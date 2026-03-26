@@ -1,7 +1,7 @@
 const STEPS = [
   { icon: '👶', title: 'اختر الفئة العمرية', desc: 'حدد عمر طفلك لتحصل على أسئلة مناسبة' },
   { icon: '🎯', title: 'حدد المهارة', desc: 'كمي أو لفظي أو منطقي أو مزيج من الكل' },
-  { icon: '🚀', title: 'ابدأ التدريب', desc: '١٠ أسئلة مع شرح فوري لكل إجابة' },
+  { icon: '🚀', title: 'ابدأ التدريب', desc: '10 أسئلة مع شرح فوري لكل إجابة' },
 ];
 
 export default function HowItWorks() {
@@ -10,7 +10,7 @@ export default function HowItWorks() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3">كيف يعمل بُنيان؟</h2>
-          <p className="text-gray-600">٣ خطوات بسيطة للبدء</p>
+          <p className="text-gray-600">3 خطوات بسيطة للبدء</p>
         </div>
         <div className="relative">
           {/* Connection line */}

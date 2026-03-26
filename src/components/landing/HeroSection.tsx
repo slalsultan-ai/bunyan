@@ -28,7 +28,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            منصة تدريب تفاعلية تجهّز طفلك لاختبار القدرات العامة من عمر <strong className="text-gray-800">٤ سنوات</strong> — بأسلوب ممتع يحبه الأطفال
+            منصة تدريب تفاعلية تجهّز طفلك لاختبار القدرات العامة من عمر <strong className="text-gray-800">4 سنوات</strong> — بأسلوب ممتع يحبه الأطفال
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">

@@ -19,9 +19,9 @@ export function formatTime(ms: number): string {
 
 export function getAgeGroupLabel(ageGroup: AgeGroup): string {
   const labels: Record<AgeGroup, string> = {
-    '4-5': '٤ — ٥ سنوات',
-    '6-9': '٦ — ٩ سنوات',
-    '10-12': '١٠ — ١٢ سنة',
+    '4-5': '4 — 5 سنوات',
+    '6-9': '6 — 9 سنوات',
+    '10-12': '10 — 12 سنة',
   };
   return labels[ageGroup];
 }

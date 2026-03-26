@@ -3,7 +3,7 @@ import Link from 'next/link';
 const GROUPS = [
   {
     age: '4-5',
-    label: '٤ — ٥ سنوات',
+    label: '4 — 5 سنوات',
     emoji: '🌱',
     desc: 'أسئلة مصورة وألوان وأشكال — مصممة لمن لا يقرأون بعد',
     color: 'from-green-400 to-emerald-500',
@@ -12,7 +12,7 @@ const GROUPS = [
   },
   {
     age: '6-9',
-    label: '٦ — ٩ سنوات',
+    label: '6 — 9 سنوات',
     emoji: '📚',
     desc: 'أسئلة متنوعة تجمع بين الصور والنصوص القصيرة',
     color: 'from-blue-400 to-blue-500',
@@ -21,7 +21,7 @@ const GROUPS = [
   },
   {
     age: '10-12',
-    label: '١٠ — ١٢ سنة',
+    label: '10 — 12 سنة',
     emoji: '🚀',
     desc: 'تمارين متقدمة تحاكي أسلوب اختبار القدرات الفعلي',
     color: 'from-purple-400 to-purple-500',
