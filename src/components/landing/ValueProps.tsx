@@ -35,7 +35,7 @@ export default function ValueProps() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3">لماذا بُنيان؟</h2>
-          <p className="text-gray-600 max-w-xl mx-auto">منصة مصممة خصيصاً للأطفال السعوديين — تبني المهارات الحقيقية، مش الحفظ</p>
+          <p className="text-gray-600 max-w-xl mx-auto">منصة تبني المهارات الحقيقية للطفل، لا الحفظ</p>
         </div>
         <div className="grid md:grid-cols-2 gap-5">
           {PROPS.map((p, i) => (
