@@ -100,8 +100,10 @@ function SessionContent() {
   const isLast = session.currentIndex === session.questions.length - 1;
   const lastAnswer = session.answers[session.answers.length - 1];
 
+  const isYoung = ageGroup === '4-5';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <SessionProgress
         current={session.currentIndex + 1}
         total={session.questions.length}
@@ -110,45 +112,61 @@ function SessionContent() {
         onExit={() => setExitConfirm(true)}
       />
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <QuestionCard
-          question={q}
-          index={session.currentIndex}
-          total={session.questions.length}
-          ageGroup={ageGroup}
-        />
-
-        <div className="mt-4 space-y-3">
-          {q.options.map((opt, idx) => {
-            const isChosen = session.selectedOption === idx;
-            const isCorrect = isReviewing && idx === q.correctOptionIndex;
-            const isWrong = isReviewing && isChosen && idx !== q.correctOptionIndex;
-            return (
-              <AnswerOption
-                key={idx}
-                index={idx}
-                text={opt.text}
-                selected={isChosen}
-                correct={isCorrect}
-                wrong={isWrong}
-                disabled={isReviewing}
-                onClick={() => handleAnswer(idx)}
-                large={ageGroup === '4-5'}
-              />
-            );
-          })}
-        </div>
-
-        {isReviewing && lastAnswer && (
-          <ExplanationPanel
+      {/* scrollable content with bottom padding for the fixed button */}
+      <div className="flex-1 overflow-y-auto">
+        <div className={`max-w-2xl mx-auto px-4 pt-4 ${isReviewing ? 'pb-28' : 'pb-6'}`}>
+          <QuestionCard
             question={q}
-            isCorrect={lastAnswer.isCorrect}
-            pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0}
-            onNext={session.nextQuestion}
-            isLast={isLast}
+            index={session.currentIndex}
+            total={session.questions.length}
+            ageGroup={ageGroup}
           />
-        )}
+
+          {/* 2×2 grid for young kids, stacked list for older */}
+          <div className={`mt-3 ${isYoung ? 'grid grid-cols-2 gap-3' : 'space-y-2.5'}`}>
+            {q.options.map((opt, idx) => {
+              const isChosen = session.selectedOption === idx;
+              const isCorrect = isReviewing && idx === q.correctOptionIndex;
+              const isWrong = isReviewing && isChosen && idx !== q.correctOptionIndex;
+              return (
+                <AnswerOption
+                  key={idx}
+                  index={idx}
+                  text={opt.text}
+                  selected={isChosen}
+                  correct={isCorrect}
+                  wrong={isWrong}
+                  disabled={isReviewing}
+                  onClick={() => handleAnswer(idx)}
+                  large={isYoung}
+                />
+              );
+            })}
+          </div>
+
+          {isReviewing && lastAnswer && (
+            <ExplanationPanel
+              question={q}
+              isCorrect={lastAnswer.isCorrect}
+              pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0}
+            />
+          )}
+        </div>
       </div>
+
+      {/* fixed bottom next button — always visible */}
+      {isReviewing && (
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-100 shadow-lg p-4 z-40">
+          <div className="max-w-2xl mx-auto">
+            <button
+              onClick={session.nextQuestion}
+              className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 active:scale-95 transition-all text-base shadow-emerald-200 shadow-md"
+            >
+              {isLast ? '🎉 عرض النتائج' : 'السؤال التالي ←'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {exitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

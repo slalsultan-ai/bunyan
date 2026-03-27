@@ -880,10 +880,10 @@ async function seed45() {
     questionType: q.questionType,
     questionTextAr: q.questionTextAr,
     questionImageUrl: q.questionImageUrl,
-    options: JSON.stringify(q.options),
+    options: q.options,
     correctOptionIndex: q.correctOptionIndex,
     explanationAr: q.explanationAr,
-    tags: JSON.stringify(q.tags),
+    tags: q.tags,
     isActive: true,
   }));
 
