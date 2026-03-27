@@ -8,7 +8,7 @@ export const contentType = 'image/png';
 
 export default async function Image() {
   const fontData = await readFile(
-    join(process.cwd(), 'assets/NotoSansArabic-Bold.woff2')
+    join(process.cwd(), 'assets/IBMPlexSansArabic-Bold.ttf')
   );
 
   return new ImageResponse(
