@@ -2,6 +2,7 @@
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Confetti from '@/components/ui/Confetti';
 import { getBadgeById } from '@/lib/gamification/badges';
 import { getSkillAreaLabel, formatTime } from '@/lib/utils';
@@ -90,16 +91,33 @@ function ResultsContent() {
           </div>
         )}
 
+        {/* Print worksheet CTA */}
+        <Link
+          href={`/worksheet?age=${age}&skill=${skill}`}
+          className="block bg-gradient-to-l from-emerald-600 to-emerald-500 text-white rounded-2xl p-4 mb-3 shadow-md shadow-emerald-100 hover:shadow-lg hover:from-emerald-700 hover:to-emerald-600 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+              🖨️
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-base leading-tight">اطبع وتدرّب بالقلم!</p>
+              <p className="text-emerald-100 text-xs mt-0.5 leading-relaxed">ورقة عمل جاهزة لنفس المهارة — الكتابة تُرسّخ التعلم</p>
+            </div>
+            <span className="text-xl opacity-80 group-hover:translate-x-1 transition-transform">←</span>
+          </div>
+        </Link>
+
         <div className="space-y-3">
           <button onClick={() => router.push(`/practice?age=${age}&skill=${skill}`)}
-            className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition-colors shadow-md">
+            className="w-full bg-white border-2 border-emerald-600 text-emerald-700 font-bold py-3.5 rounded-2xl hover:bg-emerald-50 transition-colors">
             🔁 جلسة جديدة
           </button>
           <button onClick={() => router.push('/progress')}
-            className="w-full bg-white border-2 border-emerald-600 text-emerald-700 font-bold py-3.5 rounded-2xl hover:bg-emerald-50 transition-colors">
-            📊 شوف تقدمك
+            className="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-2xl hover:bg-gray-200 transition-colors">
+            📊 تقدمي
           </button>
-          <button onClick={() => router.push('/')} className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors">
+          <button onClick={() => router.push('/')} className="w-full text-gray-400 py-2 text-sm hover:text-gray-600 transition-colors">
             الرئيسية
           </button>
         </div>

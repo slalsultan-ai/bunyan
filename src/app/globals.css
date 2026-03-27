@@ -78,3 +78,39 @@ body {
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
+/* ═══════════════════════════════
+   Print styles — ورقة العمل
+   ═══════════════════════════════ */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm 1.8cm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  .worksheet-header {
+    background-color: #059669 !important;
+    color: white !important;
+    border-radius: 0 !important;
+  }
+
+  .worksheet-question {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .worksheet-answer-key {
+    page-break-before: avoid;
+    break-before: avoid;
+  }
+}

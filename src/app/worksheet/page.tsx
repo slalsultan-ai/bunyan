@@ -1,20 +1,30 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AgeGroup, SkillArea, Difficulty, Question } from '@/types';
 import { getSkillAreaLabel, getAgeGroupLabel } from '@/lib/utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 
 type QuestionCount = 10 | 15 | 20;
+const LETTERS = ['أ', 'ب', 'ج', 'د'];
+const DIFFICULTY_LABELS: Record<string, string> = { easy: 'سهل', medium: 'متوسط', hard: 'صعب', mixed: 'متنوع' };
 
-export default function WorksheetPage() {
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>('6-9');
-  const [skillArea, setSkillArea] = useState<SkillArea>('mixed');
+function WorksheetContent() {
+  const params = useSearchParams();
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>((params.get('age') as AgeGroup) || '6-9');
+  const [skillArea, setSkillArea] = useState<SkillArea>((params.get('skill') as SkillArea) || 'mixed');
   const [difficulty, setDifficulty] = useState<Difficulty>('mixed');
   const [count, setCount] = useState<QuestionCount>(10);
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [previewing, setPreviewing] = useState(false);
+  const [today, setToday] = useState('');
+
+  useEffect(() => {
+    const d = new Date();
+    setToday(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`);
+  }, []);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -23,7 +33,7 @@ export default function WorksheetPage() {
       const data = await res.json();
       setQuestions(data.questions || []);
       setPreviewing(true);
-    } catch (e) {
+    } catch {
       alert('حدث خطأ، حاول مرة أخرى');
     } finally {
       setLoading(false);
@@ -32,23 +42,35 @@ export default function WorksheetPage() {
 
   const handlePrint = () => window.print();
 
-  const LETTERS = ['أ', 'ب', 'ج', 'د'];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-4 py-4 print:hidden">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Logo size="sm" />
-          <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">الرئيسية</Link>
+  if (!previewing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+        {/* nav */}
+        <div className="bg-white border-b border-gray-200 px-4 py-4">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <Logo size="sm" />
+            <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">الرئيسية</Link>
+          </div>
         </div>
-      </div>
 
-      {!previewing ? (
-        <div className="max-w-xl mx-auto px-4 py-10 print:hidden">
+        <div className="max-w-xl mx-auto px-4 py-10">
+          {/* motivation header */}
           <div className="text-center mb-8">
-            <div className="text-4xl mb-3">📄</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">توليد ورقة عمل</h1>
-            <p className="text-gray-600 text-sm">اطبع تمارين مخصصة لطفلك يحلها بالقلم</p>
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-sm">
+              🖨️
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">ورقة تدريب للطباعة</h1>
+            <p className="text-gray-600 text-sm max-w-xs mx-auto leading-relaxed">
+              الطباعة والكتابة بالقلم تُعمّق الفهم وتُقوّي الذاكرة — اطبع لطفلك وشجّعه!
+            </p>
+          </div>
+
+          {/* tip banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex gap-3 items-start">
+            <span className="text-xl shrink-0">💡</span>
+            <p className="text-amber-800 text-xs leading-relaxed">
+              <strong>نصيحة:</strong> اجلس مع طفلك، دعه يحل الأسئلة بالقلم، ثم تحققوا من الإجابات سوياً باستخدام مفتاح الإجابات.
+            </p>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-5">
@@ -82,15 +104,12 @@ export default function WorksheetPage() {
             <div>
               <label className="block font-semibold text-gray-800 mb-2 text-sm">المستوى</label>
               <div className="grid grid-cols-4 gap-2">
-                {(['easy', 'medium', 'hard', 'mixed'] as Difficulty[]).map(d => {
-                  const labels = { easy: 'سهل', medium: 'متوسط', hard: 'صعب', mixed: 'متنوع' };
-                  return (
-                    <button key={d} onClick={() => setDifficulty(d)}
-                      className={`py-2.5 rounded-xl border-2 text-xs font-medium transition-all ${difficulty === d ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'}`}>
-                      {labels[d]}
-                    </button>
-                  );
-                })}
+                {(['easy', 'medium', 'hard', 'mixed'] as Difficulty[]).map(d => (
+                  <button key={d} onClick={() => setDifficulty(d)}
+                    className={`py-2.5 rounded-xl border-2 text-xs font-medium transition-all ${difficulty === d ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300'}`}>
+                    {DIFFICULTY_LABELS[d]}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -108,81 +127,168 @@ export default function WorksheetPage() {
             </div>
 
             <button onClick={handleGenerate} disabled={loading}
-              className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-              {loading ? 'جاري التوليد...' : '📄 توليد الورقة'}
+              className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base shadow-lg shadow-emerald-100">
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  جاري التوليد...
+                </>
+              ) : (
+                <>🖨️ توليد ورقة العمل</>
+              )}
             </button>
           </div>
         </div>
-      ) : (
-        <div>
-          {/* Print controls */}
-          <div className="max-w-3xl mx-auto px-4 py-4 flex gap-3 print:hidden">
-            <button onClick={handlePrint} className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2">
-              🖨️ طباعة / حفظ PDF
-            </button>
-            <button onClick={() => { setPreviewing(false); setQuestions([]); }} className="bg-gray-100 text-gray-700 font-semibold px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors">
-              ← رجوع
-            </button>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════
+  // Preview + Print mode
+  // ═══════════════════════════════
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Print controls — hidden on print */}
+      <div className="print:hidden bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+          <button onClick={handlePrint}
+            className="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-md shadow-emerald-100">
+            🖨️ طباعة / حفظ PDF
+          </button>
+          <button onClick={() => { setPreviewing(false); setQuestions([]); }}
+            className="bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-200 transition-colors">
+            ← تعديل
+          </button>
+          <span className="text-sm text-gray-500 mr-auto">
+            {questions.length} سؤال — {getAgeGroupLabel(ageGroup)} — {getSkillAreaLabel(skillArea)}
+          </span>
+        </div>
+      </div>
+
+      {/* ═══ PRINTABLE WORKSHEET ═══ */}
+      <div className="max-w-3xl mx-auto py-6 px-4 print:py-0 print:px-0 print:max-w-none">
+        <div className="bg-white shadow-xl print:shadow-none rounded-2xl overflow-hidden print:rounded-none">
+
+          {/* ── Header (green bar) ── */}
+          <div className="worksheet-header bg-emerald-600 text-white px-8 py-5 print:px-10 print:py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white font-extrabold text-xl">ب</div>
+                <div>
+                  <div className="font-extrabold text-xl tracking-wide">بُنيان</div>
+                  <div className="text-emerald-100 text-xs">منصة تنمية المهارات</div>
+                </div>
+              </div>
+              <div className="text-left text-xs text-emerald-100 leading-relaxed">
+                <div className="font-bold text-white text-sm mb-0.5">ورقة تدريب</div>
+                <div>{getAgeGroupLabel(ageGroup)}</div>
+                <div>{getSkillAreaLabel(skillArea)} — {DIFFICULTY_LABELS[difficulty]}</div>
+              </div>
+            </div>
           </div>
 
-          {/* Printable worksheet */}
-          <div className="max-w-3xl mx-auto px-4 print:px-8 print:max-w-none">
-            {/* Header */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 print:rounded-none print:border-0 print:p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">ب</div>
-                  <span className="font-bold text-gray-900 text-xl">بُنيان</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                  ورقة تدريب — {getSkillAreaLabel(skillArea)} — {ageGroup} سنوات
-                </div>
+          {/* ── Student info strip ── */}
+          <div className="bg-emerald-50 border-b-2 border-emerald-100 px-8 py-4 print:px-10">
+            <div className="grid grid-cols-2 gap-6 text-sm text-gray-700">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-600 shrink-0">👤 الاسم:</span>
+                <span className="flex-1 border-b-2 border-gray-400 border-dotted pb-0.5 min-h-[22px]"> </span>
               </div>
-              <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
-                <div className="text-sm text-gray-700">الاسم: <span className="inline-block border-b border-gray-400 w-32 ms-2"> </span></div>
-                <div className="text-sm text-gray-700">التاريخ: <span className="inline-block border-b border-gray-400 w-24 ms-2"> </span></div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-600 shrink-0">📅 التاريخ:</span>
+                <span className="flex-1 border-b-2 border-gray-400 border-dotted pb-0.5">{today}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-600 shrink-0">⭐ الدرجة:</span>
+                <span className="flex-1 border-b-2 border-gray-400 border-dotted pb-0.5 min-h-[22px]"> </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-600 shrink-0">⏱️ الوقت:</span>
+                <span className="flex-1 border-b-2 border-gray-400 border-dotted pb-0.5 min-h-[22px]"> </span>
               </div>
             </div>
+          </div>
 
-            {/* Questions */}
-            <div className="space-y-5">
-              {questions.map((q, qi) => (
-                <div key={q.id} className="bg-white rounded-2xl border border-gray-200 p-5 print:rounded-none print:border-b print:border-gray-300 print:pb-4">
-                  <p className="font-semibold text-gray-900 mb-3 text-base">
-                    <span className="text-emerald-600 font-bold ml-2">{qi + 1}.</span>
+          {/* ── Instructions ── */}
+          <div className="px-8 pt-5 pb-2 print:px-10 border-b border-gray-100">
+            <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2.5 border border-gray-200 leading-relaxed">
+              📝 <strong className="text-gray-700">التعليمات:</strong> اقرأ كل سؤال بتأنٍّ ثم ضع دائرة ◯ حول رمز الإجابة الصحيحة (أ، ب، ج، د).
+            </p>
+          </div>
+
+          {/* ── Questions ── */}
+          <div className="px-8 py-5 print:px-10 space-y-0">
+            {questions.map((q, qi) => (
+              <div key={q.id}
+                className="worksheet-question border-b border-gray-100 last:border-0 py-5">
+                {/* Question text */}
+                <div className="flex gap-3 mb-3">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-extrabold mt-0.5 print:bg-emerald-600 print:text-white">
+                    {qi + 1}
+                  </span>
+                  <p className="text-gray-900 font-semibold text-base leading-relaxed whitespace-pre-line">
                     {q.questionTextAr}
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {q.options.map((opt, oi) => (
-                      <div key={oi} className="flex items-center gap-2 text-sm text-gray-700">
-                        <span className="w-6 h-6 rounded-full border-2 border-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{LETTERS[oi]}</span>
-                        {opt.text}
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Answer key */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mt-6 print:rounded-none">
-              <p className="font-bold text-amber-800 mb-3 text-sm">🔑 مفتاح الإجابات — لولي الأمر</p>
-              <div className="grid grid-cols-5 gap-2">
+                {/* Options — 2×2 grid */}
+                <div className="grid grid-cols-2 gap-2 mr-10">
+                  {q.options.map((opt, oi) => (
+                    <div key={oi}
+                      className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 print:bg-transparent print:border-gray-300">
+                      {/* Bubble to circle */}
+                      <span className="shrink-0 w-7 h-7 rounded-full border-2 border-emerald-500 flex items-center justify-center text-xs font-bold text-emerald-700 print:border-emerald-600">
+                        {LETTERS[oi]}
+                      </span>
+                      <span className="text-gray-800 text-sm leading-tight">{opt.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Answer key ── */}
+          <div className="worksheet-answer-key mx-8 mb-8 print:mx-10 print:mb-6 mt-2 rounded-2xl overflow-hidden border-2 border-amber-300 print:rounded-none">
+            <div className="bg-amber-400 px-5 py-3 flex items-center gap-2 print:bg-amber-400">
+              <span className="text-lg">🔑</span>
+              <span className="font-extrabold text-amber-900 text-sm">مفتاح الإجابات — لولي الأمر فقط</span>
+              <span className="mr-auto text-amber-800 text-xs">لا تُظهر للطفل قبل الحل</span>
+            </div>
+            <div className="bg-amber-50 p-4 print:bg-amber-50">
+              <div className="grid grid-cols-10 gap-2 text-center">
                 {questions.map((q, qi) => (
-                  <div key={q.id} className="text-center">
-                    <div className="text-xs text-gray-500">{qi + 1}</div>
-                    <div className="font-bold text-emerald-700 text-sm">{LETTERS[q.correctOptionIndex]}</div>
+                  <div key={q.id} className="flex flex-col items-center gap-1">
+                    <span className="text-xs text-gray-500 font-medium">{qi + 1}</span>
+                    <span className="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-extrabold flex items-center justify-center print:bg-emerald-600">
+                      {LETTERS[q.correctOptionIndex]}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
-
-            <div className="text-center text-gray-400 text-xs mt-4 mb-8 print:mb-2">
-              bunyan.app — كل بُنيان يبدأ بلبنة
-            </div>
           </div>
+
+          {/* ── Footer ── */}
+          <div className="bg-emerald-600 print:bg-emerald-600 px-8 py-3 print:px-10 flex items-center justify-between">
+            <span className="text-emerald-100 text-xs">bunyan.app — كل بُنيان يبدأ بلبنة</span>
+            <span className="text-emerald-100 text-xs">© {new Date().getFullYear()}</span>
+          </div>
+
         </div>
-      )}
+      </div>
     </div>
+  );
+}
+
+export default function WorksheetPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <WorksheetContent />
+    </Suspense>
   );
 }
