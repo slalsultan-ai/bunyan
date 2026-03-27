@@ -43,7 +43,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ questions: rows });
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[questions API error]', msg);
+    return NextResponse.json({ error: 'Server error', detail: msg }, { status: 500 });
   }
 }
