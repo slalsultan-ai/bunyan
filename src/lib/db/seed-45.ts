@@ -859,7 +859,7 @@ const questions45 = [
 ];
 
 async function seed45() {
-  const client = createClient({ url: process.env.TURSO_DATABASE_URL ?? 'file:./local.db' });
+  const client = createClient({ url: process.env.TURSO_DATABASE_URL ?? 'file:./local.db', ...(process.env.TURSO_AUTH_TOKEN ? { authToken: process.env.TURSO_AUTH_TOKEN } : {}) });
   const db = drizzle(client);
 
   // حذف أسئلة 4-5 القديمة
