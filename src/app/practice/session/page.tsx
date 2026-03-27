@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/useSession';
 import { useGuest } from '@/hooks/useGuest';
+import { useSound } from '@/hooks/useSound';
 import { POINTS } from '@/lib/gamification/points';
 import SessionProgress from '@/components/practice/SessionProgress';
 import QuestionCard from '@/components/practice/QuestionCard';
@@ -21,8 +22,11 @@ function SessionContent() {
   const { state, recordSession } = useGuest();
   const [pointsThisSession, setPointsThisSession] = useState(0);
   const [exitConfirm, setExitConfirm] = useState(false);
+  const [muted, setMuted] = useState(false);
   const sessionIdRef = useRef(crypto.randomUUID());
   const resultSavedRef = useRef(false);
+
+  const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
 
   useEffect(() => {
     session.loadQuestions(ageGroup, skillArea, 'mixed');
@@ -42,6 +46,8 @@ function SessionContent() {
       };
 
       const { pointsEarned, newBadges } = recordSession(result);
+
+      if (session.score === session.questions.length) playFanfare();
 
       if (state.guestId) {
         fetch('/api/sessions', {
@@ -79,7 +85,13 @@ function SessionContent() {
     const isCorrect = idx === q.correctOptionIndex;
     const pts = isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0;
     setPointsThisSession(p => p + pts);
+    if (isCorrect) playCorrect(); else playWrong();
     session.selectAnswer(idx);
+  };
+
+  const handleNext = () => {
+    playNext();
+    session.nextQuestion();
   };
 
   if (session.phase === 'loading') {
@@ -99,7 +111,6 @@ function SessionContent() {
   const isReviewing = session.phase === 'reviewing';
   const isLast = session.currentIndex === session.questions.length - 1;
   const lastAnswer = session.answers[session.answers.length - 1];
-
   const isYoung = ageGroup === '4-5';
 
   return (
@@ -112,9 +123,10 @@ function SessionContent() {
         onExit={() => setExitConfirm(true)}
         ageGroup={ageGroup}
         skillArea={skillArea}
+        muted={muted}
+        onToggleMute={() => setMuted(m => !m)}
       />
 
-      {/* scrollable content with bottom padding for the fixed button */}
       <div className="flex-1 overflow-y-auto">
         <div className={`max-w-2xl mx-auto px-4 pt-4 ${isReviewing ? 'pb-28' : 'pb-6'}`}>
           <QuestionCard
@@ -124,7 +136,6 @@ function SessionContent() {
             ageGroup={ageGroup}
           />
 
-          {/* 2×2 grid for young kids, stacked list for older */}
           <div className={`mt-3 ${isYoung ? 'grid grid-cols-2 gap-3' : 'space-y-2.5'}`}>
             {q.options.map((opt, idx) => {
               const isChosen = session.selectedOption === idx;
@@ -156,12 +167,11 @@ function SessionContent() {
         </div>
       </div>
 
-      {/* fixed bottom next button — always visible */}
       {isReviewing && (
         <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-100 shadow-lg p-4 z-40">
           <div className="max-w-2xl mx-auto">
             <button
-              onClick={session.nextQuestion}
+              onClick={handleNext}
               className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 active:scale-95 transition-all text-base shadow-emerald-200 shadow-md"
             >
               {isLast ? '🎉 عرض النتائج' : 'السؤال التالي ←'}

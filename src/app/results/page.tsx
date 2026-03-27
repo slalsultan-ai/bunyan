@@ -1,7 +1,7 @@
 'use client';
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Confetti from '@/components/ui/Confetti';
 import { getBadgeById } from '@/lib/gamification/badges';
@@ -10,6 +10,7 @@ import { getSkillAreaLabel, formatTime } from '@/lib/utils';
 function ResultsContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const [childName, setChildName] = useState('');
 
   const score = parseInt(params.get('score') || '0');
   const total = parseInt(params.get('total') || '10');
@@ -27,6 +28,8 @@ function ResultsContent() {
 
   const circumference = 2 * Math.PI * 54;
   const strokeDash = circumference - (pct / 100) * circumference;
+
+  const certUrl = `/certificate?name=${encodeURIComponent(childName || 'المتميز')}&score=${score}&total=${total}&skill=${skill}&age=${age}`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start py-8 px-4">
@@ -90,6 +93,29 @@ function ResultsContent() {
             </div>
           </div>
         )}
+
+        {/* 🎓 شهادة إتمام */}
+        <div className="bg-gradient-to-l from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-2xl p-4 mb-3 shadow-sm">
+          <p className="font-bold text-amber-800 text-sm mb-3 flex items-center gap-2">
+            <span className="text-xl">🎓</span> اطبع شهادة تميّز للطفل
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={childName}
+              onChange={e => setChildName(e.target.value)}
+              placeholder="اكتب اسم الطفل..."
+              className="flex-1 border-2 border-amber-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:border-amber-400 focus:outline-none bg-white"
+            />
+            <Link
+              href={certUrl}
+              target="_blank"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0 flex items-center gap-1"
+            >
+              🖨️ طباعة
+            </Link>
+          </div>
+        </div>
 
         {/* Print worksheet CTA */}
         <Link
