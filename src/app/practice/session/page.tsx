@@ -110,6 +110,8 @@ function SessionContent() {
         score={session.score}
         pointsThisSession={pointsThisSession}
         onExit={() => setExitConfirm(true)}
+        ageGroup={ageGroup}
+        skillArea={skillArea}
       />
 
       {/* scrollable content with bottom padding for the fixed button */}

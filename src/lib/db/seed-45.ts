@@ -856,6 +856,140 @@ const questions45 = [
     explanationAr: '🍊 هو المختلف — الباقي كلها تفاح 🍎.',
     tags: []
   },
+
+  // ════════════════════════════════════════
+  // أسئلة صوتية — يُقرأ السؤال بالصوت 🔊
+  // ════════════════════════════════════════
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها يطير في السماء؟',
+    options: [{ text: '🐦' }, { text: '🐟' }, { text: '🐶' }, { text: '🐢' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الطائر 🐦 هو من يطير في السماء.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها فاكهة صفراء؟',
+    options: [{ text: '🍌' }, { text: '🍎' }, { text: '🍇' }, { text: '🍓' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الموزة 🍌 فاكهة صفراء اللون.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'ما عدد أصابع يدك الواحدة؟',
+    options: [{ text: '3' }, { text: '4' }, { text: '5' }, { text: '6' }],
+    correctOptionIndex: 2,
+    explanationAr: 'لدينا خمسة أصابع في كل يد.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها حيوان كبير جداً؟',
+    options: [{ text: '🐘' }, { text: '🐭' }, { text: '🐝' }, { text: '🐇' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الفيل 🐘 هو أكبر الحيوانات الأربعة.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها نلبسه في قدمينا؟',
+    options: [{ text: '👟' }, { text: '👒' }, { text: '🧤' }, { text: '🧣' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الحذاء 👟 هو ما نلبسه في القدمين.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'medium',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها يُعطينا الحليب؟',
+    options: [{ text: '🐄' }, { text: '🐟' }, { text: '🦜' }, { text: '🐢' }],
+    correctOptionIndex: 0,
+    explanationAr: 'البقرة 🐄 هي التي تُعطينا الحليب.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'medium',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها يعيش في الماء ويسبح؟',
+    options: [{ text: '🐟' }, { text: '🐈' }, { text: '🐔' }, { text: '🐑' }],
+    correctOptionIndex: 0,
+    explanationAr: 'السمكة 🐟 تعيش في الماء وتسبح.',
+    tags: ['audio']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المشاعر', difficulty: 'easy',
+    questionType: 'audio', questionImageUrl: null,
+    questionTextAr: 'أيٌّ منها وجه سعيد؟',
+    options: [{ text: '😀' }, { text: '😢' }, { text: '😡' }, { text: '😴' }],
+    correctOptionIndex: 0,
+    explanationAr: '😀 هو الوجه السعيد المبتسم.',
+    tags: ['audio']
+  },
+
+  // ════════════════════════════════════════
+  // أسئلة بصرية — رسومات تظهر على الشاشة وتُطبع 🖼️
+  // ════════════════════════════════════════
+  {
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'easy',
+    questionType: 'image', questionImageUrl: '/q-images/q45-count-2.svg',
+    questionTextAr: 'كم؟',
+    options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
+    correctOptionIndex: 1,
+    explanationAr: 'نعد: 1، 2. الجواب 2.',
+    tags: ['image', 'counting']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'easy',
+    questionType: 'image', questionImageUrl: '/q-images/q45-count-3.svg',
+    questionTextAr: 'كم؟',
+    options: [{ text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }],
+    correctOptionIndex: 1,
+    explanationAr: 'نعد: 1، 2، 3. الجواب 3.',
+    tags: ['image', 'counting']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'medium',
+    questionType: 'image', questionImageUrl: '/q-images/q45-count-4.svg',
+    questionTextAr: 'كم؟',
+    options: [{ text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }],
+    correctOptionIndex: 2,
+    explanationAr: 'نعد النجوم: 1، 2، 3، 4. الجواب 4.',
+    tags: ['image', 'counting']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'medium',
+    questionType: 'image', questionImageUrl: '/q-images/q45-count-5.svg',
+    questionTextAr: 'كم؟',
+    options: [{ text: '3' }, { text: '4' }, { text: '5' }, { text: '6' }],
+    correctOptionIndex: 2,
+    explanationAr: 'نعد الكرات: 1، 2، 3، 4، 5. الجواب 5.',
+    tags: ['image', 'counting']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'medium',
+    questionType: 'image', questionImageUrl: '/q-images/q45-pattern-rb.svg',
+    questionTextAr: 'ما التالي؟',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 1,
+    explanationAr: 'النمط أحمر-أزرق يتكرر. بعد الأحمر يأتي الأزرق 🔵.',
+    tags: ['image', 'pattern']
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'medium',
+    questionType: 'image', questionImageUrl: '/q-images/q45-odd-shape.svg',
+    questionTextAr: 'أيهما مختلف؟',
+    options: [{ text: '⭕' }, { text: '⬛' }, { text: '🔺' }, { text: '🔷' }],
+    correctOptionIndex: 1,
+    explanationAr: 'المربع ⬛ مختلف — الباقي كلها دوائر.',
+    tags: ['image', 'shapes']
+  },
 ];
 
 async function seed45() {

@@ -226,9 +226,26 @@ function WorksheetContent() {
                   <span className="shrink-0 w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-extrabold mt-0.5 print:bg-emerald-600 print:text-white">
                     {qi + 1}
                   </span>
-                  <p className="text-gray-900 font-semibold text-base leading-relaxed whitespace-pre-line">
-                    {q.questionTextAr}
-                  </p>
+                  <div className="flex-1">
+                    {q.questionType === 'audio' ? (
+                      <p className="text-gray-900 font-semibold text-base leading-relaxed">
+                        🔊 {q.questionTextAr}
+                      </p>
+                    ) : (
+                      <p className="text-gray-900 font-semibold text-base leading-relaxed whitespace-pre-line">
+                        {q.questionTextAr}
+                      </p>
+                    )}
+                    {q.questionImageUrl && q.questionType !== 'audio' && (
+                      <div className="mt-2">
+                        <img
+                          src={q.questionImageUrl}
+                          alt="صورة السؤال"
+                          className="max-h-36 object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Options — 2×2 grid */}

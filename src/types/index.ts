@@ -1,7 +1,7 @@
 export type AgeGroup = '4-5' | '6-9' | '10-12';
 export type SkillArea = 'quantitative' | 'verbal' | 'logical_patterns' | 'mixed';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
-export type QuestionType = 'text' | 'image' | 'mixed';
+export type QuestionType = 'text' | 'image' | 'audio' | 'mixed';
 
 export interface QuestionOption {
   text: string;
