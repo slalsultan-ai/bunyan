@@ -34,10 +34,10 @@ function CertificateContent() {
           🖨️ طباعة الشهادة
         </button>
         <button
-          onClick={() => window.history.back()}
+          onClick={() => window.close()}
           className="bg-white text-gray-700 font-semibold px-6 py-3 rounded-2xl hover:bg-gray-50 transition-colors shadow border border-gray-200"
         >
-          ← رجوع
+          ✕ إغلاق
         </button>
       </div>
 
