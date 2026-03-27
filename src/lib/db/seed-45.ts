@@ -1,5 +1,5 @@
 // أسئلة عمر 4-5 — مصممة للأطفال الذين لا يقرأون
-// القاعدة: الإجابات إما أرقام، أو إيموجي، أو كلمة واحدة بسيطة جداً
+// القاعدة الصارمة: الخيارات = إيموجي أو أرقام فقط — صفر كلمات عربية في الخيارات
 import { createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
 import { questions } from './schema';
@@ -54,19 +54,19 @@ const questions45 = [
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'المقارنة', difficulty: 'easy',
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما أكثر؟\n🍎🍎  أم  🍎🍎🍎🍎',
-    options: [{ text: '🍎🍎' }, { text: '🍎🍎🍎🍎' }, { text: 'متساوي' }, { text: 'لا أعرف' }],
-    correctOptionIndex: 1,
-    explanationAr: '2 تفاحة أم 4 تفاحة؟ — 4 تفاحات أكثر!',
+    questionTextAr: 'كم 🦋؟\n🦋🦋🦋🦋🦋🦋',
+    options: [{ text: '4' }, { text: '5' }, { text: '6' }, { text: '7' }],
+    correctOptionIndex: 2,
+    explanationAr: 'نعد الفراشات: 1، 2، 3، 4، 5، 6. الجواب 6.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'الأشكال', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أي شكل 🔵 مستدير؟',
-    options: [{ text: '▲ مثلث' }, { text: '⬛ مربع' }, { text: '⬤ دائرة' }, { text: '▬ مستطيل' }],
+    questionTextAr: 'أي شكل مستدير؟',
+    options: [{ text: '▲' }, { text: '⬛' }, { text: '⬤' }, { text: '▬' }],
     correctOptionIndex: 2,
     explanationAr: 'الدائرة ⬤ شكل مستدير بدون زوايا.',
     tags: []
@@ -81,12 +81,12 @@ const questions45 = [
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'المقارنة', difficulty: 'easy',
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'العد', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '3 🐠  أم  1 🐠\nأيهما أقل؟',
-    options: [{ text: '3' }, { text: '1' }, { text: 'نفس' }, { text: 'لا أعرف' }],
-    correctOptionIndex: 1,
-    explanationAr: '1 سمكة أقل من 3 سمكات.',
+    questionTextAr: 'كم 🐠؟\n🐠',
+    options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
+    correctOptionIndex: 0,
+    explanationAr: 'هناك سمكة واحدة فقط. الجواب 1.',
     tags: []
   },
   {
@@ -135,7 +135,7 @@ const questions45 = [
     questionTextAr: 'ما التالي؟\n🔴🔵🔴🔵🔴 ___',
     options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
     correctOptionIndex: 1,
-    explanationAr: 'النمط: أحمر 🔴 ثم أزرق 🔵. بعد الأحمر يأتي الأزرق 🔵.',
+    explanationAr: 'النمط: 🔴 ثم 🔵. بعد 🔴 يأتي 🔵.',
     tags: []
   },
   {
@@ -150,9 +150,9 @@ const questions45 = [
   {
     ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'المقارنة', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '9 أم 6 — أيهما أكبر؟',
-    options: [{ text: '6' }, { text: '9' }, { text: 'نفس' }, { text: 'لا أعرف' }],
-    correctOptionIndex: 1,
+    questionTextAr: 'أيهما أكبر؟\n9 أم 6',
+    options: [{ text: '6' }, { text: '7' }, { text: '8' }, { text: '9' }],
+    correctOptionIndex: 3,
     explanationAr: '9 أكبر من 6.',
     tags: []
   },
@@ -168,7 +168,7 @@ const questions45 = [
   {
     ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'الأشكال', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'المثلث له كم ضلع؟',
+    questionTextAr: '▲ المثلث له كم ضلع؟',
     options: [{ text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }],
     correctOptionIndex: 1,
     explanationAr: 'المثلث ▲ له 3 أضلاع و3 زوايا.',
@@ -202,13 +202,13 @@ const questions45 = [
     questionTextAr: '2 + 2 = ؟',
     options: [{ text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }],
     correctOptionIndex: 2,
-    explanationAr: '2 + 2 = 4. تعد على أصابعك: 1، 2 ثم 3، 4.',
+    explanationAr: '2 + 2 = 4.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'الجمع', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐱🐱🐱 + 🐱🐱 = ؟\nكم قطة الآن؟',
+    questionTextAr: '🐱🐱🐱 + 🐱🐱 = ؟',
     options: [{ text: '3' }, { text: '4' }, { text: '5' }, { text: '6' }],
     correctOptionIndex: 2,
     explanationAr: '3 قطط + 2 قطط = 5 قطط.',
@@ -233,12 +233,12 @@ const questions45 = [
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'المقارنة', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'الطرح', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'رتّب: 5 ، 2 ، 8\nمن الأصغر للأكبر؟',
-    options: [{ text: '2 ، 5 ، 8' }, { text: '8 ، 5 ، 2' }, { text: '5 ، 2 ، 8' }, { text: '2 ، 8 ، 5' }],
-    correctOptionIndex: 0,
-    explanationAr: 'من الأصغر للأكبر: 2 ثم 5 ثم 8.',
+    questionTextAr: '5 - 3 = ؟',
+    options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
+    correctOptionIndex: 1,
+    explanationAr: '5 - 3 = 2.',
     tags: []
   },
   {
@@ -256,7 +256,7 @@ const questions45 = [
     questionTextAr: '1 + 1 + 1 = ؟',
     options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
     correctOptionIndex: 2,
-    explanationAr: '1 + 1 + 1 = 3. ثلاثة آحاد تساوي 3.',
+    explanationAr: '1 + 1 + 1 = 3.',
     tags: []
   },
   {
@@ -274,13 +274,13 @@ const questions45 = [
     questionTextAr: '4 - 2 = ؟',
     options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
     correctOptionIndex: 1,
-    explanationAr: '4 - 2 = 2. أربعة ناقص اثنين يساوي اثنين.',
+    explanationAr: '4 - 2 = 2.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'quantitative', subSkill: 'الأشكال', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'المربع ⬛ له كم ضلع؟',
+    questionTextAr: '⬛ المربع له كم ضلع؟',
     options: [{ text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }],
     correctOptionIndex: 2,
     explanationAr: 'المربع ⬛ له 4 أضلاع كلها متساوية.',
@@ -289,12 +289,22 @@ const questions45 = [
 
   // ════════════════════════════
   // لفظي — سهل (10 أسئلة)
+  // الخيارات: إيموجي فقط
   // ════════════════════════════
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'السماء 🌤️ لونها؟',
-    options: [{ text: '🔴 أحمر' }, { text: '🔵 أزرق' }, { text: '🟢 أخضر' }, { text: '🟡 أصفر' }],
+    questionTextAr: '🍎 لونه؟',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 0,
+    explanationAr: 'التفاحة 🍎 لونها أحمر 🔴.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: '🌤️ السماء لونها؟',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
     correctOptionIndex: 1,
     explanationAr: 'السماء 🌤️ لونها أزرق 🔵.',
     tags: []
@@ -302,106 +312,80 @@ const questions45 = [
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'العشب 🌿 لونه؟',
-    options: [{ text: '🔴 أحمر' }, { text: '🔵 أزرق' }, { text: '🟢 أخضر' }, { text: '🟡 أصفر' }],
+    questionTextAr: '🌿 العشب لونه؟',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
     correctOptionIndex: 2,
     explanationAr: 'العشب 🌿 لونه أخضر 🟢.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐱 هذا الحيوان يقول؟',
-    options: [{ text: 'هاو هاو' }, { text: 'مياو' }, { text: 'خوار' }, { text: 'زقزقة' }],
-    correctOptionIndex: 1,
-    explanationAr: 'القطة 🐱 تقول "مياو".',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐶 هذا الحيوان يقول؟',
-    options: [{ text: 'هاو هاو' }, { text: 'مياو' }, { text: 'خوار' }, { text: 'مو مو' }],
-    correctOptionIndex: 0,
-    explanationAr: 'الكلب 🐶 يقول "هاو هاو".',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: '🌞 الشمس لونها؟',
-    options: [{ text: '🔵 أزرق' }, { text: '🟢 أخضر' }, { text: '🟡 أصفر' }, { text: '🔴 أحمر' }],
-    correctOptionIndex: 2,
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 3,
     explanationAr: 'الشمس 🌞 لونها أصفر 🟡.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الأشياء', difficulty: 'easy',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🍎 هذا؟',
-    options: [{ text: 'موزة' }, { text: 'تفاحة' }, { text: 'برتقالة' }, { text: 'عنبة' }],
-    correctOptionIndex: 1,
-    explanationAr: 'هذه تفاحة 🍎.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐘 هذا الحيوان؟',
-    options: [{ text: 'أسد' }, { text: 'زرافة' }, { text: 'فيل' }, { text: 'دب' }],
-    correctOptionIndex: 2,
-    explanationAr: 'هذا فيل 🐘. له خرطوم طويل.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الألوان', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: '🍌 الموزة لونها؟',
-    options: [{ text: '🔴 أحمر' }, { text: '🟡 أصفر' }, { text: '🟢 أخضر' }, { text: '🔵 أزرق' }],
-    correctOptionIndex: 1,
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 3,
     explanationAr: 'الموزة 🍌 لونها أصفر 🟡.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المشاعر', difficulty: 'easy',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما سعيد؟',
+    options: [{ text: '😀' }, { text: '😢' }, { text: '😡' }, { text: '😴' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الوجه 😀 يبتسم — هذا السعيد.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🦁 هذا الحيوان؟',
-    options: [{ text: 'نمر' }, { text: 'أسد' }, { text: 'فيل' }, { text: 'قرد' }],
-    correctOptionIndex: 1,
-    explanationAr: 'هذا أسد 🦁. يعيش في الغابة.',
+    questionTextAr: 'أيهما يطير؟',
+    options: [{ text: '🐦' }, { text: '🐶' }, { text: '🐟' }, { text: '🐢' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الطائر 🐦 يطير في السماء بأجنحته.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الأشياء', difficulty: 'easy',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'نستخدم ✏️ لـ؟',
-    options: [{ text: 'الأكل' }, { text: 'الكتابة' }, { text: 'اللعب' }, { text: 'النوم' }],
-    correctOptionIndex: 1,
-    explanationAr: 'القلم ✏️ نستخدمه للكتابة والرسم.',
+    questionTextAr: 'أيهما يعيش في الماء؟',
+    options: [{ text: '🐟' }, { text: '🐶' }, { text: '🦁' }, { text: '🐰' }],
+    correctOptionIndex: 0,
+    explanationAr: 'السمكة 🐟 تعيش وتسبح في الماء.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'easy',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما أكبر؟',
+    options: [{ text: '🐘' }, { text: '🐭' }, { text: '🐇' }, { text: '🐓' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الفيل 🐘 هو أكبر الحيوانات هنا.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'easy',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما من الفواكه؟',
+    options: [{ text: '🍎' }, { text: '🚗' }, { text: '🐶' }, { text: '✏️' }],
+    correctOptionIndex: 0,
+    explanationAr: 'التفاحة 🍎 فاكهة نأكلها.',
     tags: []
   },
 
   // ════════════════════════════
   // لفظي — متوسط (10 أسئلة)
+  // الخيارات: إيموجي فقط
   // ════════════════════════════
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐘 كبير — 🐭 ؟',
-    options: [{ text: 'كبير' }, { text: 'صغير' }, { text: 'طويل' }, { text: 'سريع' }],
-    correctOptionIndex: 1,
-    explanationAr: 'الفيل 🐘 كبير والفأر 🐭 صغير. هما متضادان.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🌞 النهار — 🌙 ؟',
-    options: [{ text: 'نهار' }, { text: 'مساء' }, { text: 'ليل' }, { text: 'فجر' }],
-    correctOptionIndex: 2,
-    explanationAr: 'عكس النهار 🌞 هو الليل 🌙.',
-    tags: []
-  },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
@@ -417,176 +401,196 @@ const questions45 = [
     questionTextAr: 'أيهما ليس فاكهة؟\n🍎 🍌 🥕 🍊',
     options: [{ text: '🍎' }, { text: '🍌' }, { text: '🥕' }, { text: '🍊' }],
     correctOptionIndex: 2,
-    explanationAr: 'الجزر 🥕 خضروات وليس فاكهة. التفاح والموز والبرتقال فواكه.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '☀️ ساخن — ❄️ ؟',
-    options: [{ text: 'ساخن' }, { text: 'دافئ' }, { text: 'بارد' }, { text: 'جاف' }],
-    correctOptionIndex: 2,
-    explanationAr: 'الشمس ☀️ ساخنة والثلج ❄️ بارد. هما متضادان.',
+    explanationAr: 'الجزر 🥕 خضروات وليس فاكهة.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما نستخدم للكتابة؟\n✏️ 🍴 📚 ✂️',
-    options: [{ text: '✏️' }, { text: '🍴' }, { text: '📚' }, { text: '✂️' }],
-    correctOptionIndex: 0,
-    explanationAr: 'القلم ✏️ للكتابة. الشوكة للأكل والمقص للقطع.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '⬆️ فوق — ⬇️ ؟',
-    options: [{ text: 'فوق' }, { text: 'جانب' }, { text: 'تحت' }, { text: 'أمام' }],
-    correctOptionIndex: 2,
-    explanationAr: 'عكس فوق ⬆️ هو تحت ⬇️.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما نلبسه في قدمينا؟\n👒 🧤 👟 🧣',
-    options: [{ text: '👒 قبعة' }, { text: '🧤 قفاز' }, { text: '👟 حذاء' }, { text: '🧣 وشاح' }],
+    questionTextAr: 'أيهما نلبسه في القدمين؟',
+    options: [{ text: '👒' }, { text: '🧤' }, { text: '👟' }, { text: '🧣' }],
     correctOptionIndex: 2,
     explanationAr: 'الحذاء 👟 نلبسه في قدمينا.',
     tags: []
   },
   {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما يسبح؟',
+    options: [{ text: '🐟' }, { text: '🐶' }, { text: '🦁' }, { text: '🐦' }],
+    correctOptionIndex: 0,
+    explanationAr: 'السمكة 🐟 تسبح في الماء.',
+    tags: []
+  },
+  {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐢 بطيء — 🐇 ؟',
-    options: [{ text: 'بطيء' }, { text: 'كسول' }, { text: 'سريع' }, { text: 'صغير' }],
-    correctOptionIndex: 2,
-    explanationAr: 'السلحفاة 🐢 بطيئة والأرنب 🐇 سريع. هما متضادان.',
+    questionTextAr: 'أيهما ساخن؟',
+    options: [{ text: '☀️' }, { text: '❄️' }, { text: '🌧️' }, { text: '🌙' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الشمس ☀️ ساخنة والثلج ❄️ بارد.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما يطير في السماء؟\n🐟 🐦 🐕 🐘',
-    options: [{ text: '🐟 سمكة' }, { text: '🐦 طائر' }, { text: '🐕 كلب' }, { text: '🐘 فيل' }],
-    correctOptionIndex: 1,
-    explanationAr: 'الطائر 🐦 يطير في السماء بأجنحته.',
+    questionTextAr: 'أيهما ليس مركبة؟\n🚗 🚌 🚂 🐶',
+    options: [{ text: '🚗' }, { text: '🚌' }, { text: '🚂' }, { text: '🐶' }],
+    correctOptionIndex: 3,
+    explanationAr: 'الكلب 🐶 ليس مركبة. السيارة والحافلة والقطار مركبات.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما نستخدم للكتابة؟',
+    options: [{ text: '✏️' }, { text: '🍴' }, { text: '🚗' }, { text: '🐶' }],
+    correctOptionIndex: 0,
+    explanationAr: 'القلم ✏️ للكتابة.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الوقت', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما في الليل؟',
+    options: [{ text: '🌙' }, { text: '☀️' }, { text: '🌞' }, { text: '🌤️' }],
+    correctOptionIndex: 0,
+    explanationAr: 'القمر 🌙 يظهر في الليل.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما ليس طعاماً؟\n🍕 🍔 🍦 🚗',
+    options: [{ text: '🍕' }, { text: '🍔' }, { text: '🍦' }, { text: '🚗' }],
+    correctOptionIndex: 3,
+    explanationAr: 'السيارة 🚗 ليست طعاماً. البيتزا والبرجر والآيس كريم نأكلها.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'المتضادات', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما بارد؟',
+    options: [{ text: '❄️' }, { text: '☀️' }, { text: '🔥' }, { text: '🌞' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الثلج ❄️ بارد والنار 🔥 ساخنة.',
     tags: []
   },
 
   // ════════════════════════════
   // لفظي — صعب (10 أسئلة)
+  // الخيارات: إيموجي فقط
   // ════════════════════════════
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'أعضاء الجسم', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🌧️ المطر — أين يسقط؟',
-    options: [{ text: '🏠 البيت' }, { text: '🌍 الأرض' }, { text: '🌊 البحر' }, { text: '⭐ النجوم' }],
-    correctOptionIndex: 1,
-    explanationAr: 'المطر 🌧️ يسقط من السماء على الأرض 🌍.',
+    questionTextAr: 'أيهما نسمع به؟',
+    options: [{ text: '👂' }, { text: '👁️' }, { text: '👃' }, { text: '👄' }],
+    correctOptionIndex: 0,
+    explanationAr: 'نسمع بالأذن 👂.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'أعضاء الجسم', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🍦 الآيس كريم — ماذا يحدث له في ☀️؟',
-    options: [{ text: 'يكبر' }, { text: 'يذوب' }, { text: 'يطير' }, { text: 'يصلب' }],
-    correctOptionIndex: 1,
-    explanationAr: 'الآيس كريم 🍦 يذوب في الحر ☀️.',
+    questionTextAr: 'أيهما نرى به؟',
+    options: [{ text: '👁️' }, { text: '👂' }, { text: '👃' }, { text: '👄' }],
+    correctOptionIndex: 0,
+    explanationAr: 'نرى بالعين 👁️.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف المتقدم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'أعضاء الجسم', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما يعيش في الماء؟\n🦁 🐋 🐘 🦒',
-    options: [{ text: '🦁 أسد' }, { text: '🐋 حوت' }, { text: '🐘 فيل' }, { text: '🦒 زرافة' }],
-    correctOptionIndex: 1,
-    explanationAr: 'الحوت 🐋 يعيش في الماء. الأسد والفيل والزرافة على الأرض.',
+    questionTextAr: 'أيهما نشم به؟',
+    options: [{ text: '👃' }, { text: '👁️' }, { text: '👂' }, { text: '👄' }],
+    correctOptionIndex: 0,
+    explanationAr: 'نشم بالأنف 👃.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🏥 المستشفى — من نجد هناك؟',
-    options: [{ text: '👨‍🍳 طباخ' }, { text: '👨‍🏫 معلم' }, { text: '👨‍⚕️ طبيب' }, { text: '👷 بنّاء' }],
-    correctOptionIndex: 2,
-    explanationAr: 'في المستشفى 🏥 نجد الطبيب 👨‍⚕️ الذي يعالج المرضى.',
+    questionTextAr: 'أيهما نأكل به؟',
+    options: [{ text: '🍴' }, { text: '✏️' }, { text: '🔑' }, { text: '✂️' }],
+    correctOptionIndex: 0,
+    explanationAr: 'نأكل بالشوكة 🍴.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🌱 البذرة — تكبر وتصبح؟',
-    options: [{ text: '🐟 سمكة' }, { text: '🌳 شجرة' }, { text: '🏠 بيت' }, { text: '⭐ نجمة' }],
-    correctOptionIndex: 1,
-    explanationAr: 'البذرة 🌱 تنبت في الأرض وتكبر لتصبح شجرة 🌳.',
+    questionTextAr: 'الغريب: 🍎 🍊 🍋 🥦',
+    options: [{ text: '🍎' }, { text: '🍊' }, { text: '🍋' }, { text: '🥦' }],
+    correctOptionIndex: 3,
+    explanationAr: 'البروكلي 🥦 خضروات، والبقية فواكه.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف المتقدم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'نذهب إلى 🏫 المدرسة لـ؟',
-    options: [{ text: 'النوم' }, { text: 'التعلم' }, { text: 'الطبخ' }, { text: 'البناء' }],
-    correctOptionIndex: 1,
-    explanationAr: 'نذهب إلى المدرسة 🏫 للتعلم وتعلم القراءة والكتابة.',
+    questionTextAr: 'أيهما يضيء؟',
+    options: [{ text: '💡' }, { text: '🍎' }, { text: '🚗' }, { text: '🐶' }],
+    correctOptionIndex: 0,
+    explanationAr: 'المصباح 💡 يضيء الظلام.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الملابس', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐝 النحلة — ماذا تصنع؟',
-    options: [{ text: '🥛 لبن' }, { text: '🍯 عسل' }, { text: '🧀 جبن' }, { text: '🥚 بيض' }],
-    correctOptionIndex: 1,
-    explanationAr: 'النحلة 🐝 تجمع الرحيق وتصنع العسل 🍯.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🌙 القمر — يظهر في؟',
-    options: [{ text: '☀️ النهار' }, { text: '🌃 الليل' }, { text: '🌅 الفجر' }, { text: '🌄 المساء فقط' }],
-    correctOptionIndex: 1,
-    explanationAr: 'القمر 🌙 يظهر في الليل 🌃 ويضيء الظلام.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف المتقدم', difficulty: 'hard',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما نأكله؟\n🚗 📚 🍕 ✏️',
-    options: [{ text: '🚗 سيارة' }, { text: '📚 كتاب' }, { text: '🍕 بيتزا' }, { text: '✏️ قلم' }],
-    correctOptionIndex: 2,
-    explanationAr: 'البيتزا 🍕 نأكلها. السيارة والكتاب والقلم لا نأكلها.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الفهم', difficulty: 'hard',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: '❄️ عندما يكون الجو بارداً نلبس؟',
-    options: [{ text: '👙 ملابس رياضة' }, { text: '🩳 شورت' }, { text: '🧥 معطف' }, { text: '👒 قبعة صيف' }],
-    correctOptionIndex: 2,
+    questionTextAr: 'في الشتاء ❄️ نلبس؟',
+    options: [{ text: '🧥' }, { text: '👙' }, { text: '👕' }, { text: '🩳' }],
+    correctOptionIndex: 0,
     explanationAr: 'في الجو البارد ❄️ نلبس المعطف 🧥 للدفء.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'الحيوانات', difficulty: 'hard',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما أطول؟',
+    options: [{ text: '🦒' }, { text: '🐭' }, { text: '🐇' }, { text: '🐓' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الزرافة 🦒 لها رقبة طويلة جداً — هي الأطول.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'hard',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'الغريب: 🐶 🐱 🐦 🌳',
+    options: [{ text: '🐶' }, { text: '🐱' }, { text: '🐦' }, { text: '🌳' }],
+    correctOptionIndex: 3,
+    explanationAr: 'الشجرة 🌳 ليست حيواناً. الكلب والقطة والطائر حيوانات.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'verbal', subSkill: 'التصنيف', difficulty: 'hard',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما نجلس عليه؟',
+    options: [{ text: '🪑' }, { text: '🍎' }, { text: '🌊' }, { text: '🐶' }],
+    correctOptionIndex: 0,
+    explanationAr: 'الكرسي 🪑 نجلس عليه.',
     tags: []
   },
 
   // ════════════════════════════
   // منطقي — سهل (10 أسئلة)
+  // الخيارات: إيموجي فقط
   // ════════════════════════════
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'أيهما مختلف؟\n🔴 🔴 🔴 🔵',
-    options: [{ text: '🔴 الأول' }, { text: '🔴 الثاني' }, { text: '🔴 الثالث' }, { text: '🔵 الرابع' }],
-    correctOptionIndex: 3,
-    explanationAr: 'الأولى والثانية والثالثة حمراء، لكن الرابعة زرقاء 🔵 — هي المختلفة!',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 1,
+    explanationAr: 'الأولى والثانية والثالثة حمراء 🔴، لكن الرابعة زرقاء 🔵 — هي المختلفة!',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'أيهما مختلف؟\n🐱 🐱 🐶 🐱',
-    options: [{ text: '🐱 الأول' }, { text: '🐱 الثاني' }, { text: '🐶 الثالث' }, { text: '🐱 الرابع' }],
-    correctOptionIndex: 2,
+    options: [{ text: '🐱' }, { text: '🐶' }, { text: '🐟' }, { text: '🐦' }],
+    correctOptionIndex: 1,
     explanationAr: 'الأول والثاني والرابع قطط 🐱، لكن الثالث كلب 🐶 — هو المختلف!',
     tags: []
   },
@@ -612,7 +616,7 @@ const questions45 = [
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'أيهما مختلف؟\n🍎 🍌 🍎 🍎',
-    options: [{ text: '🍎 الأول' }, { text: '🍌 الثاني' }, { text: '🍎 الثالث' }, { text: '🍎 الرابع' }],
+    options: [{ text: '🍎' }, { text: '🍌' }, { text: '🍊' }, { text: '🍇' }],
     correctOptionIndex: 1,
     explanationAr: 'الأول والثالث والرابع تفاح 🍎، لكن الثاني موزة 🍌 — هي المختلفة!',
     tags: []
@@ -630,7 +634,7 @@ const questions45 = [
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'التصنيف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'من يسبح في الماء؟\n🐦 🐟 🐘 🦁',
-    options: [{ text: '🐦 طائر' }, { text: '🐟 سمكة' }, { text: '🐘 فيل' }, { text: '🦁 أسد' }],
+    options: [{ text: '🐦' }, { text: '🐟' }, { text: '🐘' }, { text: '🦁' }],
     correctOptionIndex: 1,
     explanationAr: 'السمكة 🐟 تعيش وتسبح في الماء.',
     tags: []
@@ -639,8 +643,8 @@ const questions45 = [
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'أيهما مختلف؟\n▲ ▲ ⬛ ▲',
-    options: [{ text: '▲ الأول' }, { text: '▲ الثاني' }, { text: '⬛ الثالث' }, { text: '▲ الرابع' }],
-    correctOptionIndex: 2,
+    options: [{ text: '▲' }, { text: '⬛' }, { text: '⬤' }, { text: '▬' }],
+    correctOptionIndex: 1,
     explanationAr: 'الثالث مربع ⬛ وليس مثلثاً ▲ — هو المختلف!',
     tags: []
   },
@@ -657,7 +661,7 @@ const questions45 = [
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'التصنيف', difficulty: 'easy',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'أيهما ليس طعاماً؟\n🍕 🚗 🍎 🍌',
-    options: [{ text: '🍕 بيتزا' }, { text: '🚗 سيارة' }, { text: '🍎 تفاح' }, { text: '🍌 موز' }],
+    options: [{ text: '🍕' }, { text: '🚗' }, { text: '🍎' }, { text: '🍌' }],
     correctOptionIndex: 1,
     explanationAr: 'السيارة 🚗 ليست طعاماً. البيتزا والتفاح والموز نأكلها.',
     tags: []
@@ -665,6 +669,7 @@ const questions45 = [
 
   // ════════════════════════════
   // منطقي — متوسط (10 أسئلة)
+  // الخيارات: إيموجي أو أرقام فقط
   // ════════════════════════════
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'medium',
@@ -679,7 +684,7 @@ const questions45 = [
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: '🐱 أكبر من 🐭\n🐘 أكبر من 🐱\nمن الأكبر؟',
-    options: [{ text: '🐭' }, { text: '🐱' }, { text: '🐘' }, { text: 'نفس' }],
+    options: [{ text: '🐭' }, { text: '🐱' }, { text: '🐘' }, { text: '🐇' }],
     correctOptionIndex: 2,
     explanationAr: 'الفيل 🐘 أكبر من القطة، والقطة أكبر من الفأر. الفيل 🐘 هو الأكبر.',
     tags: []
@@ -696,195 +701,200 @@ const questions45 = [
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما لا يطير؟\n🦅 🦋 🐦 🐘',
-    options: [{ text: '🦅 نسر' }, { text: '🦋 فراشة' }, { text: '🐦 طائر' }, { text: '🐘 فيل' }],
-    correctOptionIndex: 3,
-    explanationAr: 'الفيل 🐘 لا يطير. النسر والفراشة والطائر يطيرون.',
+    questionTextAr: 'أيهما مختلف؟\n🔵🔵🔵🔴🔵',
+    options: [{ text: '🔵' }, { text: '🔴' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 1,
+    explanationAr: '🔴 هو المختلف — الباقي كلها زرقاء 🔵.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'ما التالي؟\n🌞🌞🌧️🌞🌞 ___',
-    options: [{ text: '🌞' }, { text: '🌧️' }, { text: '❄️' }, { text: '🌈' }],
+    questionTextAr: 'ما التالي؟\n🍎🍌🍎🍌🍎 ___',
+    options: [{ text: '🍎' }, { text: '🍌' }, { text: '🍊' }, { text: '🍇' }],
     correctOptionIndex: 1,
-    explanationAr: 'النمط: 🌞🌞🌧️ يتكرر. بعد 🌞🌞 يأتي 🌧️.',
+    explanationAr: 'النمط: 🍎 ثم 🍌. بعد 🍎 يأتي 🍌.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'medium',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'كل 🐱 يقول مياو\nهذا 🐱 — ماذا يقول؟',
-    options: [{ text: 'هاو هاو' }, { text: 'مياو' }, { text: 'خوار' }, { text: 'صمت' }],
+    questionTextAr: 'أيهما مختلف؟\n🚗 🚗 🚗 🚂 🚗',
+    options: [{ text: '🚗' }, { text: '🚂' }, { text: '🚌' }, { text: '✈️' }],
     correctOptionIndex: 1,
-    explanationAr: 'كل القطط تقول مياو، وهذه قطة، إذن تقول مياو.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'التصنيف', difficulty: 'medium',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'الذي يسكن في البحر؟\n🦁 🐠 🐘 🦒',
-    options: [{ text: '🦁' }, { text: '🐠' }, { text: '🐘' }, { text: '🦒' }],
-    correctOptionIndex: 1,
-    explanationAr: 'السمكة 🐠 تسكن في البحر. الأسد والفيل والزرافة على الأرض.',
+    explanationAr: 'القطار 🚂 هو المختلف — الباقي كلها سيارات 🚗.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'ما التالي؟\n▲⬛▲⬛▲ ___',
-    options: [{ text: '▲' }, { text: '⬛' }, { text: '⬤' }, { text: '▬' }],
+    questionTextAr: 'ما التالي؟\n⭐⭐🌙⭐⭐🌙⭐⭐ ___',
+    options: [{ text: '⭐' }, { text: '🌙' }, { text: '☀️' }, { text: '💫' }],
     correctOptionIndex: 1,
-    explanationAr: 'النمط: ▲ ثم ⬛. بعد ▲ يأتي ⬛.',
+    explanationAr: 'النمط: ⭐⭐🌙 يتكرر. بعد ⭐⭐ يأتي 🌙.',
     tags: []
   },
   {
     ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'سارة 🌟 أكبر من نورة\nنورة أكبر من ريم\nمن الأصغر؟',
-    options: [{ text: 'سارة' }, { text: 'نورة' }, { text: 'ريم' }, { text: 'نفس' }],
+    questionTextAr: 'من الأكبر؟\n🐝 🦋 🐘',
+    options: [{ text: '🐝' }, { text: '🦋' }, { text: '🐘' }, { text: '🐞' }],
     correctOptionIndex: 2,
-    explanationAr: 'سارة > نورة > ريم. ريم هي الأصغر.',
+    explanationAr: 'الفيل 🐘 أكبر بكثير من النحلة والفراشة.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'التصنيف', difficulty: 'medium',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'medium',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أيهما ليس مستديراً؟\n⬤ ⚽ ▲ 🌕',
-    options: [{ text: '⬤ دائرة' }, { text: '⚽ كرة' }, { text: '▲ مثلث' }, { text: '🌕 قمر' }],
-    correctOptionIndex: 2,
-    explanationAr: 'المثلث ▲ ليس مستديراً. الدائرة والكرة والقمر مستديرة.',
+    questionTextAr: 'أيهما مختلف؟\n🟡🟡🟡🔵🟡🟡🟡🔵 ___\nما التالي؟',
+    options: [{ text: '🟡' }, { text: '🔵' }, { text: '🔴' }, { text: '🟢' }],
+    correctOptionIndex: 0,
+    explanationAr: 'النمط: 🟡🟡🟡🔵 يتكرر. بعد 🔵 يأتي 🟡.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'medium',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما مختلف؟\n🐶 🐶 🐶 🐱 🐶',
+    options: [{ text: '🐶' }, { text: '🐱' }, { text: '🐟' }, { text: '🐦' }],
+    correctOptionIndex: 1,
+    explanationAr: '🐱 هو المختلف — الباقي كلها كلاب 🐶.',
     tags: []
   },
 
   // ════════════════════════════
   // منطقي — صعب (10 أسئلة)
+  // الخيارات: إيموجي أو أرقام فقط
   // ════════════════════════════
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط المتقدمة', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'ما التالي؟\n1 3 5 7 ___',
-    options: [{ text: '8' }, { text: '9' }, { text: '10' }, { text: '11' }],
-    correctOptionIndex: 1,
-    explanationAr: 'الأعداد الفردية: 1، 3، 5، 7، 9. نضيف 2 في كل مرة.',
+    questionTextAr: 'ما التالي؟\n🔴🟡🔵🔴🟡🔵🔴🟡 ___',
+    options: [{ text: '🔴' }, { text: '🟡' }, { text: '🔵' }, { text: '🟢' }],
+    correctOptionIndex: 2,
+    explanationAr: 'النمط: 🔴🟡🔵 يتكرر. بعد 🔴🟡 يأتي 🔵.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'hard',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'إذا كانت ☀️ تضيء النهار\nو 🌙 يضيء الليل\nمن يضيء الليل؟',
-    options: [{ text: '☀️' }, { text: '🌙' }, { text: '⭐' }, { text: 'لا شيء' }],
-    correctOptionIndex: 1,
-    explanationAr: 'القمر 🌙 يضيء الليل — هذا ما قاله السؤال.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط المتقدمة', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
     questionTextAr: 'ما التالي؟\n2 4 6 8 ___',
     options: [{ text: '9' }, { text: '10' }, { text: '11' }, { text: '12' }],
     correctOptionIndex: 1,
-    explanationAr: 'الأعداد الزوجية: 2، 4، 6، 8، 10. نضيف 2 في كل مرة.',
+    explanationAr: 'الأعداد الزوجية: 2، 4، 6، 8، 10...',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'عندي 🍎🍎🍎\nأعطيت 🍎 لأختي\nكم بقي معي؟',
+    questionTextAr: 'ما الناقص؟\n1 2 _ 4 5',
     options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
-    correctOptionIndex: 1,
-    explanationAr: '3 تفاحات - 1 تفاحة = 2 تفاحة بقيت معي.',
+    correctOptionIndex: 2,
+    explanationAr: 'العدد الناقص بين 2 و4 هو 3.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط المتقدمة', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'ما الرقم المفقود؟\n1 __ 3 4',
-    options: [{ text: '1' }, { text: '2' }, { text: '5' }, { text: '6' }],
-    correctOptionIndex: 1,
-    explanationAr: 'السلسلة: 1، 2، 3، 4. الرقم المفقود هو 2.',
+    questionTextAr: 'ما التالي؟\n🐶🐱🐟🐶🐱🐟🐶🐱 ___',
+    options: [{ text: '🐶' }, { text: '🐱' }, { text: '🐟' }, { text: '🐦' }],
+    correctOptionIndex: 2,
+    explanationAr: 'النمط: 🐶🐱🐟 يتكرر. بعد 🐶🐱 يأتي 🐟.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: '🐟 يعيش في الماء\nأخذنا 🐟 من الماء\nماذا يحدث له؟',
-    options: [{ text: 'يطير' }, { text: 'يموت' }, { text: 'يمشي' }, { text: 'ينام' }],
-    correctOptionIndex: 1,
-    explanationAr: 'السمكة 🐟 تحتاج الماء للعيش. خارج الماء لا تستطيع التنفس.',
-    tags: []
-  },
-  {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط المتقدمة', difficulty: 'hard',
-    questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'ما التالي؟\n🔴🔴🔵🔴🔴🔵🔴🔴 ___',
+    questionTextAr: 'أيهما مختلف؟\n🔴🔴🔴🔵🔴🔴',
     options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
     correctOptionIndex: 1,
-    explanationAr: 'النمط: 🔴🔴🔵 يتكرر. بعد 🔴🔴 يأتي 🔵.',
+    explanationAr: '🔵 هو المختلف — الباقي كلها حمراء 🔴.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'إذا نام الطفل مبكراً\nسيستيقظ مبكراً\nنام مبكراً — هل يستيقظ مبكراً؟',
-    options: [{ text: 'نعم' }, { text: 'لا' }, { text: 'ربما' }, { text: 'لا أعرف' }],
-    correctOptionIndex: 0,
-    explanationAr: 'نعم! لأن القاعدة قالت: نام مبكراً ← استيقظ مبكراً.',
+    questionTextAr: 'ما التالي؟\n1 1 2 1 1 2 1 1 ___',
+    options: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }],
+    correctOptionIndex: 1,
+    explanationAr: 'النمط: 1 1 2 يتكرر. بعد 1 1 يأتي 2.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط المتقدمة', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'الرقم المفقود؟\n2 4 __ 8 10',
+    questionTextAr: 'ما التالي؟\n10 9 8 7 ___',
     options: [{ text: '5' }, { text: '6' }, { text: '7' }, { text: '8' }],
     correctOptionIndex: 1,
-    explanationAr: 'الأعداد الزوجية: 2، 4، 6، 8، 10. المفقود هو 6.',
+    explanationAr: 'النمط: نطرح 1 في كل مرة. بعد 7 يأتي 6.',
     tags: []
   },
   {
-    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الاستنتاج', difficulty: 'hard',
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
     questionType: 'text', questionImageUrl: null,
-    questionTextAr: 'أحمد 🏆 جاء أول\nخالد جاء بعده\nمحمد جاء آخراً\nمن جاء ثانياً؟',
-    options: [{ text: 'أحمد' }, { text: 'خالد' }, { text: 'محمد' }, { text: 'لا أحد' }],
+    questionTextAr: 'ما التالي؟\n🌞🌛⭐🌞🌛⭐🌞🌛 ___',
+    options: [{ text: '🌞' }, { text: '🌛' }, { text: '⭐' }, { text: '🌈' }],
+    correctOptionIndex: 2,
+    explanationAr: 'النمط: 🌞🌛⭐ يتكرر. بعد 🌞🌛 يأتي ⭐.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'الأنماط', difficulty: 'hard',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'ما التالي؟\n🔴🔴🔵🔵🟢🟢🔴🔴🔵🔵 ___',
+    options: [{ text: '🔴' }, { text: '🔵' }, { text: '🟢' }, { text: '🟡' }],
+    correctOptionIndex: 2,
+    explanationAr: 'النمط: 🔴🔴🔵🔵🟢🟢 يتكرر. بعد 🔵🔵 يأتي 🟢.',
+    tags: []
+  },
+  {
+    ageGroup: '4-5', skillArea: 'logical_patterns', subSkill: 'ما يختلف', difficulty: 'hard',
+    questionType: 'text', questionImageUrl: null,
+    questionTextAr: 'أيهما مختلف؟\n🍎🍎🍎🍊🍎🍎',
+    options: [{ text: '🍎' }, { text: '🍊' }, { text: '🍌' }, { text: '🍋' }],
     correctOptionIndex: 1,
-    explanationAr: 'الترتيب: أحمد أول، خالد ثانٍ، محمد ثالث. خالد جاء ثانياً.',
+    explanationAr: '🍊 هو المختلف — الباقي كلها تفاح 🍎.',
     tags: []
   },
 ];
 
 async function seed45() {
-  const client = createClient({ url: process.env.TURSO_DATABASE_URL || 'file:./local.db' });
+  const client = createClient({ url: process.env.TURSO_DATABASE_URL ?? 'file:./local.db' });
   const db = drizzle(client);
 
-  // Delete old 4-5 questions first
-  const { sql } = await import('drizzle-orm');
-  await client.execute("DELETE FROM questions WHERE age_group = '4-5'");
+  // حذف أسئلة 4-5 القديمة
+  await db.delete(questions).where(
+    // @ts-ignore
+    require('drizzle-orm').eq(questions.ageGroup, '4-5')
+  );
   console.log('Deleted old 4-5 questions');
 
+  // إدراج الأسئلة الجديدة
   console.log('Seeding 4-5 questions...');
-  let count = 0;
-  for (const q of questions45) {
-    await db.insert(questions).values({
-      id: crypto.randomUUID(),
-      skillArea: q.skillArea,
-      subSkill: q.subSkill,
-      ageGroup: q.ageGroup,
-      difficulty: q.difficulty,
-      questionType: q.questionType as 'text' | 'image',
-      questionTextAr: q.questionTextAr,
-      questionImageUrl: q.questionImageUrl,
-      options: q.options as Array<{ text: string }>,
-      correctOptionIndex: q.correctOptionIndex,
-      explanationAr: q.explanationAr,
-      tags: q.tags,
-      isActive: true,
-    });
-    count++;
+  const rows = questions45.map(q => ({
+    id: crypto.randomUUID(),
+    skillArea: q.skillArea,
+    subSkill: q.subSkill,
+    ageGroup: q.ageGroup,
+    difficulty: q.difficulty,
+    questionType: q.questionType,
+    questionTextAr: q.questionTextAr,
+    questionImageUrl: q.questionImageUrl,
+    options: JSON.stringify(q.options),
+    correctOptionIndex: q.correctOptionIndex,
+    explanationAr: q.explanationAr,
+    tags: JSON.stringify(q.tags),
+    isActive: true,
+  }));
+
+  const BATCH = 20;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    await db.insert(questions).values(rows.slice(i, i + BATCH)).onConflictDoNothing();
   }
-  console.log(`Seeded ${count} questions for age 4-5`);
-  return count;
+
+  console.log(`Seeded ${rows.length} questions for age 4-5`);
+  console.log('Done:', rows.length);
+  client.close();
 }
 
-if (require.main === module) {
-  seed45().then(n => { console.log(`Done: ${n}`); process.exit(0); }).catch(e => { console.error(e); process.exit(1); });
-}
+seed45().catch(console.error);
