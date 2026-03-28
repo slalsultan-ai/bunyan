@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
       totalCorrect: allSessions.reduce((a, s) => a + (s.score ?? 0), 0),
       totalAnswered: allSessions.reduce((a, s) => a + (s.totalQuestions ?? 0), 0),
       skillBreakdown: breakdown,
-      recentSessions: allSessions.slice(-10).reverse(),
+      recentSessions: allSessions.slice(-10).reverse().map(
+        ({ ipAddress: _ip, guestId: _g, ...s }) => s
+      ),
     });
   } catch (e) {
     console.error(e);
