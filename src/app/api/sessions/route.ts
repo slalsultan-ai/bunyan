@@ -133,21 +133,38 @@ export async function POST(req: NextRequest) {
     const serverPoints = calculateSessionPoints(serverScore, serverTotal, isFirstSessionToday, newStreak);
 
     // ── Persist ─────────────────────────────────────────────────────────
-    const sessionId = crypto.randomUUID();
+    // Use the sessionId from start endpoint if provided (UPDATE existing record),
+    // otherwise INSERT a new one (backwards compatibility).
+    const incomingId = typeof body.sessionId === 'string' && UUID_RE.test(body.sessionId)
+      ? body.sessionId
+      : null;
+    const sessionId = incomingId ?? crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await db.insert(sessions).values({
-      id: sessionId,
-      guestId,
-      ageGroup,
-      skillArea,
-      score: serverScore,
-      totalQuestions: serverTotal,
-      pointsEarned: serverPoints,
-      timeTakenMs: safeTime,
-      completedAt: now,
-      ipAddress: ip,
-    });
+    if (incomingId) {
+      // Session was pre-registered via /api/sessions/start — update it
+      await db.update(sessions).set({
+        score: serverScore,
+        totalQuestions: serverTotal,
+        pointsEarned: serverPoints,
+        timeTakenMs: safeTime,
+        completedAt: now,
+        ipAddress: ip,
+      }).where(eq(sessions.id, incomingId));
+    } else {
+      await db.insert(sessions).values({
+        id: sessionId,
+        guestId,
+        ageGroup,
+        skillArea,
+        score: serverScore,
+        totalQuestions: serverTotal,
+        pointsEarned: serverPoints,
+        timeTakenMs: safeTime,
+        completedAt: now,
+        ipAddress: ip,
+      });
+    }
 
     await db.insert(sessionAnswers).values(
       validAnswers.map((a) => ({

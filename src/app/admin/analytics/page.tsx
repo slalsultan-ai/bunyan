@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
 
       {/* Completion Rate */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <h3 className="font-bold text-gray-900 mb-4">نسبة الاجتياز (60٪ فأكثر)</h3>
+        <h3 className="font-bold text-gray-900 mb-4">نسبة إكمال الاختبارات</h3>
         <div className="flex items-center gap-6">
           <div className="relative w-24 h-24 shrink-0">
             <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
@@ -75,15 +75,15 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">إجمالي الجلسات</span>
+              <span className="text-gray-500">بدأوا اختباراً</span>
               <span className="font-semibold text-gray-800">{data.totalStarted.toLocaleString('ar-SA')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">اجتازوا 60٪ فأكثر</span>
+              <span className="text-gray-500">أكملوا حتى النهاية</span>
               <span className="font-semibold text-emerald-600">{data.totalCompleted.toLocaleString('ar-SA')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">أقل من 60٪</span>
+              <span className="text-gray-500">تركوا في المنتصف</span>
               <span className="font-semibold text-red-500">{(data.totalStarted - data.totalCompleted).toLocaleString('ar-SA')}</span>
             </div>
             <div className="pt-1">
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1.5">
-                {data.completionRate >= 70 ? 'أداء ممتاز' : data.completionRate >= 40 ? 'أداء متوسط' : 'معظم الجلسات دون مستوى الاجتياز'}
+                {data.completionRate >= 70 ? 'معدل إكمال جيد' : data.completionRate >= 40 ? 'كثير من الطلاب يتركون الاختبار في المنتصف' : 'معظم من يبدأ لا يكمل الاختبار'}
               </p>
             </div>
           </div>

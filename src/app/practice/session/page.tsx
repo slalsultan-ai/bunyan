@@ -25,12 +25,31 @@ function SessionContent() {
   const [muted, setMuted] = useState(false);
   const sessionIdRef = useRef(crypto.randomUUID());
   const resultSavedRef = useRef(false);
+  const startRegisteredRef = useRef(false);
 
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
 
   useEffect(() => {
     session.loadQuestions(ageGroup, skillArea, 'mixed');
   }, []);
+
+  // Register session start as soon as questions are loaded (phase = 'answering')
+  useEffect(() => {
+    if (session.phase === 'answering' && !startRegisteredRef.current && state?.guestId) {
+      startRegisteredRef.current = true;
+      fetch('/api/sessions/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          guestId: state.guestId,
+          ageGroup,
+          skillArea,
+          totalQuestions: session.questions.length,
+        }),
+      }).catch(console.error);
+    }
+  }, [session.phase, state?.guestId]);
 
   useEffect(() => {
     if (session.phase === 'completed' && state && !resultSavedRef.current) {
@@ -54,6 +73,7 @@ function SessionContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            sessionId: sessionIdRef.current,
             guestId: state.guestId,
             ageGroup,
             skillArea,

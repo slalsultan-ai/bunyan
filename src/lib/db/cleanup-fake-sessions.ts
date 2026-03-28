@@ -27,11 +27,14 @@ async function main() {
   console.log(`\nTotal sessions before: ${totalRow.cnt}`);
 
   // ── Criteria 1: no answers + (speed 0 or null time) ──────────────────
+  // Sessions with no answers AND suspiciously fast time (< 500ms) are fake submissions.
+  // Sessions with no answers AND time_taken_ms IS NULL are legitimately abandoned (started but not completed) — do NOT delete.
   const noAnswers = await client.execute(`
     SELECT s.id FROM sessions s
     LEFT JOIN session_answers sa ON sa.session_id = s.id
     WHERE sa.id IS NULL
-      AND (s.time_taken_ms IS NULL OR s.time_taken_ms < 500)
+      AND s.time_taken_ms IS NOT NULL
+      AND s.time_taken_ms < 500
   `);
   const noAnswerIds = noAnswers.rows.map(r => r.id as string);
   console.log(`\nCriteria 1 — no answers + too fast: ${noAnswerIds.length} sessions`);
