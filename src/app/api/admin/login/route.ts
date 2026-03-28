@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
   try {
     const code = await createOtpChallenge();
     await sendAdminOtp(adminEmail, code);
-  } catch {
-    // Don't leak internal errors
+  } catch (err) {
+    console.error('[admin/login] Failed to send OTP:', err);
   }
 
   return NextResponse.json({ success: true });
