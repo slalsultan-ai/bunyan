@@ -41,6 +41,12 @@ export const sessionAnswers = sqliteTable('session_answers', {
   timeSpentMs: integer('time_spent_ms'),
 });
 
+export const siteContent = sqliteTable('site_content', {
+  key: text('key').primaryKey(),
+  value: text('value', { mode: 'json' }).notNull(),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const guestProgress = sqliteTable('guest_progress', {
   guestId: text('guest_id').primaryKey(),
   totalPoints: integer('total_points').default(0),

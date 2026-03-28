@@ -7,8 +7,11 @@ import FAQ from '@/components/landing/FAQ';
 import FooterCTA from '@/components/landing/FooterCTA';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
+import { getHeroContent, getFaqContent } from '@/lib/content';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [hero, faq] = await Promise.all([getHeroContent(), getFaqContent()]);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar */}
@@ -33,12 +36,12 @@ export default function HomePage() {
       </nav>
 
       <main className="flex-1">
-        <HeroSection />
+        <HeroSection content={hero} />
         <ValueProps />
         <HowItWorks />
         <AgeGroups />
         <StatsSection />
-        <FAQ />
+        <FAQ items={faq} />
         <FooterCTA />
       </main>
     </div>

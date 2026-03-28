@@ -1,34 +1,8 @@
 'use client';
 import { useState } from 'react';
+import type { FaqItem } from '@/lib/content';
 
-const FAQS = [
-  {
-    q: 'هل هذا اختبار القدرات الفعلي؟',
-    a: 'لا. بُنيان منصة تدريب تبني المهارات الأساسية التي يحتاجها طفلك للتفوق في اختبار القدرات مستقبلاً — التفكير النقدي والتحليلي والاستنتاج، لا الحفظ.',
-  },
-  {
-    q: 'من أي عمر يبدأ طفلي؟',
-    a: 'من عمر 4 سنوات! الأسئلة مصممة لكل فئة عمرية — الصغار يتعلمون بالصور والأشكال، والكبار يتدربون على أسئلة أقرب لاختبار القدرات الفعلي.',
-  },
-  {
-    q: 'هل المنصة فعلاً مجانية؟',
-    a: 'نعم، مجانية بالكامل حالياً. نخطط لإضافة باقات مدفوعة مستقبلاً مع ميزات إضافية — لكن التدريب الأساسي سيبقى مجانياً.',
-  },
-  {
-    q: 'كم سؤال في كل جلسة؟',
-    a: '10 أسئلة لكل جلسة تدريبية، مع شرح مفصل لكل إجابة يساعد الطفل على الفهم الحقيقي.',
-  },
-  {
-    q: 'هل أقدر أطبع الأسئلة؟',
-    a: 'نعم! يمكنك توليد أوراق عمل PDF مصممة وطباعتها لطفلك ليحلها بقلم وورق — تجربة تعليمية بدون شاشة.',
-  },
-  {
-    q: 'هل يحتاج طفلي حساباً للتسجيل؟',
-    a: 'لا! طفلك يبدأ التدريب فوراً بضغطة زر واحدة — لا بريد إلكتروني ولا كلمة مرور ولا أي بيانات شخصية.',
-  },
-];
-
-export default function FAQ() {
+export default function FAQ({ items }: { items: FaqItem[] }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
     <section className="bg-gray-50 py-16 px-4">
@@ -37,7 +11,7 @@ export default function FAQ() {
           <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3">أسئلة شائعة</h2>
         </div>
         <div className="space-y-3">
-          {FAQS.map((faq, i) => (
+          {items.map((faq, i) => (
             <div key={i} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <button
                 onClick={() => setOpen(open === i ? null : i)}

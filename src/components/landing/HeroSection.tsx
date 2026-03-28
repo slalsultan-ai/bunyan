@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { HeroContent } from '@/lib/content';
 
-export default function HeroSection() {
+export default function HeroSection({ content }: { content: HeroContent }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { setVisible(true); }, []);
 
@@ -19,24 +20,25 @@ export default function HeroSection() {
         <div className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 text-sm font-semibold px-4 py-2 rounded-full mb-6 border border-emerald-200">
             <span>🎁</span>
-            <span>مجاني لفترة محدودة — سجّل الآن واستفد!</span>
+            <span>{content.badge}</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
-            ابنِ قدرات طفلك
-            <span className="block text-emerald-600">من اليوم</span>
+            {content.title}
+            <span className="block text-emerald-600">{content.titleHighlight}</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            منصة تدريب تفاعلية تجهّز طفلك لاختبار القدرات العامة من عمر <strong className="text-gray-800">4 سنوات</strong> — بأسلوب ممتع يحبه الأطفال
-          </p>
+          <p
+            className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: content.subtitle }}
+          />
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
               href="/practice"
               className="bg-emerald-600 text-white font-bold text-lg px-8 py-4 rounded-2xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 w-full sm:w-auto"
             >
-              ابدأ التدريب الآن — مجاناً 🚀
+              {content.ctaPrimary}
             </Link>
             <Link
               href="/progress"
