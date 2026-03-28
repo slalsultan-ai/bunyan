@@ -39,11 +39,12 @@ export async function GET() {
       .groupBy(sql`DATE(started_at)`)
       .orderBy(sql`DATE(started_at)`),
 
-    // Completion = sessions where the user answered every question (answer_count = total_questions).
-    // We cannot use completed_at because it is always set at submission time, making that metric always 100%.
+    // Pass rate = sessions where score >= 60% of total_questions.
+    // "Completion rate" is meaningless here because sessions are only stored after submission,
+    // so every row in the DB is by definition completed (always 100%).
     db.select({
       totalStarted: sql<number>`COUNT(*)`,
-      totalCompleted: sql<number>`SUM(CASE WHEN (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) = sessions.total_questions AND sessions.total_questions > 0 THEN 1 ELSE 0 END)`,
+      totalCompleted: sql<number>`SUM(CASE WHEN total_questions > 0 AND CAST(score AS REAL) / total_questions >= 0.6 THEN 1 ELSE 0 END)`,
     }).from(sessions),
   ]);
 
