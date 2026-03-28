@@ -39,9 +39,11 @@ export async function GET() {
       .groupBy(sql`DATE(started_at)`)
       .orderBy(sql`DATE(started_at)`),
 
+    // Completion = sessions where the user answered every question (answer_count = total_questions).
+    // We cannot use completed_at because it is always set at submission time, making that metric always 100%.
     db.select({
       totalStarted: sql<number>`COUNT(*)`,
-      totalCompleted: sql<number>`SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END)`,
+      totalCompleted: sql<number>`SUM(CASE WHEN (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) = sessions.total_questions AND sessions.total_questions > 0 THEN 1 ELSE 0 END)`,
     }).from(sessions),
   ]);
 

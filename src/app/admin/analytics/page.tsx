@@ -75,15 +75,15 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">اختبارات بدأت</span>
+              <span className="text-gray-500">إجمالي الجلسات</span>
               <span className="font-semibold text-gray-800">{data.totalStarted.toLocaleString('ar-SA')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">اختبارات مكتملة</span>
+              <span className="text-gray-500">أجاب على كل الأسئلة</span>
               <span className="font-semibold text-emerald-600">{data.totalCompleted.toLocaleString('ar-SA')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">غير مكتملة</span>
+              <span className="text-gray-500">إجابات ناقصة</span>
               <span className="font-semibold text-red-500">{(data.totalStarted - data.totalCompleted).toLocaleString('ar-SA')}</span>
             </div>
             <div className="pt-1">
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1.5">
-                {data.completionRate >= 70 ? 'معدل إكمال جيد' : data.completionRate >= 40 ? 'كثير من الطلاب يتركون الاختبار في المنتصف' : 'معظم من يبدأ لا يكمل الاختبار'}
+                {data.completionRate >= 70 ? 'معدل إكمال جيد' : data.completionRate >= 40 ? 'بعض الجلسات فيها أسئلة لم تُجب' : 'كثير من الجلسات فيها إجابات ناقصة'}
               </p>
             </div>
           </div>
