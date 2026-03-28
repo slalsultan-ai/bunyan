@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   await setContent(key, value);
-  revalidateTag('site-content');
+  revalidateTag('site-content', 'max');
 
   return NextResponse.json({ ok: true });
 }

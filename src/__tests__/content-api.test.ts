@@ -90,7 +90,7 @@ describe('PATCH /api/admin/content', () => {
 
     expect(res.status).toBe(200);
     expect(mockSetContent).toHaveBeenCalledWith('hero', heroValue);
-    expect(mockRevalidateTag).toHaveBeenCalledWith('site-content');
+    expect(mockRevalidateTag).toHaveBeenCalledWith('site-content', 'max');
   });
 
   it('accepts faq key', async () => {

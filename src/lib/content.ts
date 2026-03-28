@@ -50,9 +50,13 @@ export const DEFAULT_FAQ: FaqContent = [
 ];
 
 async function fetchContent<T>(key: string, defaultValue: T): Promise<T> {
-  const db = getDb();
-  const [row] = await db.select().from(siteContent).where(eq(siteContent.key, key));
-  return row ? (row.value as T) : defaultValue;
+  try {
+    const db = getDb();
+    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, key));
+    return row ? (row.value as T) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
 }
 
 export const getHeroContent = unstable_cache(
