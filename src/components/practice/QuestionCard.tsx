@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useCallback } from 'react';
-import { Question } from '@/types';
+import { PublicQuestion as Question } from '@/types';
 
 interface QuestionCardProps {
   question: Question;

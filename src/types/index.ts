@@ -8,6 +8,9 @@ export interface QuestionOption {
   imageUrl?: string;
 }
 
+// Question as returned by /api/questions (no answer fields)
+export type PublicQuestion = Omit<Question, 'correctOptionIndex' | 'explanationAr'>;
+
 export interface Question {
   id: string;
   skillArea: SkillArea;

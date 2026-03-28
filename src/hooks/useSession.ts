@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useRef } from 'react';
-import { Question, AgeGroup, SkillArea, Difficulty } from '@/types';
+import { PublicQuestion, AgeGroup, SkillArea, Difficulty } from '@/types';
 
 export type SessionPhase = 'loading' | 'answering' | 'reviewing' | 'completed';
 
@@ -11,12 +11,19 @@ export interface AnswerRecord {
   timeSpentMs: number;
 }
 
+export interface Reveal {
+  correctOptionIndex: number;
+  explanationAr: string;
+  isCorrect: boolean;
+}
+
 export function useSession() {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<PublicQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<SessionPhase>('loading');
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
   const [sessionStartTime] = useState(Date.now());
   const questionStartTime = useRef(Date.now());
 
@@ -30,6 +37,7 @@ export function useSession() {
         setCurrentIndex(0);
         setAnswers([]);
         setSelectedOption(null);
+        setReveal(null);
         questionStartTime.current = Date.now();
         setPhase('answering');
       }
@@ -38,19 +46,42 @@ export function useSession() {
     }
   }, []);
 
-  const selectAnswer = useCallback((optionIndex: number) => {
+  const selectAnswer = useCallback((optionIndex: number, onResult?: (isCorrect: boolean) => void) => {
     if (phase !== 'answering') return;
     const q = questions[currentIndex];
-    const isCorrect = optionIndex === q.correctOptionIndex;
     const timeSpent = Date.now() - questionStartTime.current;
+
+    // Immediate visual feedback — transition to reviewing
     setSelectedOption(optionIndex);
-    setAnswers(prev => [...prev, {
-      questionId: q.id,
-      selectedOption: optionIndex,
-      isCorrect,
-      timeSpentMs: timeSpent,
-    }]);
+    setReveal(null);
     setPhase('reviewing');
+
+    fetch('/api/questions/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: q.id, selectedOption: optionIndex }),
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: Reveal) => {
+        setReveal(data);
+        setAnswers(prev => [...prev, {
+          questionId: q.id,
+          selectedOption: optionIndex,
+          isCorrect: data.isCorrect,
+          timeSpentMs: timeSpent,
+        }]);
+        onResult?.(data.isCorrect);
+      })
+      .catch(() => {
+        // Network error: record as unanswered and allow continuing
+        setAnswers(prev => [...prev, {
+          questionId: q.id,
+          selectedOption: optionIndex,
+          isCorrect: false,
+          timeSpentMs: timeSpent,
+        }]);
+        onResult?.(false);
+      });
   }, [phase, questions, currentIndex]);
 
   const nextQuestion = useCallback(() => {
@@ -60,6 +91,7 @@ export function useSession() {
     } else {
       setCurrentIndex(next);
       setSelectedOption(null);
+      setReveal(null);
       questionStartTime.current = Date.now();
       setPhase('answering');
     }
@@ -77,6 +109,7 @@ export function useSession() {
     phase,
     answers,
     selectedOption,
+    reveal,
     score,
     timeTakenMs,
     progress,

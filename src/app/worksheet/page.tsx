@@ -29,7 +29,7 @@ function WorksheetContent() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/questions?age_group=${ageGroup}&skill_area=${skillArea}&difficulty=${difficulty}&count=${count}`);
+      const res = await fetch(`/api/worksheet/questions?age_group=${ageGroup}&skill_area=${skillArea}&difficulty=${difficulty}&count=${count}`);
       const data = await res.json();
       setQuestions(data.questions || []);
       setPreviewing(true);

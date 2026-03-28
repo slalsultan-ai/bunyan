@@ -1,16 +1,18 @@
-import { Question } from '@/types';
+import { QuestionOption } from '@/types';
 
 const LETTERS = ['أ', 'ب', 'ج', 'د'];
 
 interface ExplanationPanelProps {
-  question: Question;
+  options: QuestionOption[];
+  correctOptionIndex: number;
+  explanationAr: string;
   isCorrect: boolean;
   pointsEarned: number;
 }
 
-export default function ExplanationPanel({ question, isCorrect, pointsEarned }: ExplanationPanelProps) {
-  const correctLetter = LETTERS[question.correctOptionIndex];
-  const correctText = question.options[question.correctOptionIndex]?.text;
+export default function ExplanationPanel({ options, correctOptionIndex, explanationAr, isCorrect, pointsEarned }: ExplanationPanelProps) {
+  const correctLetter = LETTERS[correctOptionIndex];
+  const correctText = options[correctOptionIndex]?.text;
 
   return (
     <div className={`mt-3 rounded-xl px-4 py-3 border-2 animate-fade-in-up ${isCorrect ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`}>
@@ -27,7 +29,7 @@ export default function ExplanationPanel({ question, isCorrect, pointsEarned }: 
           </span>
         )}
       </div>
-      <p className="text-gray-600 text-xs leading-relaxed mt-1">{question.explanationAr}</p>
+      <p className="text-gray-600 text-xs leading-relaxed mt-1">{explanationAr}</p>
     </div>
   );
 }

@@ -80,13 +80,12 @@ function SessionContent() {
   }, [session.phase]);
 
   const handleAnswer = (idx: number) => {
-    const q = session.currentQuestion;
-    if (!q) return;
-    const isCorrect = idx === q.correctOptionIndex;
-    const pts = isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0;
-    setPointsThisSession(p => p + pts);
-    if (isCorrect) playCorrect(); else playWrong();
-    session.selectAnswer(idx);
+    if (!session.currentQuestion) return;
+    session.selectAnswer(idx, (isCorrect) => {
+      const pts = isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0;
+      setPointsThisSession(p => p + pts);
+      if (isCorrect) playCorrect(); else playWrong();
+    });
   };
 
   const handleNext = () => {
@@ -139,8 +138,8 @@ function SessionContent() {
           <div className={`mt-3 ${isYoung ? 'grid grid-cols-2 gap-3' : 'space-y-2.5'}`}>
             {q.options.map((opt, idx) => {
               const isChosen = session.selectedOption === idx;
-              const isCorrect = isReviewing && idx === q.correctOptionIndex;
-              const isWrong = isReviewing && isChosen && idx !== q.correctOptionIndex;
+              const isCorrect = isReviewing && session.reveal !== null && idx === session.reveal.correctOptionIndex;
+              const isWrong = isReviewing && session.reveal !== null && isChosen && idx !== session.reveal.correctOptionIndex;
               return (
                 <AnswerOption
                   key={idx}
@@ -157,9 +156,11 @@ function SessionContent() {
             })}
           </div>
 
-          {isReviewing && lastAnswer && (
+          {isReviewing && session.reveal && lastAnswer && (
             <ExplanationPanel
-              question={q}
+              options={q.options}
+              correctOptionIndex={session.reveal.correctOptionIndex}
+              explanationAr={session.reveal.explanationAr}
               isCorrect={lastAnswer.isCorrect}
               pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0}
             />

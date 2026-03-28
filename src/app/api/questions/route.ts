@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
       rows = await db.select().from(questions).where(and(...conds)).orderBy(sql`RANDOM()`).limit(count);
     }
 
-    return NextResponse.json({ questions: rows });
+    const safe = rows.map(({ correctOptionIndex: _c, explanationAr: _e, ...q }) => q);
+    return NextResponse.json({ questions: safe });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[questions API error]', msg);
