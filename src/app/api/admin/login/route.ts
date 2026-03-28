@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSession } from '@/lib/admin-auth';
+import { createOtpChallenge } from '@/lib/admin-auth';
+import { sendAdminOtp } from '@/lib/email';
 
-// In-memory rate limiter — resets on cold start, still effective against rapid brute force
+// Rate limit: max 3 OTP requests per 15 min per IP
 const ipAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_REQUESTS = 3;
+const WINDOW_MS = 15 * 60 * 1000;
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -17,12 +18,11 @@ function getClientIp(req: NextRequest): string {
 function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
   const now = Date.now();
   const entry = ipAttempts.get(ip);
-
   if (!entry || now > entry.resetAt) {
     ipAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     return { allowed: true };
   }
-  if (entry.count >= MAX_ATTEMPTS) {
+  if (entry.count >= MAX_REQUESTS) {
     return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
   }
   entry.count++;
@@ -41,34 +41,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { password } = await req.json();
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  if (!adminPassword) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
     return NextResponse.json({ error: 'Admin not configured' }, { status: 500 });
   }
 
-  if (password !== adminPassword) {
-    return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  const { email } = body;
+
+  // Always respond with success to avoid email enumeration
+  if (!email || typeof email !== 'string' || email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
+    return NextResponse.json({ success: true });
   }
 
-  // Correct password — clear rate limit and create a new session
-  ipAttempts.delete(ip);
-
-  let token: string;
   try {
-    token = await createAdminSession();
+    const code = await createOtpChallenge();
+    await sendAdminOtp(adminEmail, code);
   } catch {
-    return NextResponse.json({ error: 'خطأ في إنشاء الجلسة' }, { status: 500 });
+    // Don't leak internal errors
   }
 
-  const res = NextResponse.json({ success: true });
-  res.cookies.set('admin_token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    maxAge: 60 * 60 * 8, // 8 hours
-  });
-  return res;
+  return NextResponse.json({ success: true });
 }

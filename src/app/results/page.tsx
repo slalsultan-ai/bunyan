@@ -12,9 +12,9 @@ function ResultsContent() {
   const router = useRouter();
   const [childName, setChildName] = useState('');
 
-  const score = parseInt(params.get('score') || '0');
-  const total = parseInt(params.get('total') || '10');
-  const points = parseInt(params.get('points') || '0');
+  const total = Math.min(Math.max(parseInt(params.get('total') || '10'), 1), 100);
+  const score = Math.min(Math.max(parseInt(params.get('score') || '0'), 0), total);
+  const points = Math.min(Math.max(parseInt(params.get('points') || '0'), 0), total * 200);
   const time = parseInt(params.get('time') || '0');
   const skill = params.get('skill') || 'mixed';
   const age = params.get('age') || '6-9';

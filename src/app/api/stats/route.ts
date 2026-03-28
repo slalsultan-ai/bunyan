@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessions, sessionAnswers } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { sessions } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { rateLimit, getIp } from '@/lib/rate-limit';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(`stats:${getIp(req)}`, 20, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } });
+  }
+
   try {
     const guestId = req.nextUrl.searchParams.get('guest_id');
-    if (!guestId) return NextResponse.json({ error: 'guest_id required' }, { status: 400 });
+    if (!guestId || !UUID_RE.test(guestId)) {
+      return NextResponse.json({ error: 'guest_id required' }, { status: 400 });
+    }
 
     const db = getDb();
     const allSessions = await db.select().from(sessions).where(eq(sessions.guestId, guestId)).orderBy(sessions.startedAt);
