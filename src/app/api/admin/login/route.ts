@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
   if (!adminEmail) {
     return NextResponse.json({ error: 'Admin not configured' }, { status: 500 });
   }
