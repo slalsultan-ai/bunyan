@@ -28,8 +28,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'مفتاح غير صالح' }, { status: 400 });
   }
 
-  await setContent(key, value);
-  revalidatePath('/');
+  try {
+    await setContent(key, value);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 
+  revalidatePath('/');
   return NextResponse.json({ ok: true });
 }
