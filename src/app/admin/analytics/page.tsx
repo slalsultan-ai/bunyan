@@ -8,6 +8,9 @@ interface Analytics {
   skillDist: { skill: string; cnt: number }[];
   topGuests: { guestId: string; totalPoints: number; totalSessions: number; totalCorrect: number; totalAnswered: number; currentStreak: number }[];
   weekAcc: { date: string; accuracy: number }[];
+  completionRate: number;
+  totalStarted: number;
+  totalCompleted: number;
 }
 
 const AGE_L: Record<string, string> = { '4-5': '4-5 سنوات', '6-9': '6-9 سنوات', '10-12': '10-12 سنة' };
@@ -45,6 +48,57 @@ export default function AnalyticsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">التحليلات</h1>
         <p className="text-gray-500 text-sm mt-0.5">إحصاءات الاستخدام والأداء</p>
+      </div>
+
+      {/* Completion Rate */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <h3 className="font-bold text-gray-900 mb-4">نسبة إكمال الاختبارات</h3>
+        <div className="flex items-center gap-6">
+          <div className="relative w-24 h-24 shrink-0">
+            <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" strokeWidth="3" />
+              <circle
+                cx="18" cy="18" r="15.9" fill="none"
+                stroke={data.completionRate >= 70 ? '#059669' : data.completionRate >= 40 ? '#F59E0B' : '#EF4444'}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="100"
+                strokeDashoffset={100 - data.completionRate}
+                className="transition-all duration-700"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={`text-xl font-extrabold ${data.completionRate >= 70 ? 'text-emerald-600' : data.completionRate >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                {data.completionRate}٪
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">اختبارات بدأت</span>
+              <span className="font-semibold text-gray-800">{data.totalStarted.toLocaleString('ar-SA')}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">اختبارات مكتملة</span>
+              <span className="font-semibold text-emerald-600">{data.totalCompleted.toLocaleString('ar-SA')}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">غير مكتملة</span>
+              <span className="font-semibold text-red-500">{(data.totalStarted - data.totalCompleted).toLocaleString('ar-SA')}</span>
+            </div>
+            <div className="pt-1">
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${data.completionRate >= 70 ? 'bg-emerald-500' : data.completionRate >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
+                  style={{ width: `${data.completionRate}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                {data.completionRate >= 70 ? 'معدل إكمال جيد' : data.completionRate >= 40 ? 'كثير من الطلاب يتركون الاختبار في المنتصف' : 'معظم من يبدأ لا يكمل الاختبار'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Sessions per day (14 days) */}

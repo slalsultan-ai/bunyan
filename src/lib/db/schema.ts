@@ -30,6 +30,7 @@ export const sessions = sqliteTable('sessions', {
   totalQuestions: integer('total_questions').default(10),
   pointsEarned: integer('points_earned').default(0),
   timeTakenMs: integer('time_taken_ms'),
+  ipAddress: text('ip_address'),
 });
 
 export const sessionAnswers = sqliteTable('session_answers', {
