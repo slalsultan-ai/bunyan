@@ -1,7 +1,6 @@
 import { getDb } from './db';
 import { siteContent } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { unstable_cache } from 'next/cache';
 
 export type HeroContent = {
   badge: string;
@@ -59,17 +58,13 @@ async function fetchContent<T>(key: string, defaultValue: T): Promise<T> {
   }
 }
 
-export const getHeroContent = unstable_cache(
-  () => fetchContent<HeroContent>('hero', DEFAULT_HERO),
-  ['site-content-hero'],
-  { tags: ['site-content'] },
-);
+export function getHeroContent() {
+  return fetchContent<HeroContent>('hero', DEFAULT_HERO);
+}
 
-export const getFaqContent = unstable_cache(
-  () => fetchContent<FaqContent>('faq', DEFAULT_FAQ),
-  ['site-content-faq'],
-  { tags: ['site-content'] },
-);
+export function getFaqContent() {
+  return fetchContent<FaqContent>('faq', DEFAULT_FAQ);
+}
 
 export async function setContent(key: string, value: unknown): Promise<void> {
   const db = getDb();

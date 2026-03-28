@@ -5,10 +5,8 @@ import { DEFAULT_HERO, DEFAULT_FAQ } from '@/lib/content';
 // Mocks
 // ---------------------------------------------------------------------------
 
-// next/cache: unstable_cache just calls the wrapped function directly in tests
 vi.mock('next/cache', () => ({
-  unstable_cache: (fn: () => unknown) => fn,
-  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
 }));
 
 // Mock db layer

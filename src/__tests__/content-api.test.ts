@@ -20,8 +20,8 @@ vi.mock('@/lib/content', () => ({
   DEFAULT_FAQ: [],
 }));
 
-const mockRevalidateTag = vi.fn();
-vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
+const mockRevalidatePath = vi.fn();
+vi.mock('next/cache', () => ({ revalidatePath: mockRevalidatePath }));
 
 const { GET, PATCH } = await import('@/app/api/admin/content/route');
 
@@ -90,7 +90,7 @@ describe('PATCH /api/admin/content', () => {
 
     expect(res.status).toBe(200);
     expect(mockSetContent).toHaveBeenCalledWith('hero', heroValue);
-    expect(mockRevalidateTag).toHaveBeenCalledWith('site-content', 'max');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/');
   });
 
   it('accepts faq key', async () => {

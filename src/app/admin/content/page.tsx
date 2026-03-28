@@ -18,7 +18,8 @@ export default function ContentPage() {
       .then(data => {
         setHero(data.hero);
         setFaq(data.faq);
-      });
+      })
+      .catch(() => setError('تعذّر تحميل المحتوى'));
   }, []);
 
   async function save(key: 'hero' | 'faq', value: unknown) {
@@ -32,12 +33,15 @@ export default function ContentPage() {
         body: JSON.stringify({ key, value }),
       });
       if (!res.ok) {
-        const d = await res.json();
-        setError(d.error || 'حدث خطأ');
+        let msg = 'حدث خطأ';
+        try { const d = await res.json(); msg = d.error || msg; } catch { /* non-JSON error body */ }
+        setError(msg);
       } else {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }
+    } catch {
+      setError('فشل الاتصال بالخادم');
     } finally {
       setSaving(false);
     }

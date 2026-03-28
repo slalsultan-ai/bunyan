@@ -9,6 +9,8 @@ import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 import { getHeroContent, getFaqContent } from '@/lib/content';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const [hero, faq] = await Promise.all([getHeroContent(), getFaqContent()]);
 

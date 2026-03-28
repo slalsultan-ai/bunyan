@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { getHeroContent, getFaqContent, setContent } from '@/lib/content';
 
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   await setContent(key, value);
-  revalidateTag('site-content', 'max');
+  revalidatePath('/');
 
   return NextResponse.json({ ok: true });
 }
