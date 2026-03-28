@@ -1,5 +1,3 @@
-// Returns full question data including correctOptionIndex for the printable answer key.
-// This is intentional — worksheets are print materials meant to include an answer key.
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
@@ -42,7 +40,8 @@ export async function GET(req: NextRequest) {
       .orderBy(sql`RANDOM()`)
       .limit(count);
 
-    return NextResponse.json({ questions: rows });
+    const safeQuestions = rows.map(({ correctOptionIndex: _c, explanationAr: _e, ...question }) => question);
+    return NextResponse.json({ questions: safeQuestions });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

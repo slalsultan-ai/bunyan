@@ -70,6 +70,16 @@ describe('content lib', () => {
       const hero = await getHeroContent();
       expect(hero.title).toBe('عنوان مخصص');
     });
+
+    it('sanitizes stored subtitle markup to safe tags only', async () => {
+      const stored = {
+        ...DEFAULT_HERO,
+        subtitle: 'مرحباً <strong onclick="alert(1)">بك</strong><br class="x"><img src=x onerror=1>',
+      };
+      makeSelectChain([{ key: 'hero', value: stored }]);
+      const hero = await getHeroContent();
+      expect(hero.subtitle).toBe('مرحباً <strong>بك</strong><br />&lt;img src=x onerror=1&gt;');
+    });
   });
 
   describe('getFaqContent', () => {

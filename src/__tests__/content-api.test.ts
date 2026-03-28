@@ -85,11 +85,23 @@ describe('PATCH /api/admin/content', () => {
     mockIsAdminAuthenticated.mockResolvedValue(true);
     mockSetContent.mockResolvedValue(undefined);
 
-    const heroValue = { badge: 'test' };
+    const heroValue = {
+      badge: 'تنبيه <script>alert(1)</script>',
+      title: 'عنوان <img src=x onerror=1>',
+      titleHighlight: 'مميز',
+      subtitle: 'أهلاً <strong onclick="alert(1)">بكم</strong><br data-test="x"><img src=x onerror=1>',
+      ctaPrimary: 'ابدأ <b>الآن</b>',
+    };
     const res = await PATCH(makeRequest({ key: 'hero', value: heroValue }) as never);
 
     expect(res.status).toBe(200);
-    expect(mockSetContent).toHaveBeenCalledWith('hero', heroValue);
+    expect(mockSetContent).toHaveBeenCalledWith('hero', {
+      badge: 'تنبيه alert(1)',
+      title: 'عنوان',
+      titleHighlight: 'مميز',
+      subtitle: 'أهلاً <strong>بكم</strong><br />&lt;img src=x onerror=1&gt;',
+      ctaPrimary: 'ابدأ الآن',
+    });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/');
   });
 
@@ -97,10 +109,10 @@ describe('PATCH /api/admin/content', () => {
     mockIsAdminAuthenticated.mockResolvedValue(true);
     mockSetContent.mockResolvedValue(undefined);
 
-    const faqValue = [{ q: 'س؟', a: 'ج.' }];
+    const faqValue = [{ q: 'س؟ <strong>bad</strong>', a: 'ج. <img src=x onerror=1>' }];
     const res = await PATCH(makeRequest({ key: 'faq', value: faqValue }) as never);
 
     expect(res.status).toBe(200);
-    expect(mockSetContent).toHaveBeenCalledWith('faq', faqValue);
+    expect(mockSetContent).toHaveBeenCalledWith('faq', [{ q: 'س؟ bad', a: 'ج.' }]);
   });
 });

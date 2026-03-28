@@ -130,7 +130,7 @@ function HeroEditor({
     { key: 'badge', label: 'نص الشارة العلوية' },
     { key: 'title', label: 'العنوان الرئيسي' },
     { key: 'titleHighlight', label: 'النص المميز (السطر الثاني)' },
-    { key: 'subtitle', label: 'النص التوضيحي (يدعم HTML)', multiline: true },
+    { key: 'subtitle', label: 'النص التوضيحي (تنسيق محدود: strong / br)', multiline: true },
     { key: 'ctaPrimary', label: 'نص زر البداية' },
   ];
 

@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import { siteContent } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { sanitizeHeroContent, sanitizeFaqContent } from './content-sanitize';
 
 export type HeroContent = {
   badge: string;
@@ -59,11 +60,15 @@ async function fetchContent<T>(key: string, defaultValue: T): Promise<T> {
 }
 
 export function getHeroContent() {
-  return fetchContent<HeroContent>('hero', DEFAULT_HERO);
+  return fetchContent<unknown>('hero', DEFAULT_HERO).then(
+    (value) => sanitizeHeroContent(value) ?? DEFAULT_HERO
+  );
 }
 
 export function getFaqContent() {
-  return fetchContent<FaqContent>('faq', DEFAULT_FAQ);
+  return fetchContent<unknown>('faq', DEFAULT_FAQ).then(
+    (value) => sanitizeFaqContent(value) ?? DEFAULT_FAQ
+  );
 }
 
 export async function setContent(key: string, value: unknown): Promise<void> {

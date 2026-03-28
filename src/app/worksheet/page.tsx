@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AgeGroup, SkillArea, Difficulty, Question } from '@/types';
+import { AgeGroup, SkillArea, Difficulty, PublicQuestion } from '@/types';
 import { getSkillAreaLabel, getAgeGroupLabel } from '@/lib/utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ function WorksheetContent() {
   const [difficulty, setDifficulty] = useState<Difficulty>('mixed');
   const [count, setCount] = useState<QuestionCount>(10);
   const [loading, setLoading] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<PublicQuestion[]>([]);
   const [previewing, setPreviewing] = useState(false);
   const [today, setToday] = useState('');
 
@@ -69,7 +69,7 @@ function WorksheetContent() {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex gap-3 items-start">
             <span className="text-xl shrink-0">💡</span>
             <p className="text-amber-800 text-xs leading-relaxed">
-              <strong>نصيحة:</strong> اجلس مع طفلك، دعه يحل الأسئلة بالقلم، ثم تحققوا من الإجابات سوياً باستخدام مفتاح الإجابات.
+              <strong>نصيحة:</strong> اجلس مع طفلك، دعه يحل الأسئلة بالقلم، ثم راجعوا الأداء لاحقاً داخل التدريب التفاعلي لنفس المهارة.
             </p>
           </div>
 
@@ -265,23 +265,14 @@ function WorksheetContent() {
             ))}
           </div>
 
-          {/* ── Answer key ── */}
-          <div className="worksheet-answer-key mx-8 mb-8 print:mx-10 print:mb-6 mt-2 rounded-2xl overflow-hidden border-2 border-amber-300 print:rounded-none">
-            <div className="bg-amber-400 px-5 py-3 flex items-center gap-2 print:bg-amber-400">
-              <span className="text-lg">🔑</span>
-              <span className="font-extrabold text-amber-900 text-sm">مفتاح الإجابات — لولي الأمر فقط</span>
-              <span className="mr-auto text-amber-800 text-xs">لا تُظهر للطفل قبل الحل</span>
-            </div>
-            <div className="bg-amber-50 p-4 print:bg-amber-50">
-              <div className="grid grid-cols-10 gap-2 text-center">
-                {questions.map((q, qi) => (
-                  <div key={q.id} className="flex flex-col items-center gap-1">
-                    <span className="text-xs text-gray-500 font-medium">{qi + 1}</span>
-                    <span className="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-extrabold flex items-center justify-center print:bg-emerald-600">
-                      {LETTERS[q.correctOptionIndex]}
-                    </span>
-                  </div>
-                ))}
+          <div className="mx-8 mb-8 print:mx-10 mt-2 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 print:rounded-none">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0">🛡️</span>
+              <div className="text-right">
+                <p className="font-bold text-sky-900 text-sm mb-1">النسخة العامة لا تتضمن مفتاح الإجابات</p>
+                <p className="text-sky-800 text-xs leading-relaxed">
+                  للحفاظ على جودة بنك الأسئلة، اطبع الورقة أولاً ثم راجع نفس المهارة داخل التدريب التفاعلي إذا رغبت في التحقق من الحلول خطوة بخطوة.
+                </p>
               </div>
             </div>
           </div>
