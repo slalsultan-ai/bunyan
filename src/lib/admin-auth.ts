@@ -5,12 +5,8 @@ import { eq, sql } from 'drizzle-orm';
 
 const SESSION_KEY = 'admin_session';
 const OTP_KEY = 'admin_otp';
-const CACHE_TTL_MS = 60_000;
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const OTP_MAX_ATTEMPTS = 3;
-
-// Module-level cache — avoids a DB round-trip on every admin API call
-let sessionCache: { token: string; validUntil: number } | null = null;
 
 async function hashCode(code: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
@@ -20,14 +16,10 @@ async function hashCode(code: string): Promise<string> {
 }
 
 async function getValidToken(): Promise<string | null> {
-  const now = Date.now();
-  if (sessionCache && now < sessionCache.validUntil) return sessionCache.token;
   try {
     const db = getDb();
     const [row] = await db.select().from(siteContent).where(eq(siteContent.key, SESSION_KEY));
-    const token = row ? (row.value as string) : null;
-    sessionCache = token ? { token, validUntil: now + CACHE_TTL_MS } : null;
-    return token;
+    return row ? (row.value as string) : null;
   } catch {
     return null;
   }
@@ -51,14 +43,12 @@ export async function createAdminSession(): Promise<string> {
       target: siteContent.key,
       set: { value: token as never, updatedAt: sql`CURRENT_TIMESTAMP` },
     });
-  sessionCache = { token, validUntil: Date.now() + CACHE_TTL_MS };
   return token;
 }
 
 export async function invalidateAdminSession(): Promise<void> {
   const db = getDb();
   await db.delete(siteContent).where(eq(siteContent.key, SESSION_KEY));
-  sessionCache = null;
 }
 
 // ── OTP ────────────────────────────────────────────────────────────────────

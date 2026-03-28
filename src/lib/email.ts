@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendAdminOtp(toEmail: string, code: string): Promise<void> {
   const { error } = await resend.emails.send({
-    from: 'بنيان <onboarding@resend.dev>',
+    from: 'بنيان <noreply@bunyan.guru>',
     to: toEmail,
     subject: `رمز الدخول: ${code}`,
     html: `
