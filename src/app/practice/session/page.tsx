@@ -61,7 +61,10 @@ function SessionContent() {
         score: session.score,
         totalQuestions: session.questions.length,
         timeTakenMs: session.timeTakenMs,
-        answers: session.answers.map(a => ({ ...a, skillArea })),
+        answers: session.answers.map((a, i) => ({
+          ...a,
+          skillArea: session.questions[i]?.skillArea || skillArea,
+        })),
       };
 
       const { pointsEarned, newBadges } = recordSession(result);

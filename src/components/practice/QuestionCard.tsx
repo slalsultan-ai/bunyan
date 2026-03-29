@@ -20,7 +20,20 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(question.questionTextAr);
       utterance.lang = 'ar-SA';
-      utterance.rate = 0.85;
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+
+      // Pick the best available Arabic voice
+      const voices = window.speechSynthesis.getVoices();
+      const arabicVoice =
+        // Prefer local/premium voices (not "Google" remote)
+        voices.find(v => v.lang.startsWith('ar') && !v.name.includes('Google') && v.localService) ||
+        // Then any non-Google Arabic voice
+        voices.find(v => v.lang.startsWith('ar') && !v.name.includes('Google')) ||
+        // Fallback to any Arabic voice
+        voices.find(v => v.lang.startsWith('ar'));
+      if (arabicVoice) utterance.voice = arabicVoice;
+
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn('Speech synthesis not available:', e);
@@ -29,8 +42,19 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
 
   useEffect(() => {
     if (!isAudio || typeof window === 'undefined' || !window.speechSynthesis) return;
-    // تأخير بسيط لضمان تحميل الصفحة
-    const timer = setTimeout(speak, 300);
+    // Voices load asynchronously in some browsers — wait for them
+    const trySpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        speak();
+      } else {
+        // Voices not loaded yet — wait for onvoiceschanged
+        const handler = () => { speak(); window.speechSynthesis.removeEventListener('voiceschanged', handler); };
+        window.speechSynthesis.addEventListener('voiceschanged', handler);
+        return () => window.speechSynthesis.removeEventListener('voiceschanged', handler);
+      }
+    };
+    const timer = setTimeout(trySpeak, 300);
     return () => {
       clearTimeout(timer);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
