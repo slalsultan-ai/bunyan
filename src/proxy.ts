@@ -10,7 +10,16 @@ async function isValidToken(token: string): Promise<boolean> {
   try {
     const db = getDb();
     const [row] = await db.select().from(siteContent).where(eq(siteContent.key, SESSION_KEY));
-    return row ? (row.value as string) === token : false;
+    if (!row) return false;
+    const val = row.value;
+    // New format: { token, expiresAt }
+    if (typeof val === 'object' && val !== null && 'token' in (val as object)) {
+      const record = val as { token: string; expiresAt: number };
+      if (Date.now() > record.expiresAt) return false;
+      return record.token === token;
+    }
+    // Legacy format: plain string
+    return typeof val === 'string' ? val === token : false;
   } catch {
     return false;
   }
