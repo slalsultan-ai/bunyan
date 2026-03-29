@@ -21,7 +21,7 @@ const { POST } = await import('@/app/api/admin/verify/route');
 let reqCounter = 0;
 function makeReq(body: unknown, headers: Record<string, string> = {}) {
   // Use unique IP per request by default to avoid rate limit collisions between tests
-  const defaultHeaders = { 'x-forwarded-for': `test-verify-${++reqCounter}`, ...headers };
+  const defaultHeaders: Record<string, string> = { 'x-forwarded-for': `test-verify-${++reqCounter}`, ...headers };
   return {
     json: vi.fn().mockResolvedValue(body),
     headers: {

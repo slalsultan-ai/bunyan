@@ -23,7 +23,7 @@ const { POST } = await import('@/app/api/admin/login/route');
 
 let reqCounter = 0;
 function makeReq(body: unknown, headers: Record<string, string> = {}) {
-  const defaultHeaders = { 'x-forwarded-for': `test-login-${++reqCounter}`, ...headers };
+  const defaultHeaders: Record<string, string> = { 'x-forwarded-for': `test-login-${++reqCounter}`, ...headers };
   return {
     json: vi.fn().mockResolvedValue(body),
     headers: {
