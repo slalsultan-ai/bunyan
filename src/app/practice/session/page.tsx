@@ -97,7 +97,7 @@ function SessionContent() {
       });
       router.push(`/results?${params.toString()}`);
     }
-  }, [session.phase]);
+  }, [session.phase, state, recordSession]);
 
   const handleAnswer = (idx: number) => {
     if (!session.currentQuestion) return;
@@ -188,7 +188,16 @@ function SessionContent() {
         </div>
       </div>
 
-      {isReviewing && (
+      {isReviewing && !session.reveal && (
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-100 p-4 z-40">
+          <div className="max-w-2xl mx-auto flex items-center justify-center gap-2.5">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-gray-500 text-sm font-medium">جاري التحقق من إجابتك...</span>
+          </div>
+        </div>
+      )}
+
+      {isReviewing && session.reveal && (
         <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-gray-100 shadow-lg p-4 z-40">
           <div className="max-w-2xl mx-auto">
             <button

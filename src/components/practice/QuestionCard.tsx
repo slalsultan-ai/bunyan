@@ -15,20 +15,25 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
 
   const speak = useCallback(() => {
     if (!isAudio) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(question.questionTextAr);
-    utterance.lang = 'ar-SA';
-    utterance.rate = 0.85;
-    window.speechSynthesis.speak(utterance);
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(question.questionTextAr);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 0.85;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech synthesis not available:', e);
+    }
   }, [question.id, isAudio, question.questionTextAr]);
 
   useEffect(() => {
-    if (!isAudio) return;
+    if (!isAudio || typeof window === 'undefined' || !window.speechSynthesis) return;
     // تأخير بسيط لضمان تحميل الصفحة
     const timer = setTimeout(speak, 300);
     return () => {
       clearTimeout(timer);
-      window.speechSynthesis.cancel();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, [speak, isAudio]);
 

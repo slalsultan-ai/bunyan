@@ -42,10 +42,10 @@ function CertificateContent() {
       </div>
 
       {/* Certificate */}
-      <div className="certificate bg-white w-full max-w-2xl shadow-2xl print:shadow-none print:max-w-none print:w-full" style={{ minHeight: '500px' }}>
+      <div className="certificate bg-white w-full max-w-3xl shadow-2xl print:shadow-none print:max-w-none print:w-full" style={{ minHeight: '580px' }}>
 
         {/* Gold outer border */}
-        <div className="border-8 border-amber-400 m-3 print:m-4" style={{ minHeight: '470px' }}>
+        <div className="border-8 border-amber-400 m-3 print:m-2" style={{ minHeight: '548px' }}>
           <div className="border-2 border-amber-300 h-full flex flex-col">
 
             {/* Header */}
@@ -78,7 +78,7 @@ function CertificateContent() {
               {/* Name */}
               <div className="relative py-3 px-10">
                 <div className="absolute inset-0 border-b-4 border-amber-400 opacity-60" />
-                <h2 className="text-4xl font-extrabold text-emerald-700 relative" style={{ fontFamily: 'serif' }}>
+                <h2 className="font-extrabold text-emerald-700 relative break-words max-w-full" style={{ fontFamily: 'serif', fontSize: name.length > 20 ? '1.75rem' : name.length > 12 ? '2.25rem' : '2.5rem' }}>
                   ✦ {name} ✦
                 </h2>
               </div>
@@ -136,9 +136,19 @@ function CertificateContent() {
 
       <style>{`
         @media print {
-          @page { size: A4 landscape; margin: 10mm; }
-          body { margin: 0; }
-          .certificate { width: 100%; max-width: 100%; }
+          @page { size: A4 landscape; margin: 8mm; }
+          body { margin: 0; padding: 0; }
+          .certificate {
+            width: 100%;
+            max-width: 100%;
+            min-height: 178mm;
+            height: 178mm;
+            box-sizing: border-box;
+          }
+          .certificate > div {
+            min-height: 162mm;
+            height: 162mm;
+          }
         }
       `}</style>
     </div>
