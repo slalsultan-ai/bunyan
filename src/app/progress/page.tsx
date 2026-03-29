@@ -8,6 +8,7 @@ import { getWeakestSkill, getSkillBreakdown } from '@/lib/guest';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
+import RegisterPrompt from '@/components/auth/RegisterPrompt';
 
 export default function ProgressPage() {
   const { state, mounted, level, levelProgress, nextLevel } = useGuest();
@@ -36,6 +37,8 @@ export default function ProgressPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <RegisterPrompt context="progress" redirectTo="/dashboard" />
+
         {/* Level Card */}
         <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-4">

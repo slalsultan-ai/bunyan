@@ -5,6 +5,7 @@ import AgeGroups from '@/components/landing/AgeGroups';
 import StatsSection from '@/components/landing/StatsSection';
 import FAQ from '@/components/landing/FAQ';
 import FooterCTA from '@/components/landing/FooterCTA';
+import WeeklyEmailSection from '@/components/landing/WeeklyEmailSection';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 import { getHeroContent, getFaqContent } from '@/lib/content';
@@ -27,6 +28,9 @@ export default async function HomePage() {
             <Link href="/worksheet" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
               أوراق عمل
             </Link>
+            <Link href="/auth" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block border border-gray-200 px-3 py-1.5 rounded-lg">
+              سجّل
+            </Link>
             <Link
               href="/practice"
               className="bg-emerald-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
@@ -44,6 +48,7 @@ export default async function HomePage() {
         <AgeGroups />
         <StatsSection />
         <FAQ items={faq} />
+        <WeeklyEmailSection />
         <FooterCTA />
       </main>
     </div>

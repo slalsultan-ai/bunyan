@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Confetti from '@/components/ui/Confetti';
 import { getBadgeById } from '@/lib/gamification/badges';
 import { getSkillAreaLabel, formatTime } from '@/lib/utils';
+import RegisterPrompt from '@/components/auth/RegisterPrompt';
 
 function ResultsContent() {
   const params = useSearchParams();
@@ -134,7 +135,9 @@ function ResultsContent() {
           </div>
         </Link>
 
-        <div className="space-y-3">
+        <RegisterPrompt context="results" redirectTo="/dashboard" />
+
+        <div className="space-y-3 mt-4">
           <button onClick={() => router.push(`/practice?age=${age}&skill=${skill}`)}
             className="w-full bg-white border-2 border-emerald-600 text-emerald-700 font-bold py-3.5 rounded-2xl hover:bg-emerald-50 transition-colors">
             🔁 جلسة جديدة

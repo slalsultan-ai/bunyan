@@ -21,6 +21,8 @@ export const questions = sqliteTable('questions', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   guestId: text('guest_id'),
+  parentId: text('parent_id'),
+  childId: text('child_id'),
   ageGroup: text('age_group').notNull(),
   skillArea: text('skill_area').notNull(),
   difficulty: text('difficulty'),
@@ -60,4 +62,63 @@ export const guestProgress = sqliteTable('guest_progress', {
   totalAnswered: integer('total_answered').default(0),
   lastPracticeDate: text('last_practice_date'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ═══ Parent auth tables ═══
+
+export const parents = sqliteTable('parents', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull().unique(),
+  city: text('city'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  lastLoginAt: text('last_login_at'),
+  weeklyEmailEnabled: integer('weekly_email_enabled', { mode: 'boolean' }).default(true),
+  currentWeekNumber: integer('current_week_number').default(1),
+  unsubscribeToken: text('unsubscribe_token').notNull().$defaultFn(() => crypto.randomUUID()),
+});
+
+export const children = sqliteTable('children', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  parentId: text('parent_id').notNull().references(() => parents.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  age: integer('age').notNull(),
+  ageGroup: text('age_group').notNull(), // '4-5' | '6-9' | '10-12'
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const otpCodes = sqliteTable('otp_codes', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull(),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  attempts: integer('attempts').default(0),
+  used: integer('used', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const parentSessions = sqliteTable('parent_sessions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  parentId: text('parent_id').notNull().references(() => parents.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ═══ Weekly email tables ═══
+
+export const weeklyEmailContent = sqliteTable('weekly_email_content', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  weekNumber: integer('week_number').notNull(),
+  ageGroup: text('age_group').notNull(), // '4-5' | '6-9' | '10-12'
+  content: text('content', { mode: 'json' }).notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const emailLog = sqliteTable('email_log', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  parentId: text('parent_id').notNull().references(() => parents.id),
+  weekNumber: integer('week_number').notNull(),
+  sentAt: text('sent_at').default(sql`CURRENT_TIMESTAMP`),
+  status: text('status').notNull(), // 'sent' | 'failed'
+  resendId: text('resend_id'),
 });
