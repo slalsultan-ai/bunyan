@@ -46,6 +46,12 @@ export interface SessionSummary {
   completedAt: string;
 }
 
+export interface SkillStats {
+  quantitative: { correct: number; total: number };
+  verbal: { correct: number; total: number };
+  logical_patterns: { correct: number; total: number };
+}
+
 export interface GuestState {
   guestId: string;
   totalPoints: number;
@@ -58,6 +64,7 @@ export interface GuestState {
   totalAnswered: number;
   lastPracticeDate: string | null;
   sessionHistory: SessionSummary[];
+  skillStats?: SkillStats; // per-answer breakdown, counts mixed sessions correctly
 }
 
 export interface Badge {

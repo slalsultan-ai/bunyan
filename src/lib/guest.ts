@@ -1,6 +1,6 @@
 'use client';
 
-import { GuestState, SessionSummary, AgeGroup, SkillArea } from '@/types';
+import { GuestState, SkillStats, SessionSummary, AgeGroup, SkillArea } from '@/types';
 import { generateGuestId, getTodayDateString } from '@/lib/utils';
 import { getLevelForPoints } from '@/lib/gamification/levels';
 import { calculateStreak } from '@/lib/gamification/streaks';
@@ -74,7 +74,26 @@ export function updateGuestStateAfterSession(
   const newTotalPoints = state.totalPoints + pointsEarned;
   const newLevel = getLevelForPoints(newTotalPoints).level;
 
-  // Count skill-specific totals
+  // Build per-answer skill stats (handles 'mixed' sessions correctly)
+  const prevStats: SkillStats = state.skillStats ?? {
+    quantitative: { correct: 0, total: 0 },
+    verbal: { correct: 0, total: 0 },
+    logical_patterns: { correct: 0, total: 0 },
+  };
+  const newSkillStats: SkillStats = {
+    quantitative: { ...prevStats.quantitative },
+    verbal: { ...prevStats.verbal },
+    logical_patterns: { ...prevStats.logical_patterns },
+  };
+  for (const answer of result.answers) {
+    const skill = answer.skillArea as keyof SkillStats;
+    if (skill in newSkillStats) {
+      newSkillStats[skill].total++;
+      if (answer.isCorrect) newSkillStats[skill].correct++;
+    }
+  }
+
+  // Legacy badge calculations (session-level, unchanged)
   const quantitativeTotal = (state.sessionHistory || [])
     .filter(s => s.skillArea === 'quantitative')
     .reduce((acc, s) => acc + s.score, 0) +
@@ -114,6 +133,7 @@ export function updateGuestStateAfterSession(
       ...(state.sessionHistory || []).slice(0, 49),
     ],
     badges: state.badges,
+    skillStats: newSkillStats,
   };
 
   const newBadges = checkNewBadges(updatedState, {
@@ -131,6 +151,12 @@ export function updateGuestStateAfterSession(
 }
 
 export function getSkillBreakdown(state: GuestState) {
+  // Prefer per-answer skillStats (accurate, counts mixed sessions)
+  if (state.skillStats) {
+    return state.skillStats;
+  }
+
+  // Fallback for old localStorage data: session-level breakdown
   const history = state.sessionHistory || [];
   const breakdown = {
     quantitative: { correct: 0, total: 0 },
