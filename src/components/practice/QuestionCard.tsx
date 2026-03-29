@@ -12,32 +12,93 @@ interface QuestionCardProps {
 export default function QuestionCard({ question, index, total, ageGroup }: QuestionCardProps) {
   const isYoung = ageGroup === '4-5';
   const isAudio = question.questionType === 'audio';
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
-  const blobUrlRef = useRef<string | null>(null);
+  const audioBlobUrl = useRef<string | null>(null);
+  const audioEl = useRef<HTMLAudioElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Cleanup blob URL on unmount or question change
+  // Cleanup on unmount or question change
   useEffect(() => {
     return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
+      abortRef.current?.abort();
+      if (audioEl.current) {
+        audioEl.current.pause();
+        audioEl.current.src = '';
+        audioEl.current = null;
       }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      if (audioBlobUrl.current) {
+        URL.revokeObjectURL(audioBlobUrl.current);
+        audioBlobUrl.current = null;
       }
+      setAudioReady(false);
+      setAudioLoading(false);
     };
   }, [question.id]);
 
-  // Fetch TTS audio from server
-  const fetchAudio = useCallback(async () => {
-    if (!isAudio || typeof window === 'undefined') return;
+  // Pre-fetch audio in background (for auto-play on first load)
+  const prefetchAudio = useCallback(async () => {
+    if (!isAudio || audioBlobUrl.current) return;
 
     setAudioLoading(true);
-    setAudioReady(false);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: question.questionTextAr }),
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error('TTS failed');
+
+      const blob = await res.blob();
+      if (controller.signal.aborted) return;
+
+      if (audioBlobUrl.current) URL.revokeObjectURL(audioBlobUrl.current);
+      audioBlobUrl.current = URL.createObjectURL(blob);
+      setAudioReady(true);
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') {
+        console.warn('TTS prefetch failed, will use fallback on click');
+      }
+    } finally {
+      if (!controller.signal.aborted) setAudioLoading(false);
+    }
+  }, [question.id, isAudio, question.questionTextAr]);
+
+  // Start prefetch on mount
+  useEffect(() => {
+    if (!isAudio) return;
+    const timer = setTimeout(prefetchAudio, 200);
+    return () => clearTimeout(timer);
+  }, [prefetchAudio, isAudio]);
+
+  // Play audio — must be called from user gesture for iOS
+  const speak = useCallback(async () => {
+    if (!isAudio) return;
+
+    // If we have pre-fetched audio, play it directly
+    if (audioBlobUrl.current) {
+      // Create a fresh Audio for each play (iOS Safari requires this pattern)
+      const audio = new Audio(audioBlobUrl.current);
+      audioEl.current = audio;
+      try {
+        await audio.play();
+      } catch {
+        // Autoplay blocked — user will need to tap again
+      }
+      return;
+    }
+
+    // No cached audio — fetch and play within user gesture
+    // On iOS, we create the Audio element FIRST (in user gesture), then set src
+    const audio = new Audio();
+    audioEl.current = audio;
+
+    setAudioLoading(true);
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
@@ -48,26 +109,23 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
       if (!res.ok) throw new Error('TTS failed');
 
       const blob = await res.blob();
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      if (audioBlobUrl.current) URL.revokeObjectURL(audioBlobUrl.current);
       const url = URL.createObjectURL(blob);
-      blobUrlRef.current = url;
-
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      audioBlobUrl.current = url;
       setAudioReady(true);
-      setAudioLoading(false);
 
-      // Auto-play
-      audio.play().catch(() => {});
+      audio.src = url;
+      await audio.play();
     } catch {
-      // Fallback to browser speech synthesis
-      setAudioLoading(false);
+      // Fallback: browser speech synthesis
       speakFallback();
+    } finally {
+      setAudioLoading(false);
     }
-  }, [question.id, isAudio, question.questionTextAr]);
+  }, [isAudio, question.questionTextAr]);
 
   const speakFallback = useCallback(() => {
-    if (!window.speechSynthesis) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(question.questionTextAr);
     utterance.lang = 'ar-SA';
@@ -80,25 +138,6 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
     if (arabicVoice) utterance.voice = arabicVoice;
     window.speechSynthesis.speak(utterance);
   }, [question.questionTextAr]);
-
-  const speak = useCallback(() => {
-    if (!isAudio) return;
-    // If audio is cached, just replay it
-    if (audioRef.current && audioReady) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
-      return;
-    }
-    // Otherwise fetch it
-    fetchAudio();
-  }, [isAudio, audioReady, fetchAudio]);
-
-  // Auto-fetch audio when question loads
-  useEffect(() => {
-    if (!isAudio) return;
-    const timer = setTimeout(fetchAudio, 200);
-    return () => clearTimeout(timer);
-  }, [fetchAudio, isAudio]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -122,7 +161,7 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
             ) : '🔊'}
           </button>
           <p className="text-emerald-700 font-semibold text-sm">
-            {audioLoading ? 'جاري التحميل...' : 'اضغط للاستماع مجدداً'}
+            {audioLoading ? 'جاري التحميل...' : 'اضغط للاستماع'}
           </p>
         </div>
       )}

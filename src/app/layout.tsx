@@ -1,5 +1,13 @@
 import type { Metadata } from 'next';
+import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import './globals.css';
+
+const font = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-sans',
+});
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -29,8 +37,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+    <html lang="ar" dir="rtl" className={`h-full ${font.variable} ${font.className}`}>
+      <body className="min-h-full flex flex-col">
         {children}
       </body>
     </html>

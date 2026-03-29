@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --font-sans: 'IBM Plex Sans Arabic', sans-serif;
   --color-primary: #059669;
   --color-primary-light: #D1FAE5;
   --color-primary-dark: #047857;
@@ -26,12 +24,11 @@
 
 * { box-sizing: border-box; }
 
-html {
-  font-family: var(--font-sans);
+html, body {
+  font-family: var(--font-sans), 'IBM Plex Sans Arabic', sans-serif;
 }
 
 body {
-  font-family: var(--font-sans);
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
