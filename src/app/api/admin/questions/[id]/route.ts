@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { questions } from '@/lib/db/schema';
+import { questions, sessionAnswers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 
@@ -83,6 +83,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!UUID_RE.test(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const db = getDb();
+  // Delete associated session answers first (no cascade on FK)
+  await db.delete(sessionAnswers).where(eq(sessionAnswers.questionId, id));
   await db.delete(questions).where(eq(questions.id, id));
   return NextResponse.json({ success: true });
 }

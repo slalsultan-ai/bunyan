@@ -243,9 +243,19 @@ export default function QuestionsPage() {
   const deleteQ = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا السؤال نهائياً؟')) return;
     setDeleting(id);
-    await fetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
-    setDeleting(null);
-    load(page);
+    try {
+      const res = await fetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'فشل حذف السؤال');
+      } else {
+        load(page);
+      }
+    } catch {
+      alert('فشل الاتصال بالخادم');
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleExport = async () => {
