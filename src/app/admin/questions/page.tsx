@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -74,6 +74,132 @@ function PreviewModal({ q, onClose }: { q: Question; onClose: () => void }) {
   );
 }
 
+interface ImportResult {
+  inserted: number;
+  skipped: number;
+  total: number;
+}
+
+function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [fileName, setFileName] = useState('');
+
+  const handleFile = async (file: File) => {
+    setFileName(file.name);
+    setStatus('loading');
+    setErrors([]);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const res = await fetch('/api/admin/questions/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors(data.errors || [data.error || 'خطأ غير معروف']);
+        setStatus('error');
+      } else {
+        setResult(data);
+        setStatus('done');
+      }
+    } catch (e) {
+      setErrors([e instanceof SyntaxError ? 'ملف JSON غير صالح' : 'خطأ في رفع الملف']);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" dir="rtl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-900">استيراد أسئلة (JSON)</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {status === 'idle' && (
+            <>
+              <p className="text-sm text-gray-500">
+                ارفع ملف JSON بنفس تنسيق التصدير. سيتم تخطي الأسئلة ذات المعرّف المكرر.
+              </p>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-xl py-8 text-gray-400 hover:border-emerald-400 hover:text-emerald-600 transition-colors text-sm font-semibold"
+              >
+                📁 اختر ملف JSON
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
+              <p className="text-xs text-gray-400 text-center">الحد الأقصى: 500 سؤال لكل عملية</p>
+            </>
+          )}
+
+          {status === 'loading' && (
+            <div className="py-8 flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500">جاري معالجة {fileName}...</p>
+            </div>
+          )}
+
+          {status === 'done' && result && (
+            <div className="space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                <div className="text-3xl font-extrabold text-emerald-700">+{result.inserted}</div>
+                <div className="text-sm text-emerald-600 font-semibold mt-1">سؤال أُضيف بنجاح</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-center text-sm">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="font-bold text-gray-700">{result.total}</div>
+                  <div className="text-gray-500 text-xs">إجمالي في الملف</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="font-bold text-gray-700">{result.skipped}</div>
+                  <div className="text-gray-500 text-xs">مكرر (تم تخطيه)</div>
+                </div>
+              </div>
+              <button
+                onClick={() => { onDone(); onClose(); }}
+                className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition-colors"
+              >
+                ✓ حسناً — تحديث القائمة
+              </button>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="font-bold text-red-700 text-sm mb-2">❌ فشل الاستيراد</p>
+                <ul className="space-y-1">
+                  {errors.map((e, i) => (
+                    <li key={i} className="text-red-600 text-xs">{e}</li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => { setStatus('idle'); setErrors([]); setFileName(''); if (fileRef.current) fileRef.current.value = ''; }}
+                className="w-full bg-gray-100 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                حاول مرة أخرى
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function QuestionsPage() {
   const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -84,6 +210,7 @@ export default function QuestionsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [preview, setPreview] = useState<Question | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [filters, setFilters] = useState({ age_group: '', skill_area: '', difficulty: '', type: '', active: 'all', search: '' });
 
   const load = useCallback(async (p = page) => {
@@ -139,19 +266,28 @@ export default function QuestionsPage() {
   return (
     <div className="p-6 space-y-5">
       {preview && <PreviewModal q={preview} onClose={() => setPreview(null)} />}
+      {importing && <ImportModal onClose={() => setImporting(false)} onDone={() => load(page)} />}
 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">إدارة الأسئلة</h1>
           <p className="text-gray-500 text-sm mt-0.5">{total} سؤال</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/admin/questions/health"
+            className="bg-white border border-gray-200 text-gray-700 font-semibold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
+            🩺 صحة الأسئلة
+          </Link>
+          <button onClick={() => setImporting(true)}
+            className="bg-white border border-gray-200 text-gray-700 font-semibold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
+            ⬆️ استيراد
+          </button>
           <button onClick={handleExport} disabled={exporting}
             className="bg-white border border-gray-200 text-gray-700 font-semibold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm disabled:opacity-50">
-            {exporting ? '⏳' : '⬇️'} تصدير JSON
+            {exporting ? '⏳' : '⬇️'} تصدير
           </button>
           <Link href="/admin/questions/new"
-            className="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2">
+            className="bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2 text-sm">
             ➕ سؤال جديد
           </Link>
         </div>

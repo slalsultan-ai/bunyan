@@ -5,6 +5,8 @@ import Link from 'next/link';
 const NAV = [
   { href: '/admin', label: 'الرئيسية', icon: '📊', exact: true },
   { href: '/admin/questions', label: 'الأسئلة', icon: '❓' },
+  { href: '/admin/questions/health', label: 'صحة الأسئلة', icon: '🩺' },
+  { href: '/admin/coverage', label: 'تغطية المحتوى', icon: '🗺️' },
   { href: '/admin/content', label: 'المحتوى', icon: '✏️' },
   { href: '/admin/analytics', label: 'التحليلات', icon: '📈' },
 ];
