@@ -73,6 +73,8 @@ export const parents = sqliteTable('parents', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   lastLoginAt: text('last_login_at'),
   weeklyEmailEnabled: integer('weekly_email_enabled', { mode: 'boolean' }).default(true),
+  achievementEmailEnabled: integer('achievement_email_enabled', { mode: 'boolean' }).default(true),
+  monthlyReportEnabled: integer('monthly_report_enabled', { mode: 'boolean' }).default(true),
   currentWeekNumber: integer('current_week_number').default(1),
   unsubscribeToken: text('unsubscribe_token').notNull().$defaultFn(() => crypto.randomUUID()),
 });
@@ -121,4 +123,36 @@ export const emailLog = sqliteTable('email_log', {
   sentAt: text('sent_at').default(sql`CURRENT_TIMESTAMP`),
   status: text('status').notNull(), // 'sent' | 'failed'
   resendId: text('resend_id'),
+  emailType: text('email_type').default('weekly'), // 'weekly' | 'achievement'
+});
+
+// ═══ Weekly challenges ═══
+
+export const weeklyChallenges = sqliteTable('weekly_challenges', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  weekStart: text('week_start').notNull(), // ISO date of Monday
+  goalType: text('goal_type').notNull(), // 'sessions' | 'correct_answers'
+  goalTarget: integer('goal_target').notNull(),
+  titleAr: text('title_ar').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const challengeProgress = sqliteTable('challenge_progress', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  challengeId: text('challenge_id').notNull().references(() => weeklyChallenges.id),
+  childId: text('child_id').notNull().references(() => children.id, { onDelete: 'cascade' }),
+  currentValue: integer('current_value').default(0),
+  completedAt: text('completed_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ═══ Multi-parent linking ═══
+
+export const childParents = sqliteTable('child_parents', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  childId: text('child_id').notNull().references(() => children.id, { onDelete: 'cascade' }),
+  parentId: text('parent_id').notNull().references(() => parents.id, { onDelete: 'cascade' }),
+  role: text('role').default('follower'),
+  inviteToken: text('invite_token'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });

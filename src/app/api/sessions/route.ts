@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessions, sessionAnswers, guestProgress, questions as questionsTable } from '@/lib/db/schema';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { sessions, sessionAnswers, guestProgress, questions as questionsTable, children, parents, emailLog } from '@/lib/db/schema';
+import { eq, and, sql, inArray, gt } from 'drizzle-orm';
 import { rateLimit, getIp } from '@/lib/rate-limit';
 import { calculateSessionPoints } from '@/lib/gamification/points';
 import { calculateStreak } from '@/lib/gamification/streaks';
+import { sendAchievementEmail } from '@/lib/email/achievement';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -200,6 +201,59 @@ export async function POST(req: NextRequest) {
         updatedAt: now,
       },
     });
+
+    // ── Achievement email (fire-and-forget) ──────────────────────────────
+    if (incomingId) {
+      // Look up the session to check for childId
+      const [sessionRow] = await db
+        .select({ childId: sessions.childId })
+        .from(sessions)
+        .where(eq(sessions.id, incomingId))
+        .limit(1);
+
+      if (sessionRow?.childId) {
+        const [childRow] = await db
+          .select({ name: children.name, parentId: children.parentId })
+          .from(children)
+          .where(eq(children.id, sessionRow.childId))
+          .limit(1);
+
+        if (childRow) {
+          const [parentRow] = await db
+            .select({ email: parents.email, achievementEmailEnabled: parents.achievementEmailEnabled })
+            .from(parents)
+            .where(eq(parents.id, childRow.parentId))
+            .limit(1);
+
+          if (parentRow?.achievementEmailEnabled) {
+            // Throttle: only send if no achievement email for this child in the last hour
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            const [recent] = await db
+              .select({ cnt: sql<number>`COUNT(*)` })
+              .from(emailLog)
+              .where(and(
+                eq(emailLog.parentId, childRow.parentId),
+                sql`email_type = 'achievement'`,
+                gt(emailLog.sentAt, oneHourAgo)
+              ));
+
+            if ((recent?.cnt ?? 0) === 0) {
+              // Log to emailLog, then send fire-and-forget
+              db.insert(emailLog).values({
+                id: crypto.randomUUID(),
+                parentId: childRow.parentId,
+                weekNumber: 0,
+                status: 'sent',
+                emailType: 'achievement',
+              }).catch(console.error);
+
+              sendAchievementEmail(parentRow.email, childRow.name, serverScore, serverTotal, [])
+                .catch(console.error);
+            }
+          }
+        }
+      }
+    }
 
     return NextResponse.json({ sessionId, score: serverScore, total: serverTotal, points: serverPoints });
   } catch (e) {

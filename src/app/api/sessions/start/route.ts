@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { sessionId, guestId, ageGroup, skillArea, totalQuestions } = body;
+    const { sessionId, guestId, ageGroup, skillArea, totalQuestions, childId, parentId } = body;
 
     if (!sessionId || !ageGroup || !skillArea || !guestId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
       skillArea,
       totalQuestions: Number(totalQuestions) || 10,
       ipAddress: ip,
+      ...(childId && UUID_RE.test(childId) ? { childId } : {}),
+      ...(parentId && UUID_RE.test(parentId) ? { parentId } : {}),
     }).onConflictDoNothing(); // idempotent — ignore if already registered
 
     return NextResponse.json({ ok: true });

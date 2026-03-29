@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import { otpCodes, parents } from '@/lib/db/schema';
 import { hashCode, createParentSession, setParentCookie } from '@/lib/parent-auth';
 import { rateLimit, getIp } from '@/lib/rate-limit';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 const OTP_MAX_ATTEMPTS = 3;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

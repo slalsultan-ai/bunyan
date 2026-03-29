@@ -4,7 +4,7 @@ import { otpCodes } from '@/lib/db/schema';
 import { hashCode } from '@/lib/parent-auth';
 import { sendParentOtp } from '@/lib/email/otp';
 import { rateLimit, getIp } from '@/lib/rate-limit';
-import { eq, gt, and } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

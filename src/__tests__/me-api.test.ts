@@ -5,7 +5,7 @@ vi.mock('@/lib/parent-auth', () => ({ getParentSession: mockGetParentSession }))
 
 const mockSelect = vi.fn();
 vi.mock('@/lib/db', () => ({ getDb: () => ({ select: mockSelect }) }));
-vi.mock('@/lib/db/schema', () => ({ parents: {}, children: {} }));
+vi.mock('@/lib/db/schema', () => ({ parents: {}, children: {}, childParents: { childId: 'child_id', parentId: 'parent_id', role: 'role' } }));
 
 const { GET } = await import('@/app/api/auth/me/route');
 
@@ -46,7 +46,8 @@ describe('GET /api/auth/me', () => {
     ];
     mockSelect
       .mockReturnValueOnce(makeSelectChainLimit([parentRow]))
-      .mockReturnValueOnce(makeSelectChainDirect(childRows));
+      .mockReturnValueOnce(makeSelectChainDirect(childRows))
+      .mockReturnValueOnce(makeSelectChainDirect([])); // childParents (no followed children)
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -62,7 +63,8 @@ describe('GET /api/auth/me', () => {
     const parentRow = { id: 'p1', email: 'x@y.com', city: null, weeklyEmailEnabled: false, currentWeekNumber: 1 };
     mockSelect
       .mockReturnValueOnce(makeSelectChainLimit([parentRow]))
-      .mockReturnValueOnce(makeSelectChainDirect([]));
+      .mockReturnValueOnce(makeSelectChainDirect([]))
+      .mockReturnValueOnce(makeSelectChainDirect([])); // childParents
     const res = await GET();
     const body = await res.json();
     expect(body.parent).not.toHaveProperty('unsubscribeToken');

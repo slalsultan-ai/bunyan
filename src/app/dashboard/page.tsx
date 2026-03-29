@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation';
 import Logo from '@/components/ui/Logo';
 import ChildCard from '@/components/dashboard/ChildCard';
 import AddChildModal from '@/components/dashboard/AddChildModal';
+import DailySuggestion from '@/components/dashboard/DailySuggestion';
+import WeeklyChallenge from '@/components/dashboard/WeeklyChallenge';
+import ChildStats from '@/components/dashboard/ChildStats';
+import NotificationSettings from '@/components/dashboard/NotificationSettings';
 import Link from 'next/link';
 
 interface Child {
@@ -11,6 +15,7 @@ interface Child {
   name: string;
   age: number;
   ageGroup: string;
+  role?: 'owner' | 'follower';
 }
 
 interface Parent {
@@ -18,6 +23,8 @@ interface Parent {
   email: string;
   city: string | null;
   weeklyEmailEnabled: boolean;
+  achievementEmailEnabled: boolean;
+  monthlyReportEnabled: boolean;
   currentWeekNumber: number;
 }
 
@@ -28,8 +35,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editChild, setEditChild] = useState<Child | null>(null);
-  const [emailToggling, setEmailToggling] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [shareLinks, setShareLinks] = useState<Record<string, string>>({});
+  const [sharingId, setSharingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -58,18 +66,21 @@ export default function DashboardPage() {
     }
   }
 
-  async function toggleEmail() {
-    if (!parent) return;
-    setEmailToggling(true);
-    const res = await fetch('/api/settings/email', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weeklyEmailEnabled: !parent.weeklyEmailEnabled }),
-    });
-    if (res.ok) {
-      setParent(prev => prev ? { ...prev, weeklyEmailEnabled: !prev.weeklyEmailEnabled } : null);
-    }
-    setEmailToggling(false);
+  async function generateShareLink(childId: string) {
+    setSharingId(childId);
+    try {
+      const res = await fetch('/api/children/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setShareLinks(prev => ({ ...prev, [childId]: data.shareUrl }));
+        await navigator.clipboard?.writeText(data.shareUrl).catch(() => {});
+      }
+    } catch { /* ignore */ }
+    setSharingId(null);
   }
 
   if (loading) {
@@ -104,6 +115,12 @@ export default function DashboardPage() {
           <p className="text-emerald-200 text-sm">{parent.email}</p>
           {parent.city && <p className="text-emerald-300 text-xs mt-1">{parent.city}</p>}
         </div>
+
+        {/* Daily Suggestions */}
+        <DailySuggestion />
+
+        {/* Weekly Challenge */}
+        <WeeklyChallenge />
 
         {/* Children */}
         <div>
@@ -143,11 +160,38 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ) : (
-                    <ChildCard
-                      child={child}
-                      onDelete={id => setDeleteConfirm(id)}
-                      onEdit={c => { setEditChild(c); setModalOpen(true); }}
-                    />
+                    <div className="space-y-2">
+                      <ChildCard
+                        child={child}
+                        onDelete={id => setDeleteConfirm(id)}
+                        onEdit={c => { setEditChild(c); setModalOpen(true); }}
+                      />
+                      {/* Share button */}
+                      {child.role !== 'follower' && (
+                        <div className="px-5 pb-3">
+                          {shareLinks[child.id] ? (
+                            <div className="flex items-center gap-2 bg-emerald-50 rounded-lg p-3">
+                              <input
+                                readOnly
+                                value={shareLinks[child.id]}
+                                className="flex-1 text-xs bg-transparent text-emerald-800 outline-none"
+                              />
+                              <span className="text-xs text-emerald-600 font-medium">تم النسخ</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => generateShareLink(child.id)}
+                              disabled={sharingId === child.id}
+                              className="w-full text-sm text-emerald-600 font-semibold py-2 rounded-xl border border-emerald-200 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                            >
+                              {sharingId === child.id ? 'جاري الإنشاء...' : '🔗 شارك طفلك'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {/* Child Stats */}
+                      <ChildStats childId={child.id} childName={child.name} />
+                    </div>
                   )}
                 </div>
               ))}
@@ -155,23 +199,13 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Email settings */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h3 className="font-bold text-gray-900 mb-1">البريد الأسبوعي</h3>
-          <p className="text-sm text-gray-500 mb-4">أسئلة وألعاب ونصائح مخصصة لعمر طفلك كل أسبوع</p>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
-              {parent.weeklyEmailEnabled ? '✅ مفعّل' : '❌ موقوف'}
-            </span>
-            <button
-              onClick={toggleEmail}
-              disabled={emailToggling}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${parent.weeklyEmailEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
-            >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${parent.weeklyEmailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
-        </div>
+        {/* Notification settings */}
+        <NotificationSettings
+          parent={parent}
+          onUpdate={(settings) => {
+            setParent(prev => prev ? { ...prev, ...settings } : null);
+          }}
+        />
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
