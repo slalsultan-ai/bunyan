@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sessions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { rateLimit, getIp } from '@/lib/rate-limit';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns']);
 
 export async function GET(req: NextRequest) {
   const rl = rateLimit(`stats:${getIp(req)}`, 20, 60_000);
@@ -19,30 +21,62 @@ export async function GET(req: NextRequest) {
     }
 
     const db = getDb();
-    const allSessions = await db.select().from(sessions).where(eq(sessions.guestId, guestId)).orderBy(sessions.startedAt);
+
+    // Single aggregation query instead of loading all rows
+    const [[totals], skillRows, recentSessions] = await Promise.all([
+      db.select({
+        totalSessions: sql<number>`count(*)`,
+        totalCorrect:  sql<number>`sum(coalesce(${sessions.score}, 0))`,
+        totalAnswered: sql<number>`sum(coalesce(${sessions.totalQuestions}, 0))`,
+      })
+        .from(sessions)
+        .where(eq(sessions.guestId, guestId)),
+
+      db.select({
+        skillArea: sessions.skillArea,
+        correct:   sql<number>`sum(coalesce(${sessions.score}, 0))`,
+        total:     sql<number>`sum(coalesce(${sessions.totalQuestions}, 0))`,
+      })
+        .from(sessions)
+        .where(eq(sessions.guestId, guestId))
+        .groupBy(sessions.skillArea),
+
+      db.select({
+        id:             sessions.id,
+        ageGroup:       sessions.ageGroup,
+        skillArea:      sessions.skillArea,
+        score:          sessions.score,
+        totalQuestions: sessions.totalQuestions,
+        timeTakenMs:    sessions.timeTakenMs,
+        pointsEarned:   sessions.pointsEarned,
+        startedAt:      sessions.startedAt,
+        completedAt:    sessions.completedAt,
+      })
+        .from(sessions)
+        .where(and(eq(sessions.guestId, guestId)))
+        .orderBy(desc(sessions.startedAt))
+        .limit(10),
+    ]);
 
     const breakdown = {
-      quantitative: { correct: 0, total: 0 },
-      verbal: { correct: 0, total: 0 },
-      logical_patterns: { correct: 0, total: 0 },
+      quantitative:    { correct: 0, total: 0 },
+      verbal:          { correct: 0, total: 0 },
+      logical_patterns:{ correct: 0, total: 0 },
     };
-
-    for (const s of allSessions) {
-      const skill = s.skillArea as keyof typeof breakdown;
-      if (skill in breakdown) {
-        breakdown[skill].correct += s.score ?? 0;
-        breakdown[skill].total += s.totalQuestions ?? 0;
+    for (const r of skillRows) {
+      if (SKILL_AREAS.has(r.skillArea)) {
+        const key = r.skillArea as keyof typeof breakdown;
+        breakdown[key].correct = Number(r.correct);
+        breakdown[key].total   = Number(r.total);
       }
     }
 
     return NextResponse.json({
-      totalSessions: allSessions.length,
-      totalCorrect: allSessions.reduce((a, s) => a + (s.score ?? 0), 0),
-      totalAnswered: allSessions.reduce((a, s) => a + (s.totalQuestions ?? 0), 0),
+      totalSessions: Number(totals?.totalSessions ?? 0),
+      totalCorrect:  Number(totals?.totalCorrect  ?? 0),
+      totalAnswered: Number(totals?.totalAnswered  ?? 0),
       skillBreakdown: breakdown,
-      recentSessions: allSessions.slice(-10).reverse().map(
-        ({ ipAddress: _ip, guestId: _g, ...s }) => s
-      ),
+      recentSessions,
     });
   } catch (e) {
     console.error(e);

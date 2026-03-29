@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 
 const VALID_AGE_GROUPS  = new Set(['4-5', '6-9', '10-12']);
@@ -83,14 +83,13 @@ export async function POST(req: NextRequest) {
 
   const existingIds = new Set<string>();
   if (incomingIds.length > 0) {
-    // SQLite has a 999-variable limit; chunk if needed
+    // SQLite variable limit is 999; chunk to stay well under it
     const chunkSize = 200;
     for (let i = 0; i < incomingIds.length; i += chunkSize) {
       const chunk = incomingIds.slice(i, i + chunkSize);
-      for (const id of chunk) {
-        const [row] = await db.select({ id: questions.id }).from(questions).where(eq(questions.id, id)).limit(1);
-        if (row) existingIds.add(id);
-      }
+      // One query per chunk (not one per ID)
+      const rows = await db.select({ id: questions.id }).from(questions).where(inArray(questions.id, chunk));
+      for (const row of rows) existingIds.add(row.id);
     }
   }
 

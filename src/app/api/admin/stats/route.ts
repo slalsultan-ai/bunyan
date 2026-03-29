@@ -21,7 +21,15 @@ export async function GET() {
     db.select({ ageGroup: questions.ageGroup, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.ageGroup),
     db.select({ type: questions.questionType, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.questionType),
     db.select({ skill: questions.skillArea, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.skillArea),
-    db.select().from(sessions).orderBy(desc(sessions.startedAt)).limit(8),
+    db.select({
+      id:             sessions.id,
+      ageGroup:       sessions.ageGroup,
+      skillArea:      sessions.skillArea,
+      score:          sessions.score,
+      totalQuestions: sessions.totalQuestions,
+      timeTakenMs:    sessions.timeTakenMs,
+      startedAt:      sessions.startedAt,
+    }).from(sessions).orderBy(desc(sessions.startedAt)).limit(8),
   ]);
 
   return NextResponse.json({
