@@ -30,37 +30,47 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-    setLoading(false);
-    // Always advance to OTP step (don't reveal if email is correct)
-    setStep('otp');
-    setCountdown(60);
+    try {
+      await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      // Always advance to OTP step (don't reveal if email is correct)
+      setStep('otp');
+      setCountdown(60);
+    } catch {
+      setError('فشل الاتصال بالخادم');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await fetch('/api/admin/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: otp.trim() }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      router.push('/admin');
-      router.refresh();
-    } else {
-      const data = await res.json();
-      setError(data.error || 'خطأ في التحقق');
-      if (data.error?.includes('انتهت') || data.error?.includes('تجاوزت')) {
-        // Force back to email step
-        setTimeout(() => { setStep('email'); setOtp(''); setError(''); }, 2500);
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: otp.trim() }),
+      });
+      if (res.ok) {
+        router.push('/admin');
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'خطأ في التحقق');
+        if (data.error?.includes('انتهت') || data.error?.includes('تجاوزت')) {
+          // Force back to email step
+          setTimeout(() => { setStep('email'); setOtp(''); setError(''); }, 2500);
+        }
       }
+    } catch {
+      setError('فشل الاتصال بالخادم');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,12 +78,16 @@ export default function AdminLoginPage() {
     if (countdown > 0) return;
     setError('');
     setOtp('');
-    await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-    setCountdown(60);
+    try {
+      await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setCountdown(60);
+    } catch {
+      setError('فشل الاتصال بالخادم');
+    }
   };
 
   return (
