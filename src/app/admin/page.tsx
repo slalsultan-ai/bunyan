@@ -59,6 +59,10 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Session cleanup state
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
   // Test email state
   const [testEmail, setTestEmail] = useState('');
   const [testWeek, setTestWeek] = useState(1);
@@ -243,9 +247,50 @@ export default function AdminDashboard() {
 
       {/* All Sessions */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-900">جميع الجلسات</h3>
-          <p className="text-xs text-gray-400 mt-0.5">آخر 50 جلسة — الجلسات الوهمية (بدون نتيجة أو وقت) مُعلّمة</p>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-gray-900">جميع الجلسات</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              آخر 50 جلسة — {(() => {
+                const completed = stats.sessions.filter(s => s.completedAt).length;
+                const fake = stats.sessions.filter(s => s.score === null && !s.completedAt).length;
+                return `${completed} مكتملة، ${fake} وهمية محتملة`;
+              })()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {deleteResult && (
+              <span className={`text-xs px-3 py-1.5 rounded-lg ${deleteResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {deleteResult.msg}
+              </span>
+            )}
+            <button
+              onClick={async () => {
+                if (!confirm('هل تريد حذف جميع الجلسات غير المكتملة (بدون نتيجة)؟')) return;
+                setDeleting(true);
+                setDeleteResult(null);
+                try {
+                  const res = await fetch('/api/admin/sessions', { method: 'DELETE' });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setDeleteResult({ ok: true, msg: `تم حذف ${data.deleted} جلسة` });
+                    // Refresh stats
+                    fetch('/api/admin/stats').then(r => r.json()).then(setStats);
+                  } else {
+                    setDeleteResult({ ok: false, msg: data.error || 'حدث خطأ' });
+                  }
+                } catch {
+                  setDeleteResult({ ok: false, msg: 'فشل الاتصال' });
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              disabled={deleting}
+              className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'جاري الحذف...' : 'حذف الوهمية'}
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
