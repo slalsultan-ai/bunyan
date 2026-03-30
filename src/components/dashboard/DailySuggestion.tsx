@@ -41,8 +41,8 @@ export default function DailySuggestion() {
 
   useEffect(() => {
     fetch('/api/dashboard/suggestions')
-      .then(res => (res.ok ? res.json() : []))
-      .then(data => setSuggestions(data))
+      .then(res => (res.ok ? res.json() : { suggestions: [] }))
+      .then(data => setSuggestions(data.suggestions ?? []))
       .catch(() => setSuggestions([]))
       .finally(() => setLoading(false));
   }, []);
