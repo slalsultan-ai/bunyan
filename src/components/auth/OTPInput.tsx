@@ -13,7 +13,16 @@ export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
   const digits = value.padEnd(6, '').split('').slice(0, 6);
 
   function handleChange(index: number, char: string) {
-    const digit = char.replace(/\D/g, '').slice(-1);
+    const cleaned = char.replace(/\D/g, '');
+    if (cleaned.length > 1) {
+      // Typed or autofilled multiple digits — treat like paste
+      const filled = cleaned.slice(0, 6);
+      onChange(filled.padEnd(6, '').slice(0, 6));
+      const lastFilled = Math.min(filled.length, 5);
+      inputsRef.current[lastFilled]?.focus();
+      return;
+    }
+    const digit = cleaned.slice(-1);
     const next = digits.map((d, i) => (i === index ? digit : d)).join('');
     onChange(next.slice(0, 6));
     if (digit && index < 5) {
@@ -54,8 +63,8 @@ export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
           ref={el => { inputsRef.current[i] = el; }}
           type="text"
           inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={1}
+          pattern="[0-9]*"
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
           value={digits[i] || ''}
           onChange={e => handleChange(i, e.target.value)}
           onKeyDown={e => handleKeyDown(i, e)}
