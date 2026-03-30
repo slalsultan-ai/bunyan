@@ -13,7 +13,7 @@ interface Question {
 }
 
 function getSource(tags?: string[]): { label: string; color: string } {
-  if (tags?.includes('تجميعات')) return { label: 'تجميعات البابطين', color: 'bg-orange-100 text-orange-700' };
+  if (tags?.includes('تجميعات')) return { label: 'تجميعات', color: 'bg-orange-100 text-orange-700' };
   return { label: 'بنيان', color: 'bg-blue-100 text-blue-700' };
 }
 
@@ -320,7 +320,7 @@ export default function QuestionsPage() {
             { key: 'skill_area', opts: SKILLS, label: 'المهارة', labels: SKILL_L },
             { key: 'difficulty', opts: DIFFS, label: 'الصعوبة', labels: DIFF_L },
             { key: 'type', opts: TYPES, label: 'النوع', labels: TYPE_LBL },
-            { key: 'source', opts: ['', 'تجميعات', 'بنيان'], label: 'المصدر', labels: { 'تجميعات': 'تجميعات البابطين', 'بنيان': 'بنيان' } },
+            { key: 'source', opts: ['', 'تجميعات', 'بنيان'], label: 'المصدر', labels: { 'تجميعات': 'تجميعات', 'بنيان': 'بنيان' } },
           ].map(f => (
             <select key={f.key} value={filters[f.key as keyof typeof filters]}
               onChange={e => setFilter(f.key, e.target.value)}
