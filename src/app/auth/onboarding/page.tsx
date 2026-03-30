@@ -37,7 +37,7 @@ export default function OnboardingPage() {
     for (const c of childrenData) {
       if (!c.name.trim()) { setError('أدخل اسم كل طفل'); return; }
       const age = Number(c.age);
-      if (!age || age < 4 || age > 12) { setError('العمر يجب أن يكون بين ٤ و١٢'); return; }
+      if (!age || age < 4 || age > 12) { setError('العمر يجب أن يكون بين 4 و12'); return; }
     }
 
     setLoading(true);

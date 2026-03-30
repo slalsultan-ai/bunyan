@@ -51,7 +51,7 @@ function buildHtml(
     <td style="background:#059669;border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
       <div style="display:inline-block;width:52px;height:52px;background:rgba(255,255,255,0.18);border-radius:12px;line-height:52px;font-size:26px;font-weight:900;color:#fff;margin-bottom:14px;">ب</div>
       <h1 style="margin:0 0 6px;color:#fff;font-size:22px;font-weight:800;">📚 تمارين بُنيان الأسبوعية</h1>
-      <p style="margin:0;color:#a7f3d0;font-size:13px;">الأسبوع ${weekNumber} من ٨</p>
+      <p style="margin:0;color:#a7f3d0;font-size:13px;">الأسبوع ${weekNumber} من 8</p>
     </td>
   </tr>
 

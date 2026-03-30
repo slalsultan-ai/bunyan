@@ -33,7 +33,7 @@ export default function AddChildModal({ open, editChild, onClose, onSaved }: Add
     e.preventDefault();
     if (!name.trim() || !age) return;
     const ageNum = Number(age);
-    if (ageNum < 4 || ageNum > 12) { setError('العمر بين ٤ و١٢'); return; }
+    if (ageNum < 4 || ageNum > 12) { setError('العمر بين 4 و12'); return; }
 
     setLoading(true);
     setError('');

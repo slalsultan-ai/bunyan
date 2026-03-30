@@ -15,9 +15,9 @@ interface ChildCardProps {
 }
 
 const AGE_GROUP_LABEL: Record<string, string> = {
-  '4-5': '٤-٥ سنوات',
-  '6-9': '٦-٩ سنوات',
-  '10-12': '١٠-١٢ سنة',
+  '4-5': '4-5 سنوات',
+  '6-9': '6-9 سنوات',
+  '10-12': '10-12 سنة',
 };
 
 const CHILD_AVATAR = ['👦', '👧', '🧒'];

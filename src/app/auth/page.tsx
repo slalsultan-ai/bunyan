@@ -122,7 +122,7 @@ function AuthContent() {
           ) : (
             <div className="space-y-6">
               <div>
-                <p className="text-center text-sm text-gray-600 mb-1">أدخل الرمز المكوّن من ٦ أرقام</p>
+                <p className="text-center text-sm text-gray-600 mb-1">أدخل الرمز المكوّن من 6 أرقام</p>
                 <p className="text-center text-xs text-gray-400 mb-5">تحقق من صندوق الوارد أو البريد المزعج</p>
                 <OTPInput value={otp} onChange={handleOtpChange} disabled={loading} />
               </div>

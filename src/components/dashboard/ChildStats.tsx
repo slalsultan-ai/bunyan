@@ -88,7 +88,7 @@ export default function ChildStats({ childId, childName }: ChildStatsProps) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'لم يتدرب بعد';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (

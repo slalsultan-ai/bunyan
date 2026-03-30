@@ -21,12 +21,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (!childrenData.length || childrenData.length > 10) {
-    return Response.json({ error: 'أضف طفلاً واحداً على الأقل (الحد الأقصى ١٠)' }, { status: 400 });
+    return Response.json({ error: 'أضف طفلاً واحداً على الأقل (الحد الأقصى 10)' }, { status: 400 });
   }
 
   for (const child of childrenData) {
     if (!child.name?.trim() || child.age < 4 || child.age > 12) {
-      return Response.json({ error: 'بيانات الطفل غير صحيحة. العمر بين ٤ و١٢.' }, { status: 400 });
+      return Response.json({ error: 'بيانات الطفل غير صحيحة. العمر بين 4 و12.' }, { status: 400 });
     }
   }
 

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   // Rate limit by email: max 3 OTPs per 15 min
   const { allowed: emailAllowed } = rateLimit(`otp-email:${email}`, 3, 15 * 60 * 1000);
   if (!emailAllowed) {
-    return Response.json({ error: 'تم إرسال عدة رموز لهذا البريد. انتظر ١٥ دقيقة.' }, { status: 429 });
+    return Response.json({ error: 'تم إرسال عدة رموز لهذا البريد. انتظر 15 دقيقة.' }, { status: 429 });
   }
 
   const db = getDb();

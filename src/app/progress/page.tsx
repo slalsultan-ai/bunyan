@@ -141,7 +141,7 @@ export default function ProgressPage() {
                     <span className="text-base">{getSkillAreaIcon(s.skillArea as never)}</span>
                     <div>
                       <div className="text-sm font-medium text-gray-800">{getSkillAreaLabel(s.skillArea as never)}</div>
-                      <div className="text-xs text-gray-400">{s.completedAt ? new Date(s.completedAt).toLocaleDateString('ar-SA') : ''}</div>
+                      <div className="text-xs text-gray-400">{s.completedAt ? new Date(s.completedAt).toLocaleDateString('ar-EG') : ''}</div>
                     </div>
                   </div>
                   <div className="text-right">

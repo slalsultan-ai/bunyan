@@ -410,7 +410,7 @@ function WeeklyPdf({
           </View>
           <View style={s.headerTitleGroup}>
             <Text style={s.headerTitle}>تمارين بُنيان الأسبوعية</Text>
-            <Text style={s.headerSub}>الأسبوع {weekNumber} من ٨</Text>
+            <Text style={s.headerSub}>الأسبوع {weekNumber} من 8</Text>
           </View>
         </View>
 

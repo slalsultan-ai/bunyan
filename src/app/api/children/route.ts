@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const age = Number(body.age);
 
   if (!name || !Number.isInteger(age) || age < 4 || age > 12) {
-    return Response.json({ error: 'الاسم والعمر مطلوبان (العمر ٤-١٢)' }, { status: 400 });
+    return Response.json({ error: 'الاسم والعمر مطلوبان (العمر 4-12)' }, { status: 400 });
   }
 
   const db = getDb();
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   // Enforce max 10 children
   const existing = await db.select().from(children).where(eq(children.parentId, session.parentId));
   if (existing.length >= 10) {
-    return Response.json({ error: 'الحد الأقصى ١٠ أطفال' }, { status: 400 });
+    return Response.json({ error: 'الحد الأقصى 10 أطفال' }, { status: 400 });
   }
 
   const [inserted] = await db.insert(children).values({

@@ -76,15 +76,15 @@ export default function AnalyticsPage() {
           <div className="flex-1 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">بدأوا اختباراً</span>
-              <span className="font-semibold text-gray-800">{data.totalStarted.toLocaleString('ar-SA')}</span>
+              <span className="font-semibold text-gray-800">{data.totalStarted.toLocaleString('en')}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">أكملوا حتى النهاية</span>
-              <span className="font-semibold text-emerald-600">{data.totalCompleted.toLocaleString('ar-SA')}</span>
+              <span className="font-semibold text-emerald-600">{data.totalCompleted.toLocaleString('en')}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">تركوا في المنتصف</span>
-              <span className="font-semibold text-red-500">{(data.totalStarted - data.totalCompleted).toLocaleString('ar-SA')}</span>
+              <span className="font-semibold text-red-500">{(data.totalStarted - data.totalCompleted).toLocaleString('en')}</span>
             </div>
             <div className="pt-1">
               <div className="w-full bg-gray-100 rounded-full h-2">

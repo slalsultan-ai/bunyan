@@ -17,7 +17,7 @@ export async function sendParentOtp(toEmail: string, code: string): Promise<void
         <div style="background:#fff;border-radius:14px;padding:28px;text-align:center;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
           <p style="color:#374151;margin:0 0 20px;font-size:15px;line-height:1.6;">أهلاً! إليك رمز التحقق للدخول إلى بُنيان.</p>
           <div style="font-size:40px;font-weight:900;letter-spacing:10px;color:#059669;background:#f0fdf4;padding:20px 28px;border-radius:10px;display:inline-block;border:2px solid #bbf7d0;">${code}</div>
-          <p style="color:#6b7280;margin:20px 0 0;font-size:13px;">الرمز صالح لمدة <strong>١٠ دقائق</strong> فقط.</p>
+          <p style="color:#6b7280;margin:20px 0 0;font-size:13px;">الرمز صالح لمدة <strong>10 دقائق</strong> فقط.</p>
           <p style="color:#9ca3af;margin:8px 0 0;font-size:12px;">إذا لم تطلب هذا الرمز، تجاهل هذا البريد.</p>
         </div>
         <p style="text-align:center;color:#9ca3af;font-size:11px;margin-top:20px;">© بُنيان — bunyan.guru</p>

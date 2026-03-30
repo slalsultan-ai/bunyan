@@ -31,10 +31,10 @@ const SAMPLE_CONTENT = {
   weekNumber: 3,
   ageGroup: '6-9' as const,
   quantitativeQuestion: {
-    question: 'ما هو مكعب العدد ٢؟',
-    options: ['٤', '٦', '٨', '١٠'],
+    question: 'ما هو مكعب العدد 2؟',
+    options: ['4', '6', '8', '10'],
     correctIndex: 2,
-    explanation: '٢ × ٢ × ٢ = ٨',
+    explanation: '2 × 2 × 2 = 8',
   },
   verbalQuestion: {
     question: 'ما معنى كلمة "سريع"؟',
@@ -45,11 +45,11 @@ const SAMPLE_CONTENT = {
   weeklyGame: {
     title: 'لعبة الحساب السريع',
     description: 'اختبر سرعة حساب طفلك.',
-    howToPlay: 'اعطه ١٠ أسئلة جمع في ٣٠ ثانية.',
+    howToPlay: 'اعطه 10 أسئلة جمع في 30 ثانية.',
   },
   weeklyTip: {
     title: 'التكرار يبني المهارة',
-    content: 'خصص ١٠ دقائق يومياً للتدريب.',
+    content: 'خصص 10 دقائق يومياً للتدريب.',
   },
 };
 

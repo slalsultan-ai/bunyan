@@ -4,10 +4,10 @@ import { weeklyChallenges, challengeProgress, children, childParents, sessions, 
 import { eq, and, isNotNull, sql } from 'drizzle-orm';
 
 const ROTATING_CHALLENGES = [
-  { goalType: 'sessions', goalTarget: 5, titleAr: 'أكملوا ٥ جلسات هذا الأسبوع' },
-  { goalType: 'correct_answers', goalTarget: 30, titleAr: 'أجيبوا على ٣٠ سؤالاً صحيحاً' },
+  { goalType: 'sessions', goalTarget: 5, titleAr: 'أكملوا 5 جلسات هذا الأسبوع' },
+  { goalType: 'correct_answers', goalTarget: 30, titleAr: 'أجيبوا على 30 سؤالاً صحيحاً' },
   { goalType: 'sessions', goalTarget: 7, titleAr: 'تدربوا كل يوم هذا الأسبوع' },
-  { goalType: 'correct_answers', goalTarget: 50, titleAr: 'حققوا ٥٠ إجابة صحيحة' },
+  { goalType: 'correct_answers', goalTarget: 50, titleAr: 'حققوا 50 إجابة صحيحة' },
 ];
 
 function getMonday(d: Date): string {

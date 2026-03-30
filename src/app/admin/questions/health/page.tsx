@@ -99,7 +99,7 @@ export default function QuestionHealthPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">صحة الأسئلة</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            أداء كل سؤال بناءً على إجابات المستخدمين — يظهر الأسئلة التي لها ٣ محاولات أو أكثر
+            أداء كل سؤال بناءً على إجابات المستخدمين — يظهر الأسئلة التي لها 3 محاولات أو أكثر
           </p>
         </div>
         <Link href="/admin/questions"
@@ -230,7 +230,7 @@ export default function QuestionHealthPage() {
       {summary.total === 0 && (
         <div className="text-center py-12 text-gray-400">
           <div className="text-4xl mb-3">📊</div>
-          <p>لا توجد بيانات كافية بعد — تحتاج كل سؤال لـ٣ محاولات على الأقل</p>
+          <p>لا توجد بيانات كافية بعد — تحتاج كل سؤال لـ3 محاولات على الأقل</p>
         </div>
       )}
     </div>
