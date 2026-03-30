@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessions } from '@/lib/db/schema';
+import { sessions, children } from '@/lib/db/schema';
 import { sql, and, eq } from 'drizzle-orm';
 import { rateLimit, getIp } from '@/lib/rate-limit';
 
@@ -45,6 +45,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daily session limit reached' }, { status: 429 });
     }
 
+    // Validate parentId/childId ownership if both provided
+    let validChildId: string | undefined;
+    let validParentId: string | undefined;
+    if (childId && UUID_RE.test(childId) && parentId && UUID_RE.test(parentId)) {
+      const [child] = await db.select({ id: children.id }).from(children)
+        .where(and(eq(children.id, childId), eq(children.parentId, parentId)))
+        .limit(1);
+      if (child) {
+        validChildId = childId;
+        validParentId = parentId;
+      }
+    }
+
     // Insert session with completedAt = null (not yet completed)
     await db.insert(sessions).values({
       id: sessionId,
@@ -53,8 +66,8 @@ export async function POST(req: NextRequest) {
       skillArea,
       totalQuestions: Number(totalQuestions) || 10,
       ipAddress: ip,
-      ...(childId && UUID_RE.test(childId) ? { childId } : {}),
-      ...(parentId && UUID_RE.test(parentId) ? { parentId } : {}),
+      ...(validChildId ? { childId: validChildId } : {}),
+      ...(validParentId ? { parentId: validParentId } : {}),
     }).onConflictDoNothing(); // idempotent — ignore if already registered
 
     return NextResponse.json({ ok: true });

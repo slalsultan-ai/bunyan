@@ -9,6 +9,19 @@ const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns',
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
 
+function sanitizeImageUrl(url: unknown): string | null {
+  if (typeof url !== 'string' || url.trim().length === 0) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return parsed.href;
+  } catch { return null; }
+}
+
+function escapeLikePattern(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateQuestionBody(body: any): string | null {
   const { ageGroup, skillArea, subSkill, difficulty, questionType, questionTextAr, options, correctOptionIndex, explanationAr, tags } = body;
@@ -50,7 +63,7 @@ export async function GET(req: NextRequest) {
   if (type && VALID_TYPES.has(type)) conds.push(eq(questions.questionType, type));
   if (active === 'true') conds.push(eq(questions.isActive, true));
   if (active === 'false') conds.push(eq(questions.isActive, false));
-  if (search) conds.push(like(questions.questionTextAr, `%${search}%`));
+  if (search) conds.push(like(questions.questionTextAr, `%${escapeLikePattern(search)}%`));
 
   const where = conds.length > 0 ? and(...conds) : undefined;
 
@@ -79,7 +92,7 @@ export async function POST(req: NextRequest) {
     id: crypto.randomUUID(),
     ageGroup, skillArea, subSkill, difficulty, questionType,
     questionTextAr: questionTextAr.trim(),
-    questionImageUrl: typeof questionImageUrl === 'string' ? questionImageUrl : null,
+    questionImageUrl: sanitizeImageUrl(questionImageUrl),
     options, correctOptionIndex, explanationAr,
     tags: Array.isArray(tags) ? tags : [],
     isActive: true,

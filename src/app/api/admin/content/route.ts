@@ -39,8 +39,8 @@ export async function PATCH(req: NextRequest) {
   try {
     await setContent(key, sanitized);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('Content update failed:', e);
+    return NextResponse.json({ error: 'حدث خطأ أثناء حفظ المحتوى' }, { status: 500 });
   }
 
   revalidatePath('/');

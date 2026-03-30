@@ -2,9 +2,16 @@ import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
 import { childParents, children } from '@/lib/db/schema';
 import { getParentSession } from '@/lib/parent-auth';
+import { rateLimit, getIp } from '@/lib/rate-limit';
 import { eq, and } from 'drizzle-orm';
 
 export async function POST(req: NextRequest) {
+  const ip = getIp(req);
+  const rl = rateLimit(`children-join:${ip}`, 10, 15 * 60 * 1000);
+  if (!rl.allowed) {
+    return Response.json({ error: 'محاولات كثيرة. انتظر قليلاً.' }, { status: 429 });
+  }
+
   const session = await getParentSession();
   if (!session) return Response.json({ error: 'غير مصرح' }, { status: 401 });
 
@@ -12,7 +19,7 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch { return Response.json({ error: 'طلب غير صحيح' }, { status: 400 }); }
 
   const { token } = body;
-  if (!token) return Response.json({ error: 'الرمز مطلوب' }, { status: 400 });
+  if (!token || typeof token !== 'string' || token.length > 64) return Response.json({ error: 'الرمز مطلوب' }, { status: 400 });
 
   const db = getDb();
 

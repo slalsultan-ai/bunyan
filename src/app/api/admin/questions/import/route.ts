@@ -9,6 +9,15 @@ const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns',
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES        = new Set(['text', 'image', 'audio', 'mixed']);
 
+function sanitizeImageUrl(url: unknown): string | null {
+  if (typeof url !== 'string' || url.trim().length === 0) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return parsed.href;
+  } catch { return null; }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateRow(row: any, index: number): string | null {
   const { ageGroup, skillArea, subSkill, difficulty, questionType,
@@ -112,7 +121,7 @@ export async function POST(req: NextRequest) {
       difficulty:         String(row.difficulty),
       questionType:       String(row.questionType),
       questionTextAr:     String(row.questionTextAr).trim(),
-      questionImageUrl:   typeof row.questionImageUrl === 'string' ? row.questionImageUrl : null,
+      questionImageUrl:   sanitizeImageUrl(row.questionImageUrl),
       options:            row.options as Array<{ text: string; imageUrl?: string }>,
       correctOptionIndex: Number(row.correctOptionIndex),
       explanationAr:      String(row.explanationAr),

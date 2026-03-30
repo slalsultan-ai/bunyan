@@ -10,6 +10,15 @@ const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function sanitizeImageUrl(url: unknown): string | null {
+  if (typeof url !== 'string' || url.trim().length === 0) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return parsed.href;
+  } catch { return null; }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateQuestionBody(body: any): string | null {
   const { ageGroup, skillArea, difficulty, questionType, questionTextAr, options, correctOptionIndex, explanationAr, tags } = body;
@@ -52,7 +61,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     difficulty: body.difficulty,
     questionType: body.questionType,
     questionTextAr: typeof body.questionTextAr === 'string' ? body.questionTextAr.trim() : body.questionTextAr,
-    questionImageUrl: typeof body.questionImageUrl === 'string' ? body.questionImageUrl : null,
+    questionImageUrl: sanitizeImageUrl(body.questionImageUrl),
     options: body.options,
     correctOptionIndex: body.correctOptionIndex,
     explanationAr: body.explanationAr,

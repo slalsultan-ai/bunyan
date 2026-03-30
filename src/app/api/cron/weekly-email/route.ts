@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
       results.sent++;
     } catch (err) {
-      console.error(`Failed to send email to ${parent.email}:`, err);
+      console.error(`Failed to send email to parent ${parent.id}:`, err);
 
       await db.insert(emailLog).values({
         id: crypto.randomUUID(),
