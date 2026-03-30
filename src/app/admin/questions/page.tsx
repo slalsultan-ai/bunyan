@@ -9,6 +9,12 @@ interface Question {
   options: { text: string; imageUrl?: string }[];
   correctOptionIndex: number; explanationAr: string;
   questionImageUrl?: string; isActive: boolean; createdAt: string;
+  tags?: string[];
+}
+
+function getSource(tags?: string[]): { label: string; color: string } {
+  if (tags?.includes('تجميعات')) return { label: 'تجميعات البابطين', color: 'bg-orange-100 text-orange-700' };
+  return { label: 'بنيان', color: 'bg-blue-100 text-blue-700' };
 }
 
 const AGES = ['', '4-5', '6-9', '10-12'];
@@ -211,7 +217,7 @@ export default function QuestionsPage() {
   const [preview, setPreview] = useState<Question | null>(null);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [filters, setFilters] = useState({ age_group: '', skill_area: '', difficulty: '', type: '', active: 'all', search: '' });
+  const [filters, setFilters] = useState({ age_group: '', skill_area: '', difficulty: '', type: '', active: 'all', search: '', source: '' });
 
   const load = useCallback(async (p = page) => {
     setLoading(true);
@@ -223,6 +229,7 @@ export default function QuestionsPage() {
       ...(filters.type && { type: filters.type }),
       ...(filters.active !== 'all' && { active: filters.active }),
       ...(filters.search && { search: filters.search }),
+      ...(filters.source && { source: filters.source }),
     });
     const res = await fetch(`/api/admin/questions?${params}`);
     const data = await res.json();
@@ -305,7 +312,7 @@ export default function QuestionsPage() {
 
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
           <input value={filters.search} onChange={e => setFilter('search', e.target.value)} placeholder="🔍 بحث..."
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none col-span-2 lg:col-span-2" />
           {[
@@ -313,6 +320,7 @@ export default function QuestionsPage() {
             { key: 'skill_area', opts: SKILLS, label: 'المهارة', labels: SKILL_L },
             { key: 'difficulty', opts: DIFFS, label: 'الصعوبة', labels: DIFF_L },
             { key: 'type', opts: TYPES, label: 'النوع', labels: TYPE_LBL },
+            { key: 'source', opts: ['', 'تجميعات', 'بنيان'], label: 'المصدر', labels: { 'تجميعات': 'تجميعات البابطين', 'بنيان': 'بنيان' } },
           ].map(f => (
             <select key={f.key} value={filters[f.key as keyof typeof filters]}
               onChange={e => setFilter(f.key, e.target.value)}
@@ -349,6 +357,7 @@ export default function QuestionsPage() {
                   <th className="px-4 py-3 text-right font-semibold">الفئة</th>
                   <th className="px-4 py-3 text-right font-semibold">المهارة</th>
                   <th className="px-4 py-3 text-right font-semibold">الصعوبة</th>
+                  <th className="px-4 py-3 text-right font-semibold">المصدر</th>
                   <th className="px-4 py-3 text-right font-semibold">الحالة</th>
                   <th className="px-4 py-3 text-right font-semibold">إجراءات</th>
                 </tr>
@@ -370,6 +379,11 @@ export default function QuestionsPage() {
                       <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${q.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-700' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                         {DIFF_L[q.difficulty] || q.difficulty}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => { const s = getSource(q.tags); return (
+                        <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${s.color}`}>{s.label}</span>
+                      ); })()}
                     </td>
                     <td className="px-4 py-3">
                       <button onClick={() => toggleActive(q)}

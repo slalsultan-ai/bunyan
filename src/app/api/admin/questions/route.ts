@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
   const active = searchParams.get('active');
   const searchRaw = searchParams.get('search');
   const search = searchRaw ? searchRaw.slice(0, 100) : null;
+  const source = searchParams.get('source');
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
   const limit = 25;
   const offset = (page - 1) * limit;
@@ -64,6 +65,8 @@ export async function GET(req: NextRequest) {
   if (active === 'true') conds.push(eq(questions.isActive, true));
   if (active === 'false') conds.push(eq(questions.isActive, false));
   if (search) conds.push(like(questions.questionTextAr, `%${escapeLikePattern(search)}%`));
+  if (source === 'تجميعات') conds.push(like(questions.tags, `%تجميعات%`));
+  if (source === 'بنيان') conds.push(sql`(${questions.tags} IS NULL OR ${questions.tags} NOT LIKE '%تجميعات%')`);
 
   const where = conds.length > 0 ? and(...conds) : undefined;
 
