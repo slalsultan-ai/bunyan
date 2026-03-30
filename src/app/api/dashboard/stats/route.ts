@@ -41,9 +41,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Completed sessions for this child
-  const completedSessions = await db
-    .select()
+  // Aggregate totals with a single query instead of loading all sessions
+  const [totals] = await db
+    .select({
+      totalSessions: sql<number>`COUNT(*)`.as('totalSessions'),
+      totalCorrect: sql<number>`COALESCE(SUM(${sessions.score}), 0)`.as('totalCorrect'),
+      totalAnswered: sql<number>`COALESCE(SUM(${sessions.totalQuestions}), 0)`.as('totalAnswered'),
+      lastPracticedAt: sql<string>`MAX(${sessions.completedAt})`.as('lastPracticedAt'),
+    })
     .from(sessions)
     .where(and(eq(sessions.childId, childId), isNotNull(sessions.completedAt)));
 
@@ -105,23 +110,13 @@ export async function GET(req: NextRequest) {
     recentAvgScore = totalQ > 0 ? Math.round((totalScore / totalQ) * 100) : 0;
   }
 
-  // Totals
-  const totalSessions = completedSessions.length;
-  const totalCorrect = completedSessions.reduce((sum, s) => sum + (s.score ?? 0), 0);
-  const totalAnswered = completedSessions.reduce((sum, s) => sum + (s.totalQuestions ?? 0), 0);
-
-  // Last practiced
-  const lastSession = completedSessions.length > 0
-    ? completedSessions.sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))[0]
-    : null;
-
   return Response.json({
     weeklyActivity,
     skillBreakdown,
     recentAvgScore,
-    totalSessions,
-    totalCorrect,
-    totalAnswered,
-    lastPracticedAt: lastSession?.completedAt ?? null,
+    totalSessions: totals.totalSessions,
+    totalCorrect: totals.totalCorrect,
+    totalAnswered: totals.totalAnswered,
+    lastPracticedAt: totals.lastPracticedAt ?? null,
   });
 }

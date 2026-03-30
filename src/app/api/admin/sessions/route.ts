@@ -12,18 +12,18 @@ export async function GET() {
 
   const db = getDb();
 
-  const [[total], [completed], [incomplete], [noScore]] = await Promise.all([
-    db.select({ v: sql<number>`COUNT(*)` }).from(sessions),
-    db.select({ v: sql<number>`COUNT(*)` }).from(sessions).where(sql`completed_at IS NOT NULL`),
-    db.select({ v: sql<number>`COUNT(*)` }).from(sessions).where(isNull(sessions.completedAt)),
-    db.select({ v: sql<number>`COUNT(*)` }).from(sessions).where(and(isNull(sessions.score), isNull(sessions.completedAt))),
-  ]);
+  const [counts] = await db.select({
+    total: sql<number>`COUNT(*)`,
+    completed: sql<number>`SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END)`,
+    incomplete: sql<number>`SUM(CASE WHEN completed_at IS NULL THEN 1 ELSE 0 END)`,
+    fake: sql<number>`SUM(CASE WHEN score IS NULL AND completed_at IS NULL THEN 1 ELSE 0 END)`,
+  }).from(sessions);
 
   return NextResponse.json({
-    total: total.v,
-    completed: completed.v,
-    incomplete: incomplete.v,
-    fake: noScore.v,
+    total: counts.total,
+    completed: counts.completed,
+    incomplete: counts.incomplete,
+    fake: counts.fake,
   });
 }
 

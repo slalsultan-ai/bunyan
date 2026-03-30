@@ -114,6 +114,10 @@ const SETUP_STMTS = [
   'CREATE INDEX IF NOT EXISTS idx_chp_child_id         ON child_parents(child_id)',
   'CREATE INDEX IF NOT EXISTS idx_chp_parent_id        ON child_parents(parent_id)',
   'CREATE INDEX IF NOT EXISTS idx_sessions_child_id    ON sessions(child_id)',
+  'CREATE INDEX IF NOT EXISTS idx_sessions_parent_id   ON sessions(parent_id)',
+  'CREATE INDEX IF NOT EXISTS idx_sessions_completed   ON sessions(child_id, completed_at)',
+  'CREATE INDEX IF NOT EXISTS idx_el_parent_week       ON email_log(parent_id, week_number)',
+  'CREATE INDEX IF NOT EXISTS idx_chp_invite_token     ON child_parents(invite_token)',
 
   // ─── email_type column on email_log ──────────────────────────────────
   "ALTER TABLE email_log ADD COLUMN email_type TEXT DEFAULT 'weekly'",

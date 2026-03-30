@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { getDb } from '@/lib/db';
 import { parents, children, emailLog } from '@/lib/db/schema';
 import { getWeeklyContent, seedWeeklyContent } from '@/lib/db/seed-weekly-content';
@@ -9,8 +10,11 @@ const MAX_WEEKS = 8;
 
 export async function POST(req: NextRequest) {
   // Verify cron secret
-  const auth = req.headers.get('authorization');
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const auth = req.headers.get('authorization') ?? '';
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  const authBuf = Buffer.from(auth);
+  const expectedBuf = Buffer.from(expected);
+  if (authBuf.length !== expectedBuf.length || !timingSafeEqual(authBuf, expectedBuf)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

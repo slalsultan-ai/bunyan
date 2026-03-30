@@ -1,7 +1,7 @@
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { parents, children, childParents } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 export async function GET() {
   const session = await getParentSession();
@@ -20,11 +20,11 @@ export async function GET() {
     .from(childParents)
     .where(and(eq(childParents.parentId, session.parentId), eq(childParents.role, 'follower')));
 
-  const followedChildren = [];
-  for (const link of followedLinks) {
-    const [child] = await db.select().from(children).where(eq(children.id, link.childId)).limit(1);
-    if (child) followedChildren.push({ ...child, role: 'follower' as const });
-  }
+  const followedChildIds = followedLinks.map(l => l.childId);
+  const followedChildren = followedChildIds.length > 0
+    ? (await db.select().from(children).where(inArray(children.id, followedChildIds)))
+        .map(c => ({ ...c, role: 'follower' as const }))
+    : [];
 
   const allChildren = [
     ...ownedChildren.map(c => ({ id: c.id, name: c.name, age: c.age, ageGroup: c.ageGroup, role: 'owner' as const })),

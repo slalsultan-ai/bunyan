@@ -1,7 +1,7 @@
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
-import { eq, and, isNotNull, sql, desc } from 'drizzle-orm';
+import { eq, and, isNotNull, sql, desc, inArray } from 'drizzle-orm';
 
 const SKILL_LABELS: Record<string, string> = {
   quantitative: 'الكمي',
@@ -29,11 +29,10 @@ export async function GET() {
     .from(childParents)
     .where(and(eq(childParents.parentId, session.parentId), eq(childParents.role, 'follower')));
 
-  const followedChildren = [];
-  for (const link of followedLinks) {
-    const [child] = await db.select().from(children).where(eq(children.id, link.childId)).limit(1);
-    if (child) followedChildren.push(child);
-  }
+  const followedChildIds = followedLinks.map(l => l.childId);
+  const followedChildren = followedChildIds.length > 0
+    ? await db.select().from(children).where(inArray(children.id, followedChildIds))
+    : [];
 
   const childRows = [...ownedChildren, ...followedChildren];
 

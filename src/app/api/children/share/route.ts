@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!child) return Response.json({ error: 'الطفل غير موجود' }, { status: 404 });
 
   // Generate invite token
-  const token = randomBytes(4).toString('hex'); // 8-char hex
+  const token = randomBytes(16).toString('hex'); // 32-char hex (128-bit)
 
   // Upsert owner row in childParents
   const [existing] = await db.select().from(childParents)

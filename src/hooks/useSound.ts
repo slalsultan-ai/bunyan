@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function useSound(muted: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -76,6 +76,10 @@ export function useSound(muted: boolean) {
     if (!ac) return;
     tone(ac, 880, ac.currentTime, 0.08, 0.1, 'sine');
   }, [muted, ctx, tone]);
+
+  useEffect(() => {
+    return () => { ctxRef.current?.close(); ctxRef.current = null; };
+  }, []);
 
   return { playCorrect, playWrong, playFanfare, playNext };
 }
