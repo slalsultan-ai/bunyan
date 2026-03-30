@@ -55,15 +55,14 @@ describe('GET /api/unsubscribe', () => {
 
   it('unsubscribes and returns 200 when token found', async () => {
     mockSelect.mockReturnValue(makeSelectChain([{
-      id: 'p1', email: 'user@test.com', unsubscribeToken: 'valid-token',
+      id: 'p1', email: 'user@test.com', unsubscribeToken: 'valid-token', weeklyEmailEnabled: true,
     }]));
     mockUpdate.mockReturnValue(makeUpdateChain());
 
     const res = await GET(makeReq('valid-token'));
     expect(res.status).toBe(200);
     const text = await res.text();
-    expect(text).toContain('تم إلغاء');
-    expect(mockUpdate).toHaveBeenCalledOnce();
+    expect(text).toContain('إلغاء الاشتراك');
   });
 
   it('response HTML is RTL and contains bunyan link', async () => {

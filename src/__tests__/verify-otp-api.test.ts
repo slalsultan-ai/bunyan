@@ -7,10 +7,12 @@ const mockGetIp = vi.fn().mockReturnValue('1.2.3.4');
 vi.mock('@/lib/rate-limit', () => ({ rateLimit: mockRateLimit, getIp: mockGetIp }));
 
 const mockHashCode = vi.fn();
+const mockSafeCompare = vi.fn((a: string, b: string) => a === b);
 const mockCreateParentSession = vi.fn().mockResolvedValue('session-token-xyz');
 const mockSetParentCookie = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/lib/parent-auth', () => ({
   hashCode: mockHashCode,
+  safeCompare: mockSafeCompare,
   createParentSession: mockCreateParentSession,
   setParentCookie: mockSetParentCookie,
 }));
