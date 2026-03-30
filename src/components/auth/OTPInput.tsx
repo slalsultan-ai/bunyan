@@ -47,13 +47,14 @@ export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
   }
 
   return (
-    <div className="flex gap-2 justify-center" dir="ltr">
+    <div className="flex gap-1.5 sm:gap-2 justify-center" dir="ltr">
       {Array.from({ length: 6 }, (_, i) => (
         <input
           key={i}
           ref={el => { inputsRef.current[i] = el; }}
           type="text"
           inputMode="numeric"
+          autoComplete="one-time-code"
           maxLength={1}
           value={digits[i] || ''}
           onChange={e => handleChange(i, e.target.value)}
@@ -61,7 +62,7 @@ export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
           onPaste={handlePaste}
           onFocus={e => e.target.select()}
           disabled={disabled}
-          className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50 disabled:bg-gray-50 bg-white text-gray-900 border-gray-300"
+          className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50 disabled:bg-gray-50 bg-white text-gray-900 border-gray-300"
           aria-label={`الرقم ${i + 1}`}
         />
       ))}

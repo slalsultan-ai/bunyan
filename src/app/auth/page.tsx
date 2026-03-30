@@ -74,7 +74,7 @@ function AuthContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12" dir="rtl">
+    <div className="min-h-dvh bg-gray-50 flex flex-col items-center justify-center px-4 py-12" dir="rtl">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Logo size="md" className="justify-center mb-4" />
@@ -83,20 +83,21 @@ function AuthContent() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-md p-5 sm:p-8 border border-gray-100">
           {step === 'email' ? (
             <form onSubmit={sendOtp} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">البريد الإلكتروني</label>
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="example@gmail.com"
                   dir="ltr"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-base focus:border-emerald-500 focus:outline-none transition-colors"
                   required
-                  autoFocus
                 />
               </div>
 
