@@ -6,7 +6,7 @@ export function useSound(muted: boolean) {
 
   const ctx = useCallback(() => {
     if (typeof window === 'undefined') return null;
-    if (!ctxRef.current) ctxRef.current = new AudioContext();
+    if (!ctxRef.current) ctxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     if (ctxRef.current.state === 'suspended') ctxRef.current.resume();
     return ctxRef.current;
   }, []);

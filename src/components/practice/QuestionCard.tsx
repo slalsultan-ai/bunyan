@@ -14,31 +14,49 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
   const isAudio = question.questionType === 'audio';
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
-  const audioBlobUrl = useRef<string | null>(null);
-  const audioEl = useRef<HTMLAudioElement | null>(null);
+  const audioDataRef = useRef<ArrayBuffer | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Get or create AudioContext (must be resumed in user gesture)
+  const getAudioCtx = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  }, []);
+
+  // Play an ArrayBuffer through Web Audio API
+  const playBuffer = useCallback(async (ac: AudioContext, buffer: ArrayBuffer) => {
+    // Stop any currently playing source
+    try { sourceRef.current?.stop(); } catch { /* already stopped */ }
+    // decodeAudioData detaches the buffer, so pass a copy
+    const decoded = await ac.decodeAudioData(buffer.slice(0));
+    const source = ac.createBufferSource();
+    source.buffer = decoded;
+    source.connect(ac.destination);
+    sourceRef.current = source;
+    source.start(0);
+  }, []);
 
   // Cleanup on unmount or question change
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      if (audioEl.current) {
-        audioEl.current.pause();
-        audioEl.current.src = '';
-        audioEl.current = null;
-      }
-      if (audioBlobUrl.current) {
-        URL.revokeObjectURL(audioBlobUrl.current);
-        audioBlobUrl.current = null;
-      }
+      try { sourceRef.current?.stop(); } catch { /* already stopped */ }
+      audioDataRef.current = null;
       setAudioReady(false);
       setAudioLoading(false);
     };
   }, [question.id]);
 
-  // Pre-fetch audio in background (for auto-play on first load)
+  // Pre-fetch audio in background as ArrayBuffer
   const prefetchAudio = useCallback(async () => {
-    if (!isAudio || audioBlobUrl.current) return;
+    if (!isAudio || audioDataRef.current) return;
 
     setAudioLoading(true);
     abortRef.current?.abort();
@@ -54,11 +72,10 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
       });
       if (!res.ok) throw new Error('TTS failed');
 
-      const blob = await res.blob();
+      const buffer = await res.arrayBuffer();
       if (controller.signal.aborted) return;
 
-      if (audioBlobUrl.current) URL.revokeObjectURL(audioBlobUrl.current);
-      audioBlobUrl.current = URL.createObjectURL(blob);
+      audioDataRef.current = buffer;
       setAudioReady(true);
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
@@ -76,54 +93,6 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
     return () => clearTimeout(timer);
   }, [prefetchAudio, isAudio]);
 
-  // Play audio — must be called from user gesture for iOS
-  const speak = useCallback(async () => {
-    if (!isAudio) return;
-
-    // If we have pre-fetched audio, play it directly
-    if (audioBlobUrl.current) {
-      // Create a fresh Audio for each play (iOS Safari requires this pattern)
-      const audio = new Audio(audioBlobUrl.current);
-      audioEl.current = audio;
-      try {
-        await audio.play();
-      } catch {
-        // Autoplay blocked — user will need to tap again
-      }
-      return;
-    }
-
-    // No cached audio — fetch and play within user gesture
-    // On iOS, we create the Audio element FIRST (in user gesture), then set src
-    const audio = new Audio();
-    audioEl.current = audio;
-
-    setAudioLoading(true);
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: question.questionTextAr }),
-      });
-
-      if (!res.ok) throw new Error('TTS failed');
-
-      const blob = await res.blob();
-      if (audioBlobUrl.current) URL.revokeObjectURL(audioBlobUrl.current);
-      const url = URL.createObjectURL(blob);
-      audioBlobUrl.current = url;
-      setAudioReady(true);
-
-      audio.src = url;
-      await audio.play();
-    } catch {
-      // Fallback: browser speech synthesis
-      speakFallback();
-    } finally {
-      setAudioLoading(false);
-    }
-  }, [isAudio, question.questionTextAr]);
-
   const speakFallback = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -138,6 +107,47 @@ export default function QuestionCard({ question, index, total, ageGroup }: Quest
     if (arabicVoice) utterance.voice = arabicVoice;
     window.speechSynthesis.speak(utterance);
   }, [question.questionTextAr]);
+
+  // Play audio — user gesture creates/resumes AudioContext (iOS requirement)
+  const speak = useCallback(async () => {
+    if (!isAudio) return;
+
+    // CRITICAL: resume AudioContext in user gesture — unlocks audio on iOS
+    const ac = getAudioCtx();
+
+    // If we have pre-fetched audio, play it via Web Audio API
+    if (audioDataRef.current) {
+      try {
+        await playBuffer(ac, audioDataRef.current);
+        return;
+      } catch {
+        // decoding failed — re-fetch below
+      }
+    }
+
+    // Fetch and play (AudioContext already unlocked, so play works after async)
+    setAudioLoading(true);
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: question.questionTextAr }),
+      });
+
+      if (!res.ok) throw new Error('TTS failed');
+
+      const buffer = await res.arrayBuffer();
+      audioDataRef.current = buffer;
+      setAudioReady(true);
+
+      await playBuffer(ac, buffer);
+    } catch {
+      // Fallback: browser speech synthesis
+      speakFallback();
+    } finally {
+      setAudioLoading(false);
+    }
+  }, [isAudio, question.questionTextAr, getAudioCtx, playBuffer, speakFallback]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
