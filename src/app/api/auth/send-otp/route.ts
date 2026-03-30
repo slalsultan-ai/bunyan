@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     .where(and(eq(otpCodes.email, email), eq(otpCodes.used, false)));
 
   // Generate new 6-digit OTP
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
   const codeHash = await hashCode(code);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
 

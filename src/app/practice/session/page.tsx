@@ -120,8 +120,23 @@ function SessionContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">جاري تحضير الأسئلة...</p>
+          {session.error ? (
+            <>
+              <p className="text-gray-700 font-bold text-lg mb-2">تعذر تحميل الأسئلة</p>
+              <p className="text-gray-500 text-sm mb-4">تحقق من اتصالك بالإنترنت وحاول مرة أخرى</p>
+              <button
+                onClick={() => session.loadQuestions(ageGroup, skillArea, 'mixed')}
+                className="bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">جاري تحضير الأسئلة...</p>
+            </>
+          )}
         </div>
       </div>
     );

@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { parents } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+// GET shows confirmation page — does NOT perform the unsubscribe (prevents prefetch unsubscriptions)
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   if (!token) {
@@ -17,10 +18,44 @@ export async function GET(req: NextRequest) {
     .limit(1);
 
   if (!parent) {
-    return new Response(unsubPage('رابط إلغاء الاشتراك غير صحيح أو منتهي الصلاحية.', false), {
+    return new Response(unsubPage('رابط إلغاء الاشتراك غير صحيح أو منتهي الصلاحية.', 'error', token), {
       status: 404,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
+  }
+
+  if (!parent.weeklyEmailEnabled) {
+    return new Response(unsubPage('أنت بالفعل غير مشترك في البريد الأسبوعي.', 'already', token), {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
+  return new Response(unsubPage('هل تريد إلغاء اشتراكك في البريد الأسبوعي؟', 'confirm', token), {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
+
+// POST performs the actual unsubscribe
+export async function POST(req: NextRequest) {
+  let body: { token?: string };
+  try { body = await req.json(); } catch { return Response.json({ error: 'Bad request' }, { status: 400 }); }
+
+  const token = body.token;
+  if (!token) {
+    return Response.json({ error: 'Token required' }, { status: 400 });
+  }
+
+  const db = getDb();
+  const [parent] = await db
+    .select()
+    .from(parents)
+    .where(eq(parents.unsubscribeToken, token))
+    .limit(1);
+
+  if (!parent) {
+    return Response.json({ error: 'Invalid token' }, { status: 404 });
   }
 
   await db
@@ -28,14 +63,48 @@ export async function GET(req: NextRequest) {
     .set({ weeklyEmailEnabled: false })
     .where(eq(parents.id, parent.id));
 
-  return new Response(unsubPage('تم إلغاء اشتراكك في البريد الأسبوعي بنجاح.', true), {
-    status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
-  });
+  return Response.json({ success: true });
 }
 
-function unsubPage(message: string, success: boolean): string {
+function unsubPage(message: string, state: 'confirm' | 'already' | 'error', token: string): string {
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://bunyan.guru';
+  const icon = state === 'error' ? '❌' : state === 'already' ? '✅' : '📧';
+  const title = state === 'error' ? 'خطأ' : state === 'already' ? 'تم بالفعل' : 'إلغاء الاشتراك';
+
+  const confirmButton = state === 'confirm' ? `
+    <form id="unsub-form" style="margin-bottom: 16px;">
+      <button type="submit" style="display: inline-block; background: #dc2626; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; border: none; cursor: pointer;">
+        تأكيد إلغاء الاشتراك
+      </button>
+    </form>
+    <p id="result" style="color: #059669; font-weight: 700; display: none; margin-bottom: 16px;"></p>
+    <script>
+      document.getElementById('unsub-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = this.querySelector('button');
+        btn.disabled = true;
+        btn.textContent = '...';
+        fetch(window.location.pathname, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: '${token}' })
+        }).then(function(r) {
+          if (r.ok) {
+            document.getElementById('unsub-form').style.display = 'none';
+            var res = document.getElementById('result');
+            res.textContent = 'تم إلغاء اشتراكك بنجاح. يمكنك إعادة تفعيله من لوحتك.';
+            res.style.display = 'block';
+          } else {
+            btn.textContent = 'حدث خطأ، حاول مرة أخرى';
+            btn.disabled = false;
+          }
+        }).catch(function() {
+          btn.textContent = 'حدث خطأ، حاول مرة أخرى';
+          btn.disabled = false;
+        });
+      });
+    </script>` : '';
+
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -53,9 +122,10 @@ function unsubPage(message: string, success: boolean): string {
 </head>
 <body>
   <div class="box">
-    <div class="icon">${success ? '✅' : '❌'}</div>
-    <h1>${success ? 'تم بنجاح' : 'خطأ'}</h1>
-    <p>${message}${success ? ' يمكنك إعادة تفعيله في أي وقت من لوحتك.' : ''}</p>
+    <div class="icon">${icon}</div>
+    <h1>${title}</h1>
+    <p>${message}</p>
+    ${confirmButton}
     <a href="${APP_URL}">العودة لبُنيان</a>
   </div>
 </body>

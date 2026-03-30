@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
-import { sessions, sessionAnswers, questions, children } from '@/lib/db/schema';
-import { eq, and, isNotNull, sql, desc } from 'drizzle-orm';
+import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
+import { eq, and, isNotNull, sql, desc, or } from 'drizzle-orm';
 
 export async function GET(req: NextRequest) {
   const session = await getParentSession();
@@ -17,15 +17,28 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
 
-  // Verify parent owns this child
+  // Verify parent owns or follows this child
   const [child] = await db
     .select()
     .from(children)
-    .where(and(eq(children.id, childId), eq(children.parentId, session.parentId)))
+    .where(eq(children.id, childId))
     .limit(1);
 
   if (!child) {
     return Response.json({ error: 'Child not found' }, { status: 404 });
+  }
+
+  // Check ownership or follower access
+  const isOwner = child.parentId === session.parentId;
+  if (!isOwner) {
+    const [followerLink] = await db
+      .select()
+      .from(childParents)
+      .where(and(eq(childParents.childId, childId), eq(childParents.parentId, session.parentId)))
+      .limit(1);
+    if (!followerLink) {
+      return Response.json({ error: 'Child not found' }, { status: 404 });
+    }
   }
 
   // Completed sessions for this child

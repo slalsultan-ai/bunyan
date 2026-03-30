@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const updates: Record<string, unknown> = {};
   if (body.name?.trim()) updates.name = body.name.trim();
-  if (body.age && body.age >= 4 && body.age <= 12) {
+  if (body.age != null && Number.isInteger(body.age) && body.age >= 4 && body.age <= 12) {
     updates.age = body.age;
     updates.ageGroup = computeAgeGroup(body.age);
   }

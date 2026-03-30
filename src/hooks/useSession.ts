@@ -25,12 +25,17 @@ export function useSession() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const [sessionStartTime] = useState(Date.now());
+  const completionTimeRef = useRef<number | null>(null);
   const questionStartTime = useRef(Date.now());
+
+  const [error, setError] = useState(false);
 
   const loadQuestions = useCallback(async (ageGroup: AgeGroup, skillArea: SkillArea, difficulty: Difficulty = 'mixed') => {
     setPhase('loading');
+    setError(false);
     try {
       const res = await fetch(`/api/questions?age_group=${ageGroup}&skill_area=${skillArea}&difficulty=${difficulty}&count=10`);
+      if (!res.ok) throw new Error('fetch failed');
       const data = await res.json();
       if (data.questions?.length > 0) {
         setQuestions(data.questions);
@@ -40,9 +45,13 @@ export function useSession() {
         setReveal(null);
         questionStartTime.current = Date.now();
         setPhase('answering');
+      } else {
+        setError(true);
+        setPhase('loading');
       }
     } catch (e) {
       console.error(e);
+      setError(true);
     }
   }, []);
 
@@ -73,7 +82,8 @@ export function useSession() {
         onResult?.(data.isCorrect);
       })
       .catch(() => {
-        // Network error: record as unanswered and allow continuing
+        // Network error: record as wrong, show a fallback reveal so user can continue
+        setReveal({ correctOptionIndex: -1, explanationAr: 'حدث خطأ في الاتصال', isCorrect: false });
         setAnswers(prev => [...prev, {
           questionId: q.id,
           selectedOption: optionIndex,
@@ -87,6 +97,7 @@ export function useSession() {
   const nextQuestion = useCallback(() => {
     const next = currentIndex + 1;
     if (next >= questions.length) {
+      completionTimeRef.current = Date.now() - sessionStartTime;
       setPhase('completed');
     } else {
       setCurrentIndex(next);
@@ -98,7 +109,7 @@ export function useSession() {
   }, [currentIndex, questions.length]);
 
   const score = answers.filter(a => a.isCorrect).length;
-  const timeTakenMs = Date.now() - sessionStartTime;
+  const timeTakenMs = completionTimeRef.current ?? (Date.now() - sessionStartTime);
   const currentQuestion = questions[currentIndex] || null;
   const progress = questions.length > 0 ? ((currentIndex) / questions.length) * 100 : 0;
 
@@ -107,6 +118,7 @@ export function useSession() {
     currentQuestion,
     currentIndex,
     phase,
+    error,
     answers,
     selectedOption,
     reveal,

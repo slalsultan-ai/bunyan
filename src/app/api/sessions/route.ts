@@ -144,6 +144,12 @@ export async function POST(req: NextRequest) {
 
     if (incomingId) {
       // Session was pre-registered via /api/sessions/start — update it
+      // Verify the session belongs to this guest before updating
+      const [existingSession] = await db.select({ guestId: sessions.guestId })
+        .from(sessions).where(eq(sessions.id, incomingId)).limit(1);
+      if (!existingSession || existingSession.guestId !== guestId) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
       await db.update(sessions).set({
         score: serverScore,
         totalQuestions: serverTotal,
@@ -238,17 +244,24 @@ export async function POST(req: NextRequest) {
               ));
 
             if ((recent?.cnt ?? 0) === 0) {
-              // Log to emailLog, then send fire-and-forget
-              db.insert(emailLog).values({
-                id: crypto.randomUUID(),
+              const logId = crypto.randomUUID();
+              // Log first with 'pending' status, then send, then update to 'sent'
+              await db.insert(emailLog).values({
+                id: logId,
                 parentId: childRow.parentId,
                 weekNumber: 0,
-                status: 'sent',
+                status: 'pending',
                 emailType: 'achievement',
               }).catch(console.error);
 
               sendAchievementEmail(parentRow.email, childRow.name, serverScore, serverTotal, [])
-                .catch(console.error);
+                .then(() => {
+                  db.update(emailLog).set({ status: 'sent' }).where(eq(emailLog.id, logId)).catch(console.error);
+                })
+                .catch((err) => {
+                  console.error('Achievement email failed:', err);
+                  db.update(emailLog).set({ status: 'failed' }).where(eq(emailLog.id, logId)).catch(console.error);
+                });
             }
           }
         }

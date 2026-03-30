@@ -33,7 +33,7 @@ function Counter({ target, suffix }: { target: number; suffix: string }) {
     return () => obs.disconnect();
   }, [target]);
 
-  return <div ref={ref} className="text-4xl font-extrabold text-emerald-600">{count}{suffix}</div>;
+  return <div ref={ref} className="text-4xl font-extrabold text-white">{count}{suffix}</div>;
 }
 
 export default function StatsSection() {
@@ -44,9 +44,7 @@ export default function StatsSection() {
           {STATS.map((s, i) => (
             <div key={i} className="text-white">
               <div className="text-3xl mb-2">{s.icon}</div>
-              <div className="text-4xl font-extrabold text-white">
-                {s.value}{s.suffix}
-              </div>
+              <Counter target={s.value} suffix={s.suffix} />
               <div className="text-emerald-200 text-sm mt-1">{s.label}</div>
             </div>
           ))}

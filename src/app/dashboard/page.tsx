@@ -39,9 +39,11 @@ export default function DashboardPage() {
   const [shareLinks, setShareLinks] = useState<Record<string, string>>({});
   const [sharingId, setSharingId] = useState<string | null>(null);
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(data => {
         if (!data.parent) {
           router.push('/auth?redirect=/dashboard');
@@ -49,6 +51,9 @@ export default function DashboardPage() {
         }
         setParent(data.parent);
         setChildrenList(data.children);
+      })
+      .catch(() => {
+        router.push('/auth?redirect=/dashboard');
       })
       .finally(() => setLoading(false));
   }, [router]);
@@ -59,10 +64,17 @@ export default function DashboardPage() {
   }
 
   async function deleteChild(id: string) {
-    const res = await fetch(`/api/children/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setChildrenList(prev => prev.filter(c => c.id !== id));
-      setDeleteConfirm(null);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/children/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setChildrenList(prev => prev.filter(c => c.id !== id));
+        setDeleteConfirm(null);
+      } else {
+        setDeleteError('فشل حذف الطفل. حاول مرة أخرى.');
+      }
+    } catch {
+      setDeleteError('حدث خطأ في الاتصال. حاول مرة أخرى.');
     }
   }
 
@@ -152,11 +164,14 @@ export default function DashboardPage() {
               {childrenList.map(child => (
                 <div key={child.id}>
                   {deleteConfirm === child.id ? (
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
-                      <p className="text-sm text-red-700 font-medium">تأكيد حذف {child.name}؟</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => setDeleteConfirm(null)} className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100">إلغاء</button>
-                        <button onClick={() => deleteChild(child.id)} className="text-sm bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600">حذف</button>
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                      {deleteError && <p className="text-xs text-red-600 mb-2">{deleteError}</p>}
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-red-700 font-medium">تأكيد حذف {child.name}؟</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => setDeleteConfirm(null)} className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100">إلغاء</button>
+                          <button onClick={() => deleteChild(child.id)} className="text-sm bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600">حذف</button>
+                        </div>
                       </div>
                     </div>
                   ) : (

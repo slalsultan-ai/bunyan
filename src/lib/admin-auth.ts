@@ -86,7 +86,7 @@ interface OtpRecord {
 }
 
 export async function createOtpChallenge(): Promise<string> {
-  const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+  const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000)); // 6 digits
   const codeHash = await hashCode(code);
   const record: OtpRecord = {
     codeHash,

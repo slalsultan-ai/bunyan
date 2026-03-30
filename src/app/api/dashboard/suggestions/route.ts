@@ -1,6 +1,6 @@
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
-import { sessions, sessionAnswers, questions, children } from '@/lib/db/schema';
+import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
 import { eq, and, isNotNull, sql, desc } from 'drizzle-orm';
 
 const SKILL_LABELS: Record<string, string> = {
@@ -16,10 +16,26 @@ export async function GET() {
   }
 
   const db = getDb();
-  const childRows = await db
+
+  // Owned children
+  const ownedChildren = await db
     .select()
     .from(children)
     .where(eq(children.parentId, session.parentId));
+
+  // Followed children
+  const followedLinks = await db
+    .select({ childId: childParents.childId })
+    .from(childParents)
+    .where(and(eq(childParents.parentId, session.parentId), eq(childParents.role, 'follower')));
+
+  const followedChildren = [];
+  for (const link of followedLinks) {
+    const [child] = await db.select().from(children).where(eq(children.id, link.childId)).limit(1);
+    if (child) followedChildren.push(child);
+  }
+
+  const childRows = [...ownedChildren, ...followedChildren];
 
   const suggestions: Array<{
     childId: string;

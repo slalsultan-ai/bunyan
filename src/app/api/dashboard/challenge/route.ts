@@ -1,6 +1,6 @@
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
-import { weeklyChallenges, challengeProgress, children, sessions, sessionAnswers } from '@/lib/db/schema';
+import { weeklyChallenges, challengeProgress, children, childParents, sessions, sessionAnswers } from '@/lib/db/schema';
 import { eq, and, isNotNull, sql } from 'drizzle-orm';
 
 const ROTATING_CHALLENGES = [
@@ -59,11 +59,24 @@ export async function GET() {
       .limit(1);
   }
 
-  // Get parent's children
-  const childRows = await db
+  // Get parent's owned + followed children
+  const ownedChildren = await db
     .select()
     .from(children)
     .where(eq(children.parentId, session.parentId));
+
+  const followedLinks = await db
+    .select({ childId: childParents.childId })
+    .from(childParents)
+    .where(and(eq(childParents.parentId, session.parentId), eq(childParents.role, 'follower')));
+
+  const followedChildren = [];
+  for (const link of followedLinks) {
+    const [child] = await db.select().from(children).where(eq(children.id, link.childId)).limit(1);
+    if (child) followedChildren.push(child);
+  }
+
+  const childRows = [...ownedChildren, ...followedChildren];
 
   // Build progress for each child
   const progress: Array<{ childId: string; childName: string; currentValue: number; completed: boolean }> = [];

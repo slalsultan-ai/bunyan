@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
 import { otpCodes, parents } from '@/lib/db/schema';
-import { hashCode, createParentSession, setParentCookie } from '@/lib/parent-auth';
+import { hashCode, createParentSession, setParentCookie, safeCompare } from '@/lib/parent-auth';
 import { rateLimit, getIp } from '@/lib/rate-limit';
 import { eq, and } from 'drizzle-orm';
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   const inputHash = await hashCode(code);
-  if (inputHash !== otp.codeHash) {
+  if (!safeCompare(inputHash, otp.codeHash)) {
     await db.update(otpCodes)
       .set({ attempts: (otp.attempts ?? 0) + 1 })
       .where(eq(otpCodes.id, otp.id));

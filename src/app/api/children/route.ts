@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const name = (body.name || '').trim();
   const age = Number(body.age);
 
-  if (!name || !age || age < 4 || age > 12) {
+  if (!name || !Number.isInteger(age) || age < 4 || age > 12) {
     return Response.json({ error: 'الاسم والعمر مطلوبان (العمر ٤-١٢)' }, { status: 400 });
   }
 
