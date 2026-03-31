@@ -32,6 +32,7 @@ interface SessionInfo {
   startedAt: string;
   completedAt: string | null;
   ipAddress: string | null;
+  answerCount: number;
 }
 
 interface Stats {
@@ -253,8 +254,9 @@ export default function AdminDashboard() {
             <p className="text-xs text-gray-400 mt-0.5">
               آخر 50 جلسة — {(() => {
                 const completed = stats.sessions.filter(s => s.completedAt).length;
-                const fake = stats.sessions.filter(s => s.score === null && !s.completedAt).length;
-                return `${completed} مكتملة، ${fake} وهمية محتملة`;
+                const incomplete = stats.sessions.filter(s => !s.completedAt && s.answerCount > 0).length;
+                const fake = stats.sessions.filter(s => !s.completedAt && s.answerCount === 0).length;
+                return `${completed} مكتملة، ${incomplete} غير مكتملة، ${fake} وهمية محتملة`;
               })()}
             </p>
           </div>
@@ -266,7 +268,7 @@ export default function AdminDashboard() {
             )}
             <button
               onClick={async () => {
-                if (!confirm('هل تريد حذف جميع الجلسات غير المكتملة (بدون نتيجة)؟')) return;
+                if (!confirm('هل تريد حذف الجلسات الوهمية فقط (بدون أي إجابات)؟ الجلسات غير المكتملة التي فيها إجابات جزئية لن تُحذف.')) return;
                 setDeleting(true);
                 setDeleteResult(null);
                 try {
@@ -308,10 +310,11 @@ export default function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {stats.sessions.map(s => {
-                const isSuspicious = s.score === null && s.completedAt === null;
+                const isIncomplete = !s.completedAt && s.answerCount > 0;
+                const isSuspicious = !s.completedAt && s.answerCount === 0;
                 const pct = s.score != null && s.totalQuestions > 0 ? Math.round((s.score / s.totalQuestions) * 100) : null;
                 return (
-                  <tr key={s.id} className={`transition-colors ${isSuspicious ? 'bg-amber-50/50' : 'hover:bg-gray-50'}`}>
+                  <tr key={s.id} className={`transition-colors ${isSuspicious ? 'bg-amber-50/50' : isIncomplete ? 'bg-blue-50/30' : 'hover:bg-gray-50'}`}>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${s.parentId ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                         {s.parentId ? 'مسجّل' : 'زائر'}
@@ -324,6 +327,8 @@ export default function AdminDashboard() {
                         <span className={`font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
                           {s.score}/{s.totalQuestions} ({pct}٪)
                         </span>
+                      ) : isIncomplete ? (
+                        <span className="text-blue-500 text-xs">أجاب {s.answerCount}/{s.totalQuestions}</span>
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
@@ -332,8 +337,10 @@ export default function AdminDashboard() {
                     <td className="px-4 py-3">
                       {s.completedAt ? (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">مكتملة</span>
+                      ) : isIncomplete ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">غير مكتملة</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{isSuspicious ? 'وهمية؟' : 'جارية'}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">وهمية؟</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{s.startedAt ? formatDateRiyadh(s.startedAt) : '—'}</td>

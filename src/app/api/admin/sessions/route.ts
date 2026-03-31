@@ -15,8 +15,8 @@ export async function GET() {
   const [counts] = await db.select({
     total: sql<number>`COUNT(*)`,
     completed: sql<number>`SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END)`,
-    incomplete: sql<number>`SUM(CASE WHEN completed_at IS NULL THEN 1 ELSE 0 END)`,
-    fake: sql<number>`SUM(CASE WHEN score IS NULL AND completed_at IS NULL THEN 1 ELSE 0 END)`,
+    incomplete: sql<number>`SUM(CASE WHEN completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) > 0 THEN 1 ELSE 0 END)`,
+    fake: sql<number>`SUM(CASE WHEN score IS NULL AND completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) = 0 THEN 1 ELSE 0 END)`,
   }).from(sessions);
 
   return NextResponse.json({
@@ -35,20 +35,23 @@ export async function DELETE() {
 
   const db = getDb();
 
-  // Find incomplete session IDs
-  const incompleteSessions = await db
+  // Find truly fake sessions: no score, no completedAt, AND zero answers
+  const fakeSessions = await db
     .select({ id: sessions.id })
     .from(sessions)
-    .where(and(isNull(sessions.score), isNull(sessions.completedAt)));
+    .where(and(
+      isNull(sessions.score),
+      isNull(sessions.completedAt),
+      sql`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id}) = 0`
+    ));
 
-  if (incompleteSessions.length === 0) {
+  if (fakeSessions.length === 0) {
     return NextResponse.json({ deleted: 0 });
   }
 
-  const ids = incompleteSessions.map(s => s.id);
+  const ids = fakeSessions.map(s => s.id);
 
-  // Delete associated answers first, then sessions
-  await db.delete(sessionAnswers).where(inArray(sessionAnswers.sessionId, ids));
+  // Delete fake sessions (no answers to delete since count is 0)
   await db.delete(sessions).where(inArray(sessions.id, ids));
 
   return NextResponse.json({ deleted: ids.length });

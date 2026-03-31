@@ -61,6 +61,7 @@ export async function GET() {
       startedAt: sessions.startedAt,
       completedAt: sessions.completedAt,
       ipAddress: sessions.ipAddress,
+      answerCount: sql<number>`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id})`,
     }).from(sessions).orderBy(desc(sessions.startedAt)).limit(50),
   ]);
 
