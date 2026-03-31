@@ -11,7 +11,8 @@ import RegisterPrompt from '@/components/auth/RegisterPrompt';
 function ResultsContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const [childName, setChildName] = useState('');
+  const childNameParam = params.get('child') || '';
+  const [childName, setChildName] = useState(childNameParam);
 
   const total = Math.min(Math.max(parseInt(params.get('total') || '10'), 1), 100);
   const score = Math.min(Math.max(parseInt(params.get('score') || '0'), 0), total);
@@ -58,7 +59,10 @@ function ResultsContent() {
             </div>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {isPerfect ? 'ممتاز! علامة كاملة! 🎉' : pct >= 80 ? 'أحسنت! أداء رائع!' : pct >= 60 ? 'جيد! استمر في التدريب' : 'لا بأس، حاول مرة أخرى!'}
+            {childNameParam
+              ? (isPerfect ? `${childNameParam} حصل على علامة كاملة! 🎉` : pct >= 80 ? `أحسنت يا ${childNameParam}! أداء رائع!` : pct >= 60 ? `جيد يا ${childNameParam}! استمر في التدريب` : `لا بأس يا ${childNameParam}، حاول مرة أخرى!`)
+              : (isPerfect ? 'ممتاز! علامة كاملة! 🎉' : pct >= 80 ? 'أحسنت! أداء رائع!' : pct >= 60 ? 'جيد! استمر في التدريب' : 'لا بأس، حاول مرة أخرى!')
+            }
           </h2>
           <p className="text-gray-600 text-sm">مهارة {getSkillAreaLabel(skill as never)} — {age} سنوات</p>
         </div>

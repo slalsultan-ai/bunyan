@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { formatTime } from '@/lib/utils';
+import { formatTime, formatDateRiyadh } from '@/lib/utils';
 
 interface ChildInfo {
   id: string;
@@ -235,8 +235,8 @@ export default function AdminDashboard() {
                         {p.weeklyEmailEnabled ? 'مفعّل' : 'معطّل'}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-gray-400 text-xs">{p.createdAt?.slice(0, 10) || '—'}</td>
-                    <td className="px-5 py-3 text-gray-400 text-xs">{p.lastLoginAt?.slice(0, 16).replace('T', ' ') || '—'}</td>
+                    <td className="px-5 py-3 text-gray-400 text-xs">{p.createdAt ? formatDateRiyadh(p.createdAt, 'date') : '—'}</td>
+                    <td className="px-5 py-3 text-gray-400 text-xs">{p.lastLoginAt ? formatDateRiyadh(p.lastLoginAt) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
                         <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{isSuspicious ? 'وهمية؟' : 'جارية'}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{s.startedAt?.slice(0, 16).replace('T', ' ')}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{s.startedAt ? formatDateRiyadh(s.startedAt) : '—'}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs font-mono" dir="ltr">{s.ipAddress || '—'}</td>
                   </tr>
                 );

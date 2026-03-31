@@ -62,6 +62,31 @@ export function generateGuestId(): string {
   return crypto.randomUUID();
 }
 
+/** Format a date/ISO string in Riyadh timezone (GMT+3) for dashboard display */
+export function formatDateRiyadh(date: string | Date, style: 'date' | 'datetime' = 'datetime'): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '—';
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Riyadh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    ...(style === 'datetime' ? { hour: '2-digit', minute: '2-digit', hour12: false } : {}),
+  };
+  return d.toLocaleString('en-GB', { ...options });
+}
+
+/** Format a date in Riyadh timezone showing only MM-DD (for charts) */
+export function formatDateRiyadhShort(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-GB', {
+    timeZone: 'Asia/Riyadh',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
 export function getTodayDateString(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

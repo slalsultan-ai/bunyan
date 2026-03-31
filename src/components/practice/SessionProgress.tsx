@@ -10,9 +10,10 @@ interface SessionProgressProps {
   skillArea: string;
   muted: boolean;
   onToggleMute: () => void;
+  childName?: string | null;
 }
 
-export default function SessionProgress({ current, total, score, pointsThisSession, onExit, ageGroup, skillArea, muted, onToggleMute }: SessionProgressProps) {
+export default function SessionProgress({ current, total, score, pointsThisSession, onExit, ageGroup, skillArea, muted, onToggleMute, childName }: SessionProgressProps) {
   const pct = total > 0 ? (current / total) * 100 : 0;
 
   return (
@@ -42,9 +43,16 @@ export default function SessionProgress({ current, total, score, pointsThisSessi
               {muted ? '🔇' : '🔊'}
             </button>
           </div>
-          <span className="text-sm font-semibold text-gray-700">
-            سؤال {current} من {total}
-          </span>
+          <div className="flex items-center gap-2">
+            {childName && (
+              <span className="text-sm font-bold text-emerald-600">
+                🧒 {childName} يتدرب الآن
+              </span>
+            )}
+            <span className="text-sm font-semibold text-gray-700">
+              سؤال {current} من {total}
+            </span>
+          </div>
           <div className="flex items-center gap-1 text-amber-600 font-bold text-sm">
             <span>⭐</span>
             <span>{pointsThisSession}</span>

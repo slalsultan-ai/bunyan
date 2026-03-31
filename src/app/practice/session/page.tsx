@@ -10,6 +10,7 @@ import SessionProgress from '@/components/practice/SessionProgress';
 import QuestionCard from '@/components/practice/QuestionCard';
 import AnswerOption from '@/components/practice/AnswerOption';
 import ExplanationPanel from '@/components/practice/ExplanationPanel';
+import { useSelectedChild } from '@/hooks/useSelectedChild';
 import { AgeGroup, SkillArea } from '@/types';
 
 function SessionContent() {
@@ -19,6 +20,7 @@ function SessionContent() {
   const skillArea = (searchParams.get('skill') || 'mixed') as SkillArea;
 
   const session = useSession();
+  const { selectedChild } = useSelectedChild();
   const { state, recordSession } = useGuest();
   const [pointsThisSession, setPointsThisSession] = useState(0);
   const [exitConfirm, setExitConfirm] = useState(false);
@@ -97,6 +99,7 @@ function SessionContent() {
         skill: skillArea,
         age: ageGroup,
         badges: newBadges.join(','),
+        ...(selectedChild?.name ? { child: selectedChild.name } : {}),
       });
       router.push(`/results?${params.toString()}`);
     }
@@ -162,6 +165,7 @@ function SessionContent() {
         skillArea={skillArea}
         muted={muted}
         onToggleMute={() => setMuted(m => !m)}
+        childName={selectedChild?.name}
       />
 
       <div className="flex-1 overflow-y-auto">

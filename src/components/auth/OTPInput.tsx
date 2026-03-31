@@ -1,5 +1,5 @@
 'use client';
-import { useRef, KeyboardEvent, ClipboardEvent } from 'react';
+import { useRef, useCallback, KeyboardEvent, ClipboardEvent, ChangeEvent } from 'react';
 
 interface OTPInputProps {
   value: string;
@@ -10,49 +10,73 @@ interface OTPInputProps {
 export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
-  const digits = value.padEnd(6, '').split('').slice(0, 6);
+  // Always produce a 6-char array; use empty string for unfilled slots
+  const digits: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const ch = value[i];
+    digits.push(ch && /\d/.test(ch) ? ch : '');
+  }
 
-  function handleChange(index: number, char: string) {
-    const cleaned = char.replace(/\D/g, '');
-    if (cleaned.length > 1) {
-      // Typed or autofilled multiple digits — treat like paste
-      const filled = cleaned.slice(0, 6);
-      onChange(filled.padEnd(6, '').slice(0, 6));
-      const lastFilled = Math.min(filled.length, 5);
-      inputsRef.current[lastFilled]?.focus();
+  const buildValue = useCallback(
+    (arr: string[]) => arr.join('').replace(/\D/g, '').padEnd(6, ' ').slice(0, 6).replace(/ /g, ''),
+    [],
+  );
+
+  function focusInput(index: number) {
+    const clamped = Math.max(0, Math.min(index, 5));
+    // Use requestAnimationFrame to ensure the DOM is ready (fixes iOS Safari)
+    requestAnimationFrame(() => {
+      inputsRef.current[clamped]?.focus();
+    });
+  }
+
+  function handleChange(index: number, e: ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, '');
+
+    if (raw.length > 1) {
+      // Multi-digit input (autofill or fast typing) — treat as paste
+      const filled = raw.slice(0, 6);
+      onChange(filled);
+      focusInput(Math.min(filled.length, 5));
       return;
     }
-    const digit = cleaned.slice(-1);
-    const next = digits.map((d, i) => (i === index ? digit : d)).join('');
-    onChange(next.slice(0, 6));
+
+    const digit = raw.slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    onChange(next.join(''));
+
     if (digit && index < 5) {
-      inputsRef.current[index + 1]?.focus();
+      focusInput(index + 1);
     }
   }
 
   function handleKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Backspace') {
+      e.preventDefault();
       if (digits[index]) {
-        const next = digits.map((d, i) => (i === index ? '' : d)).join('');
-        onChange(next);
+        const next = [...digits];
+        next[index] = '';
+        onChange(next.join(''));
       } else if (index > 0) {
-        inputsRef.current[index - 1]?.focus();
-        const next = digits.map((d, i) => (i === index - 1 ? '' : d)).join('');
-        onChange(next);
+        const next = [...digits];
+        next[index - 1] = '';
+        onChange(next.join(''));
+        focusInput(index - 1);
       }
     } else if (e.key === 'ArrowLeft' && index > 0) {
-      inputsRef.current[index - 1]?.focus();
+      focusInput(index - 1);
     } else if (e.key === 'ArrowRight' && index < 5) {
-      inputsRef.current[index + 1]?.focus();
+      focusInput(index + 1);
     }
   }
 
   function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    onChange(pasted.padEnd(6, '').slice(0, 6));
-    const lastFilled = Math.min(pasted.length, 5);
-    inputsRef.current[lastFilled]?.focus();
+    if (!pasted) return;
+    onChange(pasted);
+    focusInput(Math.min(pasted.length, 5));
   }
 
   return (
@@ -65,14 +89,23 @@ export default function OTPInput({ value, onChange, disabled }: OTPInputProps) {
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
-          value={digits[i] || ''}
-          onChange={e => handleChange(i, e.target.value)}
+          value={digits[i]}
+          onChange={e => handleChange(i, e)}
           onKeyDown={e => handleKeyDown(i, e)}
           onPaste={handlePaste}
           onFocus={e => e.target.select()}
           disabled={disabled}
-          className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50 disabled:bg-gray-50 bg-white text-gray-900 border-gray-300"
+          maxLength={6}
           aria-label={`الرقم ${i + 1}`}
+          style={{
+            color: '#1F2937',
+            backgroundColor: '#FFFFFF',
+            caretColor: '#1F2937',
+            fontSize: '1.25rem',
+            opacity: 1,
+            WebkitTextFillColor: '#1F2937',
+          }}
+          className="w-10 h-12 sm:w-12 sm:h-14 text-center sm:text-2xl font-bold border-2 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50 disabled:bg-gray-50 border-gray-300"
         />
       ))}
     </div>

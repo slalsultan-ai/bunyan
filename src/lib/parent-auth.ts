@@ -38,6 +38,9 @@ export async function createParentSession(parentId: string): Promise<string> {
   return token;
 }
 
+// Renew the session if less than 7 days remain (sliding session)
+const SESSION_RENEWAL_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
+
 export async function getParentSession(): Promise<ParentSession | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
@@ -57,10 +60,30 @@ export async function getParentSession(): Promise<ParentSession | null> {
     .limit(1);
 
   if (!row) return null;
-  if (new Date(row.expiresAt) < new Date()) {
+
+  const expiresAt = new Date(row.expiresAt);
+  if (expiresAt < new Date()) {
     // Expired — delete it
     await db.delete(parentSessions).where(eq(parentSessions.token, token));
     return null;
+  }
+
+  // Sliding session: if less than 7 days remain, extend to 30 days from now
+  const remaining = expiresAt.getTime() - Date.now();
+  if (remaining < SESSION_RENEWAL_THRESHOLD_MS) {
+    const newExpiry = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+    await db
+      .update(parentSessions)
+      .set({ expiresAt: newExpiry })
+      .where(eq(parentSessions.token, token));
+    // Re-set the cookie with fresh maxAge
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_TTL_MS / 1000,
+      path: '/',
+    });
   }
 
   return { parentId: row.parentId, email: row.email };
@@ -107,9 +130,29 @@ export async function getAuthenticatedParent() {
     .limit(1);
 
   if (!row) return null;
-  if (new Date(row.parent_sessions.expiresAt) < new Date()) {
+
+  const expiresAt = new Date(row.parent_sessions.expiresAt);
+  if (expiresAt < new Date()) {
     await db.delete(parentSessions).where(eq(parentSessions.token, token));
     return null;
+  }
+
+  // Sliding session renewal
+  const remaining = expiresAt.getTime() - Date.now();
+  if (remaining < SESSION_RENEWAL_THRESHOLD_MS) {
+    const cookieStore = await cookies();
+    const newExpiry = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+    await db
+      .update(parentSessions)
+      .set({ expiresAt: newExpiry })
+      .where(eq(parentSessions.token, token));
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_TTL_MS / 1000,
+      path: '/',
+    });
   }
 
   return row.parents;

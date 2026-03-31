@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useSelectedChild } from '@/hooks/useSelectedChild';
 
 interface Child {
   id: string;
@@ -23,6 +24,7 @@ const AGE_GROUP_LABEL: Record<string, string> = {
 const CHILD_AVATAR = ['👦', '👧', '🧒'];
 
 export default function ChildCard({ child, onDelete, onEdit }: ChildCardProps) {
+  const { setSelectedChildId } = useSelectedChild();
   const avatar = CHILD_AVATAR[(child.name.charCodeAt(0) || 0) % CHILD_AVATAR.length];
 
   return (
@@ -58,6 +60,7 @@ export default function ChildCard({ child, onDelete, onEdit }: ChildCardProps) {
       <div className="flex gap-2">
         <Link
           href={`/practice?age=${child.ageGroup}`}
+          onClick={() => setSelectedChildId(child.id)}
           className="flex-1 bg-emerald-600 text-white text-sm font-bold py-2.5 rounded-xl text-center hover:bg-emerald-700 transition-colors"
         >
           ابدأ جلسة

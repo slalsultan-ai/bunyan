@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { formatTime } from '@/lib/utils';
+import { formatTime, formatDateRiyadhShort } from '@/lib/utils';
 
 interface Analytics {
   dailySessions: { date: string; cnt: number; avgScore: number }[];
@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
                   style={{ height: `${Math.max(4, (d.cnt / maxDailyCnt) * 120)}px` }}
                   title={`${d.date}: ${d.cnt} جلسة — متوسط ${d.avgScore}٪`}
                 />
-                <span className="text-xs text-gray-400 rotate-45 origin-right whitespace-nowrap">{d.date.slice(5)}</span>
+                <span className="text-xs text-gray-400 rotate-45 origin-right whitespace-nowrap">{formatDateRiyadhShort(d.date)}</span>
               </div>
             ))}
           </div>
@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             {data.weekAcc.map(d => (
               <div key={d.date} className="flex items-center gap-4">
-                <span className="text-sm text-gray-500 w-24 shrink-0">{d.date.slice(5)}</span>
+                <span className="text-sm text-gray-500 w-24 shrink-0">{formatDateRiyadhShort(d.date)}</span>
                 <div className="flex-1">
                   <Bar value={d.accuracy} max={100} color={d.accuracy >= 80 ? 'bg-emerald-500' : d.accuracy >= 60 ? 'bg-amber-500' : 'bg-red-500'} />
                 </div>

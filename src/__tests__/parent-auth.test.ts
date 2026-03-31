@@ -140,7 +140,8 @@ describe('getParentSession', () => {
 
   it('returns session data when valid', async () => {
     mockCookies('good-token');
-    const futureAt = new Date(Date.now() + 60_000).toISOString();
+    // Use an expiry far enough (>7 days) to avoid triggering sliding renewal
+    const futureAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
     mockSelect.mockReturnValue(makeSelectChain([{
       parentId: 'p1',
       expiresAt: futureAt,
@@ -152,5 +153,30 @@ describe('getParentSession', () => {
     expect(session).not.toBeNull();
     expect(session?.parentId).toBe('p1');
     expect(session?.email).toBe('parent@example.com');
+  });
+
+  it('renews session when less than 7 days remain', async () => {
+    const setCookie = vi.fn();
+    (cookies as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      get: () => ({ value: 'renew-token' }),
+      set: setCookie,
+    });
+    // 3 days remaining — should trigger renewal
+    const futureAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    mockSelect.mockReturnValue(makeSelectChain([{
+      parentId: 'p1',
+      expiresAt: futureAt,
+      token: 'renew-token',
+      email: 'parent@example.com',
+    }]));
+    mockUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    });
+
+    const session = await getParentSession();
+    expect(session).not.toBeNull();
+    expect(session?.parentId).toBe('p1');
+    expect(mockUpdate).toHaveBeenCalled();
+    expect(setCookie).toHaveBeenCalled();
   });
 });
