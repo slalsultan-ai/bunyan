@@ -64,7 +64,10 @@ export async function GET(req: NextRequest) {
   if (type && VALID_TYPES.has(type)) conds.push(eq(questions.questionType, type));
   if (active === 'true') conds.push(eq(questions.isActive, true));
   if (active === 'false') conds.push(eq(questions.isActive, false));
-  if (search) conds.push(like(questions.questionTextAr, `%${escapeLikePattern(search)}%`));
+  if (search) {
+    const pat = `%${escapeLikePattern(search)}%`;
+    conds.push(sql`(${like(questions.questionTextAr, pat)} OR ${like(questions.options, pat)} OR ${like(questions.explanationAr, pat)} OR ${like(questions.subSkill, pat)})`);
+  }
   if (source === 'تجميعات') conds.push(like(questions.tags, `%تجميعات%`));
   if (source === 'بنيان') conds.push(sql`(${questions.tags} IS NULL OR ${questions.tags} NOT LIKE '%تجميعات%')`);
 

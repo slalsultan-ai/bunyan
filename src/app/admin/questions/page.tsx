@@ -313,7 +313,7 @@ export default function QuestionsPage() {
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-          <input value={filters.search} onChange={e => setFilter('search', e.target.value)} placeholder="🔍 بحث..."
+          <input value={filters.search} onChange={e => setFilter('search', e.target.value)} placeholder="🔍 بحث في السؤال والخيارات والشرح..."
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none col-span-2 lg:col-span-2" />
           {[
             { key: 'age_group', opts: AGES, label: 'الفئة العمرية', labels: {} as Record<string, string> },
