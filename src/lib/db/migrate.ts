@@ -85,7 +85,11 @@ async function main() {
     const statements = sqlContent
       .split(';')
       .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith('--'));
+      .filter((s) => {
+        // Remove leading comment lines to check if there's actual SQL
+        const nonCommentLines = s.split('\n').filter((l) => !l.trim().startsWith('--') && l.trim().length > 0);
+        return nonCommentLines.length > 0;
+      });
 
     try {
       for (const stmt of statements) {
