@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sessions, sessionAnswers, guestProgress, questions as questionsTable, children, parents, emailLog } from '@/lib/db/schema';
 import { eq, and, sql, inArray, gt } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { calculateSessionPoints } from '@/lib/gamification/points';
 import { calculateStreak } from '@/lib/gamification/streaks';
 import { sendAchievementEmail } from '@/lib/email/achievement';
@@ -22,8 +22,8 @@ const MIN_MS_PER_ANSWER = 500;
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
 
-  // Burst guard (in-memory, best-effort)
-  const rl = rateLimit(`sessions:${ip}`, IP_LIMIT.max, IP_LIMIT.windowMs);
+  // Burst guard
+  const rl = await checkRateLimit(`sessions:${ip}`, IP_LIMIT.max, IP_LIMIT.windowMs / 1000);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } });
   }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daily session limit reached' }, { status: 429 });
     }
 
-    // IP daily cap — best-effort; requires migrate-add-ip.ts to have been run
+    // IP daily cap
     try {
       const [ipCap] = await db.select({ cnt: sql<number>`COUNT(*)` })
         .from(sessions)
@@ -95,7 +95,6 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Server-side answer verification ────────────────────────────────
-    // Never trust client-provided score/points/isCorrect — compute from DB
     const questionIds = parsedAnswers.map((a) => a.questionId);
     const dbQuestions = await db
       .select({ id: questionsTable.id, correctOptionIndex: questionsTable.correctOptionIndex })
@@ -112,7 +111,6 @@ export async function POST(req: NextRequest) {
         correctMap.get(a.questionId) === a.selectedOption,
     }));
 
-    // Only count answers for questions that actually exist in our DB
     const validAnswers = verifiedAnswers.filter((a) => correctMap.has(a.questionId));
     if (validAnswers.length === 0) {
       return NextResponse.json({ error: 'No valid questions found' }, { status: 400 });
@@ -133,84 +131,85 @@ export async function POST(req: NextRequest) {
     );
     const serverPoints = calculateSessionPoints(serverScore, serverTotal, isFirstSessionToday, newStreak);
 
-    // ── Persist ─────────────────────────────────────────────────────────
-    // Use the sessionId from start endpoint if provided (UPDATE existing record),
-    // otherwise INSERT a new one (backwards compatibility).
+    // ── Persist in a single transaction (idempotent) ───────────────────
     const incomingId = typeof body.sessionId === 'string' && UUID_RE.test(body.sessionId)
       ? body.sessionId
       : null;
     const sessionId = incomingId ?? crypto.randomUUID();
     const now = new Date().toISOString();
 
-    if (incomingId) {
-      // Session was pre-registered via /api/sessions/start — update it
-      // Verify the session belongs to this guest before updating
-      const [existingSession] = await db.select({ guestId: sessions.guestId })
-        .from(sessions).where(eq(sessions.id, incomingId)).limit(1);
-      if (!existingSession || existingSession.guestId !== guestId) {
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    await db.transaction(async (tx) => {
+      if (incomingId) {
+        // Session was pre-registered via /api/sessions/start — update it
+        const [existingSession] = await tx.select({ guestId: sessions.guestId })
+          .from(sessions).where(eq(sessions.id, incomingId)).limit(1);
+        if (!existingSession || existingSession.guestId !== guestId) {
+          throw new Error('SESSION_NOT_FOUND');
+        }
+        await tx.update(sessions).set({
+          score: serverScore,
+          totalQuestions: serverTotal,
+          pointsEarned: serverPoints,
+          timeTakenMs: safeTime,
+          completedAt: now,
+          ipAddress: ip,
+        }).where(eq(sessions.id, incomingId));
+      } else {
+        await tx.insert(sessions).values({
+          id: sessionId,
+          guestId,
+          ageGroup,
+          skillArea,
+          score: serverScore,
+          totalQuestions: serverTotal,
+          pointsEarned: serverPoints,
+          timeTakenMs: safeTime,
+          completedAt: now,
+          ipAddress: ip,
+        });
       }
-      await db.update(sessions).set({
-        score: serverScore,
-        totalQuestions: serverTotal,
-        pointsEarned: serverPoints,
-        timeTakenMs: safeTime,
-        completedAt: now,
-        ipAddress: ip,
-      }).where(eq(sessions.id, incomingId));
-    } else {
-      await db.insert(sessions).values({
-        id: sessionId,
+
+      // Delete old answers for this session (idempotent on retry)
+      await tx.delete(sessionAnswers).where(eq(sessionAnswers.sessionId, sessionId));
+
+      await tx.insert(sessionAnswers).values(
+        validAnswers.map((a) => ({
+          id: crypto.randomUUID(),
+          sessionId,
+          questionId: a.questionId,
+          selectedOption: a.selectedOption,
+          isCorrect: a.isCorrect,
+          timeSpentMs: a.timeSpentMs,
+        }))
+      );
+
+      await tx.insert(guestProgress).values({
         guestId,
-        ageGroup,
-        skillArea,
-        score: serverScore,
-        totalQuestions: serverTotal,
-        pointsEarned: serverPoints,
-        timeTakenMs: safeTime,
-        completedAt: now,
-        ipAddress: ip,
-      });
-    }
-
-    await db.insert(sessionAnswers).values(
-      validAnswers.map((a) => ({
-        id: crypto.randomUUID(),
-        sessionId,
-        questionId: a.questionId,
-        selectedOption: a.selectedOption,
-        isCorrect: a.isCorrect,
-        timeSpentMs: a.timeSpentMs,
-      }))
-    );
-
-    await db.insert(guestProgress).values({
-      guestId,
-      totalPoints: serverPoints,
-      totalSessions: 1,
-      totalCorrect: serverScore,
-      totalAnswered: serverTotal,
-      currentStreak: newStreak,
-      longestStreak: newStreak,
-      lastPracticeDate: today,
-      updatedAt: now,
-    }).onConflictDoUpdate({
-      target: guestProgress.guestId,
-      set: {
-        totalPoints: sql`total_points + ${serverPoints}`,
-        totalSessions: sql`total_sessions + 1`,
-        totalCorrect: sql`total_correct + ${serverScore}`,
-        totalAnswered: sql`total_answered + ${serverTotal}`,
+        totalPoints: serverPoints,
+        totalSessions: 1,
+        totalCorrect: serverScore,
+        totalAnswered: serverTotal,
         currentStreak: newStreak,
-        longestStreak: sql`MAX(longest_streak, ${newStreak})`,
+        longestStreak: newStreak,
         lastPracticeDate: today,
         updatedAt: now,
-      },
+      }).onConflictDoUpdate({
+        target: guestProgress.guestId,
+        set: {
+          totalPoints: sql`total_points + ${serverPoints}`,
+          totalSessions: sql`total_sessions + 1`,
+          totalCorrect: sql`total_correct + ${serverScore}`,
+          totalAnswered: sql`total_answered + ${serverTotal}`,
+          currentStreak: newStreak,
+          longestStreak: sql`MAX(longest_streak, ${newStreak})`,
+          lastPracticeDate: today,
+          updatedAt: now,
+        },
+      });
     });
 
-    // ── Achievement email (fire-and-forget) ──────────────────────────────
+    // ── Achievement email (fire-and-forget, outside transaction) ────────
     if (incomingId) {
-      // Look up the session to check for childId
       const [sessionRow] = await db
         .select({ childId: sessions.childId })
         .from(sessions)
@@ -232,7 +231,6 @@ export async function POST(req: NextRequest) {
             .limit(1);
 
           if (parentRow?.achievementEmailEnabled) {
-            // Throttle: only send if no achievement email for this child in the last hour
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
             const [recent] = await db
               .select({ cnt: sql<number>`COUNT(*)` })
@@ -245,7 +243,6 @@ export async function POST(req: NextRequest) {
 
             if ((recent?.cnt ?? 0) === 0) {
               const logId = crypto.randomUUID();
-              // Log first with 'pending' status, then send, then update to 'sent'
               await db.insert(emailLog).values({
                 id: logId,
                 parentId: childRow.parentId,
@@ -270,6 +267,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ sessionId, score: serverScore, total: serverTotal, points: serverPoints });
   } catch (e) {
+    if (e instanceof Error && e.message === 'SESSION_NOT_FOUND') {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
     console.error(e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

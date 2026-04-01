@@ -3,7 +3,7 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { getDb } from '@/lib/db';
 import { siteContent } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 // Cache key prefix for TTS audio
 const TTS_PREFIX = 'tts:';
@@ -69,7 +69,7 @@ async function generateAudio(text: string): Promise<Buffer> {
 export async function POST(req: NextRequest) {
   // Rate limit: 30 requests per minute per IP
   const ip = getIp(req);
-  const rl = rateLimit(`tts:${ip}`, 30, 60_000);
+  const rl = await checkRateLimit(`tts:${ip}`, 30, 60);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }

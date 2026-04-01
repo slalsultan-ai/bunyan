@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function GET(req: NextRequest) {
   if (!await isAdminAuthenticated()) {
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Limit export to 3 times per minute — it dumps the entire DB
-  const rl = rateLimit(`export:${getIp(req)}`, 3, 60_000);
+  const rl = await checkRateLimit(`export:${getIp(req)}`, 3, 60);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }

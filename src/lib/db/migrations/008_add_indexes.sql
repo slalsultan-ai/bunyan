@@ -1,0 +1,25 @@
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_sessions_guest_id    ON sessions(guest_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_started_at  ON sessions(started_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_ip          ON sessions(ip_address);
+CREATE INDEX IF NOT EXISTS idx_questions_lookup     ON questions(age_group, skill_area, is_active);
+CREATE INDEX IF NOT EXISTS idx_questions_active     ON questions(is_active);
+CREATE INDEX IF NOT EXISTS idx_sa_question_id       ON session_answers(question_id);
+CREATE INDEX IF NOT EXISTS idx_sa_session_id        ON session_answers(session_id);
+CREATE INDEX IF NOT EXISTS idx_gp_total_points      ON guest_progress(total_points DESC);
+CREATE INDEX IF NOT EXISTS idx_parents_email        ON parents(email);
+CREATE INDEX IF NOT EXISTS idx_children_parent_id   ON children(parent_id);
+CREATE INDEX IF NOT EXISTS idx_otp_email            ON otp_codes(email);
+CREATE INDEX IF NOT EXISTS idx_ps_parent_id         ON parent_sessions(parent_id);
+CREATE INDEX IF NOT EXISTS idx_wec_week_age         ON weekly_email_content(week_number, age_group);
+CREATE INDEX IF NOT EXISTS idx_el_parent_id         ON email_log(parent_id);
+CREATE INDEX IF NOT EXISTS idx_wc_week_start        ON weekly_challenges(week_start);
+CREATE INDEX IF NOT EXISTS idx_cp_challenge_id      ON challenge_progress(challenge_id);
+CREATE INDEX IF NOT EXISTS idx_cp_child_id          ON challenge_progress(child_id);
+CREATE INDEX IF NOT EXISTS idx_chp_child_id         ON child_parents(child_id);
+CREATE INDEX IF NOT EXISTS idx_chp_parent_id        ON child_parents(parent_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_child_id    ON sessions(child_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_parent_id   ON sessions(parent_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_completed   ON sessions(child_id, completed_at);
+CREATE INDEX IF NOT EXISTS idx_el_parent_week       ON email_log(parent_id, week_number);
+CREATE INDEX IF NOT EXISTS idx_chp_invite_token     ON child_parents(invite_token);

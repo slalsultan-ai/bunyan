@@ -12,6 +12,23 @@ vi.mock('@/lib/admin-auth', () => ({
   createAdminSession: (...args: unknown[]) => mockCreateAdminSession(...args),
 }));
 
+// Track rate limit calls per key
+const rateLimitResults = new Map<string, number>();
+
+vi.mock('@/lib/rate-limit-db', () => ({
+  checkRateLimit: vi.fn(async (key: string, max: number) => {
+    const count = (rateLimitResults.get(key) ?? 0) + 1;
+    rateLimitResults.set(key, count);
+    if (count > max) {
+      return { allowed: false, remaining: 0, retryAfter: 60 };
+    }
+    return { allowed: true, remaining: max - count };
+  }),
+  getIp: vi.fn((req: { headers: { get(name: string): string | null } }) =>
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  ),
+}));
+
 const { POST } = await import('@/app/api/admin/verify/route');
 
 // ---------------------------------------------------------------------------
@@ -32,6 +49,7 @@ function makeReq(body: unknown, headers: Record<string, string> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  rateLimitResults.clear();
 });
 
 // ---------------------------------------------------------------------------

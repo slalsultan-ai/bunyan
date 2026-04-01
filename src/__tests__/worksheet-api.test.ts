@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockRateLimit = vi.fn();
+const mockCheckRateLimit = vi.fn();
 const mockGetIp = vi.fn();
 const mockSelect = vi.fn();
 
-vi.mock('@/lib/rate-limit', () => ({
-  rateLimit: mockRateLimit,
+vi.mock('@/lib/rate-limit-db', () => ({
+  checkRateLimit: mockCheckRateLimit,
   getIp: mockGetIp,
 }));
 
@@ -44,7 +44,7 @@ describe('GET /api/worksheet/questions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetIp.mockReturnValue('127.0.0.1');
-    mockRateLimit.mockReturnValue({ allowed: true });
+    mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 10 });
   });
 
   it('returns worksheet questions without answer fields', async () => {

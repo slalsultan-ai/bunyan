@@ -2,12 +2,12 @@ import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
 import { childParents, children } from '@/lib/db/schema';
 import { getParentSession } from '@/lib/parent-auth';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { eq, and } from 'drizzle-orm';
 
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
-  const rl = rateLimit(`children-join:${ip}`, 10, 15 * 60 * 1000);
+  const rl = await checkRateLimit(`children-join:${ip}`, 10, 15 * 60);
   if (!rl.allowed) {
     return Response.json({ error: 'محاولات كثيرة. انتظر قليلاً.' }, { status: 429 });
   }

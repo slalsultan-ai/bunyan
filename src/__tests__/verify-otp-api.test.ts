@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-const mockRateLimit = vi.fn().mockReturnValue({ allowed: true });
+const mockCheckRateLimit = vi.fn().mockResolvedValue({ allowed: true, remaining: 10 });
 const mockGetIp = vi.fn().mockReturnValue('1.2.3.4');
-vi.mock('@/lib/rate-limit', () => ({ rateLimit: mockRateLimit, getIp: mockGetIp }));
+vi.mock('@/lib/rate-limit-db', () => ({ checkRateLimit: mockCheckRateLimit, getIp: mockGetIp }));
 
 const mockHashCode = vi.fn();
 const mockSafeCompare = vi.fn((a: string, b: string) => a === b);

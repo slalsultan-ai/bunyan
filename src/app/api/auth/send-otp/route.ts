@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import { otpCodes } from '@/lib/db/schema';
 import { hashCode } from '@/lib/parent-auth';
 import { sendParentOtp } from '@/lib/email/otp';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { eq, and } from 'drizzle-orm';
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -11,7 +11,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
-  const { allowed, retryAfter } = rateLimit(`otp-send:${ip}`, 5, 15 * 60 * 1000);
+  const { allowed, retryAfter } = await checkRateLimit(`otp-send:${ip}`, 5, 15 * 60);
   if (!allowed) {
     return Response.json({ error: 'حاول مرة أخرى بعد قليل' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
   }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit by email: max 3 OTPs per 15 min
-  const { allowed: emailAllowed } = rateLimit(`otp-email:${email}`, 3, 15 * 60 * 1000);
+  const { allowed: emailAllowed } = await checkRateLimit(`otp-email:${email}`, 3, 15 * 60);
   if (!emailAllowed) {
     return Response.json({ error: 'تم إرسال عدة رموز لهذا البريد. انتظر 15 دقيقة.' }, { status: 429 });
   }

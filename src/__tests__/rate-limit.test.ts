@@ -1,53 +1,106 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Rate limiter uses an in-memory Map. Since the module is shared between
-// test cases in the same file, use unique keys per test.
+// Mock the DB layer
+const mockSelect = vi.fn();
+const mockInsert = vi.fn();
+const mockDelete = vi.fn();
 
-let keyCounter = 0;
-function uniqueKey() { return `test-key-${++keyCounter}`; }
+vi.mock('@/lib/db', () => ({
+  getDb: () => ({
+    select: mockSelect,
+    insert: mockInsert,
+    delete: mockDelete,
+  }),
+}));
 
-describe('rateLimit', () => {
-  it('allows first request', () => {
-    const { allowed } = rateLimit(uniqueKey(), 3, 60_000);
+vi.mock('@/lib/db/schema', () => ({
+  rateLimits: {},
+}));
+
+const { checkRateLimit, getIp } = await import('@/lib/rate-limit-db');
+
+// Helpers
+
+function makeSelectChain(result: unknown[]) {
+  return {
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockResolvedValue(result),
+  };
+}
+
+function makeInsertChain() {
+  return {
+    values: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+function makeDeleteChain() {
+  return {
+    where: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+describe('checkRateLimit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Suppress random cleanup
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+  });
+
+  it('allows first request', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([{ total: 0 }]));
+    mockInsert.mockReturnValue(makeInsertChain());
+    const { allowed } = await checkRateLimit('test-key-1', 3, 60);
     expect(allowed).toBe(true);
   });
 
-  it('allows up to max requests', () => {
-    const key = uniqueKey();
-    rateLimit(key, 3, 60_000); // 1
-    rateLimit(key, 3, 60_000); // 2
-    const { allowed } = rateLimit(key, 3, 60_000); // 3
+  it('allows up to max requests', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([{ total: 2 }]));
+    mockInsert.mockReturnValue(makeInsertChain());
+    const { allowed } = await checkRateLimit('test-key-2', 3, 60);
+    expect(allowed).toBe(true);
     expect(allowed).toBe(true);
   });
 
-  it('blocks when limit exceeded', () => {
-    const key = uniqueKey();
-    rateLimit(key, 2, 60_000); // 1
-    rateLimit(key, 2, 60_000); // 2
-    const { allowed, retryAfter } = rateLimit(key, 2, 60_000); // 3 — over limit
+  it('blocks when limit exceeded', async () => {
+    mockSelect
+      .mockReturnValueOnce(makeSelectChain([{ total: 3 }]))
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ ws: new Date().toISOString() }]),
+      });
+    const { allowed, retryAfter } = await checkRateLimit('test-key-3', 3, 60);
     expect(allowed).toBe(false);
     expect(retryAfter).toBeGreaterThan(0);
   });
 
-  it('resets after window expires', () => {
-    const key = uniqueKey();
-    // Window of 1ms — already expired on next check
-    rateLimit(key, 1, 1);
-    // Sleep briefly to ensure window expires
-    const start = Date.now();
-    while (Date.now() - start < 5) { /* spin */ }
-    const { allowed } = rateLimit(key, 1, 60_000);
-    expect(allowed).toBe(true);
+  it('returns correct remaining count', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([{ total: 1 }]));
+    mockInsert.mockReturnValue(makeInsertChain());
+    const { remaining } = await checkRateLimit('test-key-4', 5, 60);
+    expect(remaining).toBe(3); // 5 - 1 - 1 (current attempt)
   });
 
-  it('different keys are independent', () => {
-    const k1 = uniqueKey();
-    const k2 = uniqueKey();
-    rateLimit(k1, 1, 60_000);
-    rateLimit(k1, 1, 60_000); // k1 over limit
-    const { allowed } = rateLimit(k2, 1, 60_000); // k2 first use
-    expect(allowed).toBe(true);
+  it('different keys are independent', async () => {
+    // First key at limit
+    mockSelect
+      .mockReturnValueOnce(makeSelectChain([{ total: 3 }]))
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ ws: new Date().toISOString() }]),
+      });
+    const r1 = await checkRateLimit('key-full', 3, 60);
+    expect(r1.allowed).toBe(false);
+
+    // Second key empty
+    mockSelect.mockReturnValue(makeSelectChain([{ total: 0 }]));
+    mockInsert.mockReturnValue(makeInsertChain());
+    const r2 = await checkRateLimit('key-empty', 3, 60);
+    expect(r2.allowed).toBe(true);
   });
 });
 

@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'node:crypto';
 import { getDb } from '@/lib/db';
-import { siteContent } from '@/lib/db/schema';
+import { adminSessions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-const SESSION_KEY = 'admin_session';
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
-// Always verify directly from DB — no cache so logout takes effect immediately
-async function isValidToken(token: string): Promise<boolean> {
+async function isValidToken(rawToken: string): Promise<boolean> {
   try {
     const db = getDb();
-    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, SESSION_KEY));
-    if (!row) return false;
-    const val = row.value;
-    // New format: { token, expiresAt }
-    if (typeof val === 'object' && val !== null && 'token' in (val as object)) {
-      const record = val as { token: string; expiresAt: number };
-      if (Date.now() > record.expiresAt) return false;
-      return record.token === token;
-    }
-    // Legacy format: plain string
-    return typeof val === 'string' ? val === token : false;
+    const tokenHash = hashToken(rawToken);
+    const [session] = await db.select()
+      .from(adminSessions)
+      .where(eq(adminSessions.tokenHash, tokenHash))
+      .limit(1);
+
+    if (!session) return false;
+    if (new Date(session.expiresAt) < new Date()) return false;
+    return true;
   } catch {
     return false;
   }

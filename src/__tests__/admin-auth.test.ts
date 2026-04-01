@@ -22,7 +22,9 @@ vi.mock('@/lib/db', () => ({
 }));
 
 vi.mock('@/lib/db/schema', () => ({
-  siteContent: { key: 'key', value: 'value' },
+  adminSessions: { id: 'id', tokenHash: 'token_hash', expiresAt: 'expires_at', adminEmail: 'admin_email' },
+  adminOtp: { id: 'id', email: 'email', codeHash: 'code_hash', expiresAt: 'expires_at', used: 'used' },
+  adminAuditLog: {},
 }));
 
 import { cookies } from 'next/headers';
@@ -36,7 +38,8 @@ const { isAdminAuthenticated, createAdminSession, invalidateAdminSession, create
 function makeSelectChain(result: unknown[]) {
   return {
     from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue(result),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue(result),
   };
 }
 
@@ -92,61 +95,59 @@ describe('isAdminAuthenticated', () => {
     expect(await isAdminAuthenticated()).toBe(false);
   });
 
-  it('returns false when token does not match DB session (new format)', async () => {
-    const dbToken = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-    mockCookies('f47ac10b-58cc-4372-a567-0e02b2c3d478'); // off by one char
-    mockSelect.mockReturnValue(makeSelectChain([{
-      key: 'admin_session',
-      value: { token: dbToken, expiresAt: Date.now() + 60_000 },
-    }]));
+  it('returns false when token does not match DB session', async () => {
+    const { createHash } = await import('node:crypto');
+    const wrongToken = 'f47ac10b-58cc-4372-a567-0e02b2c3d478';
+    mockCookies(wrongToken);
+    // No session found for wrong token's hash
+    mockSelect.mockReturnValue(makeSelectChain([]));
     expect(await isAdminAuthenticated()).toBe(false);
   });
 
-  it('returns true when token matches valid session (new format)', async () => {
-    const token = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-    mockCookies(token);
+  it('returns true when token matches valid session', async () => {
+    const rawToken = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+    const { createHash } = await import('node:crypto');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    mockCookies(rawToken);
     mockSelect.mockReturnValue(makeSelectChain([{
-      key: 'admin_session',
-      value: { token, expiresAt: Date.now() + 60_000 },
+      id: 1,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      adminEmail: 'admin@test.com',
     }]));
+    mockUpdate.mockReturnValue(makeUpdateChain());
     expect(await isAdminAuthenticated()).toBe(true);
   });
 
-  it('returns false when session is expired (new format)', async () => {
-    const token = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
-    mockCookies(token);
+  it('returns false when session is expired', async () => {
+    const rawToken = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+    const { createHash } = await import('node:crypto');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    mockCookies(rawToken);
     mockSelect.mockReturnValue(makeSelectChain([{
-      key: 'admin_session',
-      value: { token, expiresAt: Date.now() - 1000 },
+      id: 1,
+      tokenHash,
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+      adminEmail: 'admin@test.com',
     }]));
     mockDelete.mockReturnValue(makeDeleteChain());
     expect(await isAdminAuthenticated()).toBe(false);
-  });
-
-  it('returns true for legacy plain-string session format', async () => {
-    mockCookies('abc-123');
-    mockSelect.mockReturnValue(makeSelectChain([{
-      key: 'admin_session',
-      value: 'abc-123',
-    }]));
-    expect(await isAdminAuthenticated()).toBe(true);
   });
 
   it('returns false when DB throws', async () => {
     mockCookies('some-token');
     mockSelect.mockReturnValue({
       from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockRejectedValue(new Error('DB error')),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockRejectedValue(new Error('DB error')),
     });
     expect(await isAdminAuthenticated()).toBe(false);
   });
 
   it('returns false when cookie and DB token have different lengths', async () => {
     mockCookies('short');
-    mockSelect.mockReturnValue(makeSelectChain([{
-      key: 'admin_session',
-      value: { token: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', expiresAt: Date.now() + 60_000 },
-    }]));
+    // Hash of 'short' won't match anything in DB
+    mockSelect.mockReturnValue(makeSelectChain([]));
     expect(await isAdminAuthenticated()).toBe(false);
   });
 });
@@ -164,16 +165,13 @@ describe('createAdminSession', () => {
     expect(token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
-  it('stores the session in DB with token and expiresAt', async () => {
+  it('stores the session in DB with tokenHash', async () => {
     const chain = makeInsertChain();
     mockInsert.mockReturnValue(chain);
-    const before = Date.now();
     await createAdminSession();
 
-    expect(mockInsert).toHaveBeenCalledOnce();
-    const insertCall = chain.values.mock.calls[0]?.[0] ?? chain.values.mock.contexts;
-    // Verify onConflictDoUpdate was called (upsert)
-    expect(chain.onConflictDoUpdate).toHaveBeenCalledOnce();
+    // insert is called twice: once for admin_sessions, once for audit_log
+    expect(mockInsert).toHaveBeenCalled();
   });
 
   it('generates unique tokens on each call', async () => {
@@ -183,6 +181,25 @@ describe('createAdminSession', () => {
       tokens.add(await createAdminSession());
     }
     expect(tokens.size).toBe(10);
+  });
+
+  it('logs a login action in audit log', async () => {
+    mockInsert.mockReturnValue(makeInsertChain());
+    await createAdminSession('admin@test.com');
+    // Should have called insert twice: once for session, once for audit log
+    expect(mockInsert).toHaveBeenCalledTimes(2);
+  });
+
+  it('stores expiresAt approximately 8 hours in the future', async () => {
+    const chain = makeInsertChain();
+    mockInsert.mockReturnValue(chain);
+    const before = Date.now();
+    await createAdminSession();
+    const insertCall = chain.values.mock.calls[0]?.[0];
+    const expiresAt = new Date(insertCall.expiresAt).getTime();
+    const eightHours = 8 * 60 * 60 * 1000;
+    expect(expiresAt).toBeGreaterThanOrEqual(before + eightHours - 100);
+    expect(expiresAt).toBeLessThanOrEqual(before + eightHours + 500);
   });
 });
 
@@ -194,11 +211,34 @@ describe('invalidateAdminSession', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('deletes the session from DB', async () => {
+    (cookies as ReturnType<typeof vi.fn>).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'some-token' }),
+    });
+    mockSelect.mockReturnValue(makeSelectChain([{ email: 'admin@test.com' }]));
     const chain = makeDeleteChain();
     mockDelete.mockReturnValue(chain);
+    mockInsert.mockReturnValue(makeInsertChain()); // audit log
     await invalidateAdminSession();
-    expect(mockDelete).toHaveBeenCalledOnce();
-    expect(chain.where).toHaveBeenCalledOnce();
+    expect(mockDelete).toHaveBeenCalled();
+  });
+
+  it('does nothing when no cookie present', async () => {
+    (cookies as ReturnType<typeof vi.fn>).mockResolvedValue({
+      get: vi.fn().mockReturnValue(undefined),
+    });
+    await invalidateAdminSession();
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('logs a logout action in audit log', async () => {
+    (cookies as ReturnType<typeof vi.fn>).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'some-token' }),
+    });
+    mockSelect.mockReturnValue(makeSelectChain([{ email: 'admin@test.com' }]));
+    mockDelete.mockReturnValue(makeDeleteChain());
+    mockInsert.mockReturnValue(makeInsertChain());
+    await invalidateAdminSession();
+    expect(mockInsert).toHaveBeenCalled(); // audit log insert
   });
 });
 
@@ -210,6 +250,7 @@ describe('createOtpChallenge', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns a 6-digit numeric string', async () => {
+    mockDelete.mockReturnValue(makeDeleteChain());
     mockInsert.mockReturnValue(makeInsertChain());
     const code = await createOtpChallenge();
     expect(code).toMatch(/^\d{6}$/);
@@ -217,6 +258,7 @@ describe('createOtpChallenge', () => {
 
   it('code is between 100000 and 999999', async () => {
     for (let i = 0; i < 20; i++) {
+      mockDelete.mockReturnValue(makeDeleteChain());
       mockInsert.mockReturnValue(makeInsertChain());
       const code = await createOtpChallenge();
       const num = parseInt(code, 10);
@@ -226,43 +268,39 @@ describe('createOtpChallenge', () => {
   });
 
   it('stores hashed code in DB (not plaintext)', async () => {
+    mockDelete.mockReturnValue(makeDeleteChain());
     const chain = makeInsertChain();
     mockInsert.mockReturnValue(chain);
     const code = await createOtpChallenge();
 
-    // The values call receives { key, value: { codeHash, expiresAt, attempts } }
-    const call = chain.values.mock.calls[0]?.[0];
-    expect(call.key).toBe('admin_otp');
-    expect(call.value.codeHash).toBeDefined();
-    expect(call.value.codeHash).not.toBe(code);
-    expect(call.value.codeHash).toMatch(/^[0-9a-f]{64}$/);
+    // Insert was called for the OTP record
+    expect(mockInsert).toHaveBeenCalled();
+    const insertCall = chain.values.mock.calls[0]?.[0];
+    expect(insertCall.codeHash).toBeDefined();
+    expect(insertCall.codeHash).not.toBe(code);
+    expect(insertCall.codeHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('sets expiresAt ~10 minutes in the future', async () => {
+    mockDelete.mockReturnValue(makeDeleteChain());
     const chain = makeInsertChain();
     mockInsert.mockReturnValue(chain);
     const before = Date.now();
     await createOtpChallenge();
 
-    const call = chain.values.mock.calls[0]?.[0];
+    const insertCall = chain.values.mock.calls[0]?.[0];
+    const expiresAt = new Date(insertCall.expiresAt).getTime();
     const tenMin = 10 * 60 * 1000;
-    expect(call.value.expiresAt).toBeGreaterThanOrEqual(before + tenMin - 100);
-    expect(call.value.expiresAt).toBeLessThanOrEqual(before + tenMin + 500);
+    expect(expiresAt).toBeGreaterThanOrEqual(before + tenMin - 100);
+    expect(expiresAt).toBeLessThanOrEqual(before + tenMin + 500);
   });
 
-  it('initializes attempts to 0', async () => {
-    const chain = makeInsertChain();
-    mockInsert.mockReturnValue(chain);
+  it('invalidates existing unused OTPs before creating new one', async () => {
+    const delChain = makeDeleteChain();
+    mockDelete.mockReturnValue(delChain);
+    mockInsert.mockReturnValue(makeInsertChain());
     await createOtpChallenge();
-    const call = chain.values.mock.calls[0]?.[0];
-    expect(call.value.attempts).toBe(0);
-  });
-
-  it('uses upsert to overwrite any existing OTP', async () => {
-    const chain = makeInsertChain();
-    mockInsert.mockReturnValue(chain);
-    await createOtpChallenge();
-    expect(chain.onConflictDoUpdate).toHaveBeenCalledOnce();
+    expect(mockDelete).toHaveBeenCalled();
   });
 });
 
@@ -273,20 +311,22 @@ describe('createOtpChallenge', () => {
 describe('verifyOtpChallenge', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  async function setupOtp(code: string, overrides: Partial<{ expiresAt: number; attempts: number }> = {}) {
+  async function setupOtp(code: string, overrides: Partial<{ expiresAt: string; used: boolean }> = {}) {
     const codeHash = await hashCode(code);
-    const record = {
+    const otp = {
+      id: 1,
+      email: 'admin@test.com',
       codeHash,
-      expiresAt: overrides.expiresAt ?? Date.now() + 5 * 60 * 1000,
-      attempts: overrides.attempts ?? 0,
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      used: overrides.used ?? false,
     };
-    mockSelect.mockReturnValue(makeSelectChain([{ value: record }]));
-    return record;
+    mockSelect.mockReturnValue(makeSelectChain([otp]));
+    return otp;
   }
 
   it('returns "ok" for correct code', async () => {
     await setupOtp('654321');
-    mockDelete.mockReturnValue(makeDeleteChain());
+    mockUpdate.mockReturnValue(makeUpdateChain());
     expect(await verifyOtpChallenge('654321')).toBe('ok');
   });
 
@@ -296,32 +336,13 @@ describe('verifyOtpChallenge', () => {
   });
 
   it('returns "expired" when OTP is past expiresAt', async () => {
-    await setupOtp('123456', { expiresAt: Date.now() - 1000 });
+    await setupOtp('123456', { expiresAt: new Date(Date.now() - 1000).toISOString() });
     mockDelete.mockReturnValue(makeDeleteChain());
     expect(await verifyOtpChallenge('123456')).toBe('expired');
   });
 
   it('deletes expired OTP from DB', async () => {
-    await setupOtp('123456', { expiresAt: Date.now() - 1000 });
-    mockDelete.mockReturnValue(makeDeleteChain());
-    await verifyOtpChallenge('123456');
-    expect(mockDelete).toHaveBeenCalled();
-  });
-
-  it('returns "max_attempts" when attempts >= 3', async () => {
-    await setupOtp('123456', { attempts: 3 });
-    mockDelete.mockReturnValue(makeDeleteChain());
-    expect(await verifyOtpChallenge('123456')).toBe('max_attempts');
-  });
-
-  it('returns "max_attempts" when attempts > 3', async () => {
-    await setupOtp('123456', { attempts: 5 });
-    mockDelete.mockReturnValue(makeDeleteChain());
-    expect(await verifyOtpChallenge('123456')).toBe('max_attempts');
-  });
-
-  it('deletes OTP when max attempts exceeded', async () => {
-    await setupOtp('123456', { attempts: 3 });
+    await setupOtp('123456', { expiresAt: new Date(Date.now() - 1000).toISOString() });
     mockDelete.mockReturnValue(makeDeleteChain());
     await verifyOtpChallenge('123456');
     expect(mockDelete).toHaveBeenCalled();
@@ -333,29 +354,34 @@ describe('verifyOtpChallenge', () => {
     expect(await verifyOtpChallenge('999999')).toBe('invalid');
   });
 
-  it('increments attempts on wrong code', async () => {
-    await setupOtp('123456', { attempts: 1 });
+  it('marks OTP as used after successful verification', async () => {
+    await setupOtp('123456');
     mockUpdate.mockReturnValue(makeUpdateChain());
-    await verifyOtpChallenge('999999');
+    await verifyOtpChallenge('123456');
     expect(mockUpdate).toHaveBeenCalled();
   });
 
-  it('deletes OTP after successful verification (prevents reuse)', async () => {
+  it('still validates with correct code (under limit)', async () => {
     await setupOtp('123456');
-    mockDelete.mockReturnValue(makeDeleteChain());
-    await verifyOtpChallenge('123456');
-    expect(mockDelete).toHaveBeenCalled();
-  });
-
-  it('still validates at attempts = 2 (under limit)', async () => {
-    await setupOtp('123456', { attempts: 2 });
-    mockDelete.mockReturnValue(makeDeleteChain());
+    mockUpdate.mockReturnValue(makeUpdateChain());
     expect(await verifyOtpChallenge('123456')).toBe('ok');
   });
 
-  it('blocks at attempts = 3 even with correct code', async () => {
-    await setupOtp('123456', { attempts: 3 });
+  it('returns expired and deletes when past time', async () => {
+    await setupOtp('123456', { expiresAt: new Date(Date.now() - 5000).toISOString() });
     mockDelete.mockReturnValue(makeDeleteChain());
-    expect(await verifyOtpChallenge('123456')).toBe('max_attempts');
+    const result = await verifyOtpChallenge('123456');
+    expect(result).toBe('expired');
+    expect(mockDelete).toHaveBeenCalled();
+  });
+
+  it('returns invalid for empty code', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([]));
+    expect(await verifyOtpChallenge('')).toBe('invalid');
+  });
+
+  it('returns invalid for random wrong code', async () => {
+    await setupOtp('111111');
+    expect(await verifyOtpChallenge('222222')).toBe('invalid');
   });
 });

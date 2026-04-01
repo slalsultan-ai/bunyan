@@ -1,36 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyOtpChallenge, createAdminSession } from '@/lib/admin-auth';
-
-// Rate limit: max 5 verify attempts per 15 min per IP (additional guard alongside OTP attempt counter)
-const ipAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000;
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    req.headers.get('x-real-ip') ??
-    'unknown'
-  );
-}
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const entry = ipAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    ipAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return { allowed: true };
-  }
-  if (entry.count >= MAX_ATTEMPTS) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
-  }
-  entry.count++;
-  return { allowed: true };
-}
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
-  const rateCheck = checkRateLimit(ip);
+  const ip = getIp(req);
+  const rateCheck = await checkRateLimit(`admin-verify:${ip}`, 5, 15 * 60);
 
   if (!rateCheck.allowed) {
     const mins = Math.ceil(rateCheck.retryAfter! / 60);
@@ -59,12 +33,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 401 });
   }
 
-  // OTP valid — clear IP rate limit and create session
-  ipAttempts.delete(ip);
-
+  // OTP valid — create session
   let token: string;
   try {
-    token = await createAdminSession();
+    const adminEmail = process.env.ADMIN_EMAIL || '';
+    const deviceInfo = req.headers.get('user-agent')?.slice(0, 200) || undefined;
+    token = await createAdminSession(adminEmail, deviceInfo, ip);
   } catch {
     return NextResponse.json({ error: 'خطأ في إنشاء الجلسة' }, { status: 500 });
   }

@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(`check:${getIp(req)}`, 60, 60_000);
+  const rl = await checkRateLimit(`check:${getIp(req)}`, 60, 60);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } });
   }

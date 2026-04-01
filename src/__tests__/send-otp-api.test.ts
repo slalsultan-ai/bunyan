@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-const mockRateLimit = vi.fn();
+const mockCheckRateLimit = vi.fn();
 const mockGetIp = vi.fn().mockReturnValue('1.2.3.4');
-vi.mock('@/lib/rate-limit', () => ({
-  rateLimit: mockRateLimit,
+vi.mock('@/lib/rate-limit-db', () => ({
+  checkRateLimit: mockCheckRateLimit,
   getIp: mockGetIp,
 }));
 
@@ -51,14 +51,14 @@ describe('POST /api/auth/send-otp', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: rate limit allows
-    mockRateLimit.mockReturnValue({ allowed: true });
+    mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 5 });
     mockDelete.mockReturnValue(makeDeleteChain());
     mockInsert.mockReturnValue(makeInsertChain());
     mockSendParentOtp.mockResolvedValue(undefined);
   });
 
   it('returns 429 when IP rate-limited', async () => {
-    mockRateLimit.mockReturnValueOnce({ allowed: false, retryAfter: 60 });
+    mockCheckRateLimit.mockResolvedValueOnce({ allowed: false, remaining: 0, retryAfter: 60 });
     const res = await POST(makeReq({ email: 'a@b.com' }));
     expect(res.status).toBe(429);
   });
@@ -75,9 +75,9 @@ describe('POST /api/auth/send-otp', () => {
 
   it('returns 429 when email rate-limited', async () => {
     // First call (IP): allowed. Second call (email): not allowed.
-    mockRateLimit
-      .mockReturnValueOnce({ allowed: true })
-      .mockReturnValueOnce({ allowed: false });
+    mockCheckRateLimit
+      .mockResolvedValueOnce({ allowed: true, remaining: 5 })
+      .mockResolvedValueOnce({ allowed: false, remaining: 0 });
     const res = await POST(makeReq({ email: 'x@y.com' }));
     expect(res.status).toBe(429);
   });

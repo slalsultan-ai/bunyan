@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sessions, children } from '@/lib/db/schema';
 import { sql, and, eq } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
+import { getAuthenticatedParent } from '@/lib/parent-auth';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -14,14 +15,14 @@ const MAX_STARTS_PER_GUEST_PER_DAY = 60;
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
 
-  const rl = rateLimit(`sessions-start:${ip}`, IP_LIMIT.max, IP_LIMIT.windowMs);
+  const rl = await checkRateLimit(`sessions-start:${ip}`, IP_LIMIT.max, IP_LIMIT.windowMs / 1000);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   try {
     const body = await req.json();
-    const { sessionId, guestId, ageGroup, skillArea, totalQuestions, childId, parentId } = body;
+    const { sessionId, guestId, ageGroup, skillArea, totalQuestions, childId, parentId: bodyParentId } = body;
 
     if (!sessionId || !ageGroup || !skillArea || !guestId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -45,17 +46,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daily session limit reached' }, { status: 429 });
     }
 
-    // Validate parentId/childId ownership if both provided
+    // ── Server-side auth: derive parentId from authenticated session ───
     let validChildId: string | undefined;
     let validParentId: string | undefined;
-    if (childId && UUID_RE.test(childId) && parentId && UUID_RE.test(parentId)) {
-      const [child] = await db.select({ id: children.id }).from(children)
-        .where(and(eq(children.id, childId), eq(children.parentId, parentId)))
-        .limit(1);
-      if (child) {
-        validChildId = childId;
-        validParentId = parentId;
+
+    const parent = await getAuthenticatedParent();
+
+    if (parent) {
+      // Authenticated parent — use their ID from the session, NOT from body
+      validParentId = parent.id;
+
+      // If client sent a different parentId, reject (spoofing attempt)
+      if (bodyParentId && UUID_RE.test(bodyParentId) && bodyParentId !== parent.id) {
+        return NextResponse.json({ error: 'Invalid parent' }, { status: 403 });
       }
+
+      // Validate childId belongs to this parent
+      if (childId && UUID_RE.test(childId)) {
+        const [child] = await db.select({ id: children.id }).from(children)
+          .where(and(eq(children.id, childId), eq(children.parentId, parent.id)))
+          .limit(1);
+        if (!child) {
+          return NextResponse.json({ error: 'Invalid child' }, { status: 403 });
+        }
+        validChildId = childId;
+      }
+    } else {
+      // Guest (unauthenticated) — ignore any parentId/childId from body
+      // They can only create guest sessions
     }
 
     // Insert session with completedAt = null (not yet completed)

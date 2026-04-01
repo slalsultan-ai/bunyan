@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sessions } from '@/lib/db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns']);
 
 export async function GET(req: NextRequest) {
-  const rl = rateLimit(`stats:${getIp(req)}`, 20, 60_000);
+  const rl = await checkRateLimit(`stats:${getIp(req)}`, 20, 60);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } });
   }

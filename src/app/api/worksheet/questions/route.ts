@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 
 export async function GET(req: NextRequest) {
-  const rl = rateLimit(`worksheet:${getIp(req)}`, 10, 60_000);
+  const rl = await checkRateLimit(`worksheet:${getIp(req)}`, 10, 60);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } });
   }

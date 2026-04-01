@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
 import { otpCodes, parents } from '@/lib/db/schema';
 import { hashCode, createParentSession, setParentCookie, safeCompare } from '@/lib/parent-auth';
-import { rateLimit, getIp } from '@/lib/rate-limit';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { eq, and } from 'drizzle-orm';
 
 const OTP_MAX_ATTEMPTS = 3;
@@ -10,7 +10,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
-  const { allowed } = rateLimit(`otp-verify:${ip}`, 10, 5 * 60 * 1000);
+  const { allowed } = await checkRateLimit(`otp-verify:${ip}`, 10, 5 * 60);
   if (!allowed) {
     return Response.json({ error: 'محاولات كثيرة. انتظر قليلاً.' }, { status: 429 });
   }

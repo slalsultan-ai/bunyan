@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:migrate": "tsx src/lib/db/migrate.ts",
+    "db:migrate:status": "tsx src/lib/db/migrate.ts --status",
     "test": "vitest run",
     "test:watch": "vitest"
   },

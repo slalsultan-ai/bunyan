@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { getDb } from './db';
@@ -18,8 +19,14 @@ export function computeAgeGroup(age: number): '4-5' | '6-9' | '10-12' {
   return '10-12';
 }
 
+/** Hash a token with SHA-256 for storage */
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 export async function createParentSession(parentId: string): Promise<string> {
-  const token = crypto.randomUUID();
+  const rawToken = crypto.randomUUID();
+  const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
   const db = getDb();
 
@@ -31,11 +38,11 @@ export async function createParentSession(parentId: string): Promise<string> {
   await db.insert(parentSessions).values({
     id: crypto.randomUUID(),
     parentId,
-    token,
+    token: tokenHash, // Store hash, not raw token
     expiresAt,
   });
 
-  return token;
+  return rawToken; // Return raw token for the cookie
 }
 
 // Renew the session if less than 7 days remain (sliding session)
@@ -43,9 +50,10 @@ const SESSION_RENEWAL_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function getParentSession(): Promise<ParentSession | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
+  const rawToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (!rawToken) return null;
 
+  const tokenHash = hashToken(rawToken);
   const db = getDb();
   const [row] = await db
     .select({
@@ -56,7 +64,7 @@ export async function getParentSession(): Promise<ParentSession | null> {
     })
     .from(parentSessions)
     .innerJoin(parents, eq(parentSessions.parentId, parents.id))
-    .where(eq(parentSessions.token, token))
+    .where(eq(parentSessions.token, tokenHash)) // Look up by hash
     .limit(1);
 
   if (!row) return null;
@@ -64,7 +72,7 @@ export async function getParentSession(): Promise<ParentSession | null> {
   const expiresAt = new Date(row.expiresAt);
   if (expiresAt < new Date()) {
     // Expired — delete it
-    await db.delete(parentSessions).where(eq(parentSessions.token, token));
+    await db.delete(parentSessions).where(eq(parentSessions.token, tokenHash));
     return null;
   }
 
@@ -75,9 +83,9 @@ export async function getParentSession(): Promise<ParentSession | null> {
     await db
       .update(parentSessions)
       .set({ expiresAt: newExpiry })
-      .where(eq(parentSessions.token, token));
+      .where(eq(parentSessions.token, tokenHash));
     // Re-set the cookie with fresh maxAge
-    cookieStore.set(COOKIE_NAME, token, {
+    cookieStore.set(COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -112,28 +120,30 @@ export async function clearParentCookie(): Promise<void> {
 
 export async function invalidateParentSession(token: string): Promise<void> {
   const db = getDb();
-  await db.delete(parentSessions).where(eq(parentSessions.token, token));
+  const tokenHash = hashToken(token);
+  await db.delete(parentSessions).where(eq(parentSessions.token, tokenHash));
 }
 
 // Returns parent row with children, or null if not authenticated
 export async function getAuthenticatedParent() {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
+  const rawToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (!rawToken) return null;
 
+  const tokenHash = hashToken(rawToken);
   const db = getDb();
   const [row] = await db
     .select()
     .from(parentSessions)
     .innerJoin(parents, eq(parentSessions.parentId, parents.id))
-    .where(eq(parentSessions.token, token))
+    .where(eq(parentSessions.token, tokenHash))
     .limit(1);
 
   if (!row) return null;
 
   const expiresAt = new Date(row.parent_sessions.expiresAt);
   if (expiresAt < new Date()) {
-    await db.delete(parentSessions).where(eq(parentSessions.token, token));
+    await db.delete(parentSessions).where(eq(parentSessions.token, tokenHash));
     return null;
   }
 
@@ -145,8 +155,8 @@ export async function getAuthenticatedParent() {
     await db
       .update(parentSessions)
       .set({ expiresAt: newExpiry })
-      .where(eq(parentSessions.token, token));
-    cookieStore.set(COOKIE_NAME, token, {
+      .where(eq(parentSessions.token, tokenHash));
+    cookieStore.set(COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

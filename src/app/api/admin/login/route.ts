@@ -1,37 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOtpChallenge } from '@/lib/admin-auth';
 import { sendAdminOtp } from '@/lib/email';
-
-// Rate limit: max 3 OTP requests per 15 min per IP
-const ipAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_REQUESTS = 3;
-const WINDOW_MS = 15 * 60 * 1000;
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    req.headers.get('x-real-ip') ??
-    'unknown'
-  );
-}
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const entry = ipAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    ipAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return { allowed: true };
-  }
-  if (entry.count >= MAX_REQUESTS) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
-  }
-  entry.count++;
-  return { allowed: true };
-}
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
-  const rateCheck = checkRateLimit(ip);
+  const ip = getIp(req);
+  const rateCheck = await checkRateLimit(`admin-login:${ip}`, 3, 15 * 60);
 
   if (!rateCheck.allowed) {
     const mins = Math.ceil(rateCheck.retryAfter! / 60);

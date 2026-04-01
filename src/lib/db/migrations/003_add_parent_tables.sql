@@ -1,0 +1,38 @@
+-- Parent authentication tables
+CREATE TABLE IF NOT EXISTS parents (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  city TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  last_login_at TEXT,
+  weekly_email_enabled INTEGER DEFAULT 1,
+  current_week_number INTEGER DEFAULT 1,
+  unsubscribe_token TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS children (
+  id TEXT PRIMARY KEY NOT NULL,
+  parent_id TEXT NOT NULL REFERENCES parents(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  age INTEGER NOT NULL,
+  age_group TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS otp_codes (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  attempts INTEGER DEFAULT 0,
+  used INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS parent_sessions (
+  id TEXT PRIMARY KEY NOT NULL,
+  parent_id TEXT NOT NULL REFERENCES parents(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

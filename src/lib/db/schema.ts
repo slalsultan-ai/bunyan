@@ -146,6 +146,47 @@ export const challengeProgress = sqliteTable('challenge_progress', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ═══ Admin tables ═══
+
+export const adminSessions = sqliteTable('admin_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  adminEmail: text('admin_email').notNull(),
+  tokenHash: text('token_hash').notNull(),
+  deviceInfo: text('device_info'),
+  ipAddress: text('ip_address'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  expiresAt: text('expires_at').notNull(),
+  lastUsedAt: text('last_used_at'),
+});
+
+export const adminOtp = sqliteTable('admin_otp', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  codeHash: text('code_hash').notNull(),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  expiresAt: text('expires_at').notNull(),
+  used: integer('used', { mode: 'boolean' }).default(false),
+});
+
+export const adminAuditLog = sqliteTable('admin_audit_log', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  adminEmail: text('admin_email').notNull(),
+  action: text('action').notNull(),
+  details: text('details'),
+  ipAddress: text('ip_address'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
+// ═══ Rate limiting ═══
+
+export const rateLimits = sqliteTable('rate_limits', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull(),
+  attempts: integer('attempts').default(1),
+  windowStart: text('window_start').notNull(),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
 // ═══ Multi-parent linking ═══
 
 export const childParents = sqliteTable('child_parents', {
