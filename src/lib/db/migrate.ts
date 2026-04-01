@@ -1,11 +1,17 @@
 import { createClient } from '@libsql/client';
 import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const MIGRATIONS_DIR = join(import.meta.dirname, 'migrations');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const MIGRATIONS_DIR = join(__dirname, 'migrations');
 
 async function main() {
-  const url = process.env.TURSO_DATABASE_URL || 'file:./local.db';
+  const url = process.env.TURSO_DATABASE_URL;
+  if (!url) {
+    console.log('TURSO_DATABASE_URL not set — skipping migrations.');
+    return;
+  }
   const authToken = process.env.TURSO_AUTH_TOKEN;
 
   const client = createClient({
