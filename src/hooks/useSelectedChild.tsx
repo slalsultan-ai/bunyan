@@ -55,11 +55,24 @@ export function SelectedChildProvider({ children: reactChildren }: { children: R
           // Auto-select: if stored id not in list, select first child
           const storedId = localStorage.getItem(STORAGE_KEY);
           const ids = (data.children || []).map((c: ChildData) => c.id);
-          if (storedId && ids.includes(storedId)) {
-            setSelectedId(storedId);
-          } else if (ids.length > 0) {
-            setSelectedId(ids[0]);
-            localStorage.setItem(STORAGE_KEY, ids[0]);
+          const targetId = (storedId && ids.includes(storedId)) ? storedId : ids[0];
+          if (targetId) {
+            setSelectedId(targetId);
+            localStorage.setItem(STORAGE_KEY, targetId);
+            // Link orphaned guest sessions on initial load
+            try {
+              const guestState = localStorage.getItem('bunyan_guest');
+              if (guestState) {
+                const parsed = JSON.parse(guestState);
+                if (parsed?.guestId) {
+                  fetch('/api/sessions/link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ guestId: parsed.guestId, childId: targetId }),
+                  }).catch(() => {});
+                }
+              }
+            } catch { /* ignore */ }
           }
         } else {
           setIsLoggedIn(false);

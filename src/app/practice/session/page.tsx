@@ -20,7 +20,7 @@ function SessionContent() {
   const skillArea = (searchParams.get('skill') || 'mixed') as SkillArea;
 
   const session = useSession();
-  const { selectedChild } = useSelectedChild();
+  const { selectedChild, loading: childLoading } = useSelectedChild();
   const { state, recordSession } = useGuest();
   const [pointsThisSession, setPointsThisSession] = useState(0);
   const [exitConfirm, setExitConfirm] = useState(false);
@@ -35,9 +35,9 @@ function SessionContent() {
     session.loadQuestions(ageGroup, skillArea, 'mixed');
   }, []);
 
-  // Register session start as soon as questions are loaded (phase = 'answering')
+  // Register session start once questions are loaded AND child selection is resolved
   useEffect(() => {
-    if (session.phase === 'answering' && !startRegisteredRef.current && state?.guestId) {
+    if (session.phase === 'answering' && !startRegisteredRef.current && state?.guestId && !childLoading) {
       startRegisteredRef.current = true;
       fetch('/api/sessions/start', {
         method: 'POST',
@@ -52,7 +52,7 @@ function SessionContent() {
         }),
       }).catch(console.error);
     }
-  }, [session.phase, state?.guestId]);
+  }, [session.phase, state?.guestId, childLoading, selectedChild?.id]);
 
   useEffect(() => {
     if (session.phase === 'completed' && state && !resultSavedRef.current) {
