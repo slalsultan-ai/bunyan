@@ -158,10 +158,14 @@ export async function POST(req: NextRequest) {
     await db.transaction(async (tx) => {
       if (incomingId) {
         // Session was pre-registered via /api/sessions/start — update it
-        const [existingSession] = await tx.select({ guestId: sessions.guestId })
+        const [existingSession] = await tx.select({ guestId: sessions.guestId, completedAt: sessions.completedAt })
           .from(sessions).where(eq(sessions.id, incomingId)).limit(1);
         if (!existingSession || existingSession.guestId !== guestId) {
           throw new Error('SESSION_NOT_FOUND');
+        }
+        // Idempotency: if already completed, skip re-processing
+        if (existingSession.completedAt) {
+          return;
         }
         await tx.update(sessions).set({
           score: serverScore,

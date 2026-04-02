@@ -25,6 +25,19 @@ export function getInitialGuestState(): GuestState {
   };
 }
 
+function isValidGuestState(obj: unknown): obj is GuestState {
+  if (!obj || typeof obj !== 'object') return false;
+  const s = obj as Record<string, unknown>;
+  return (
+    typeof s.guestId === 'string' &&
+    typeof s.totalPoints === 'number' && !isNaN(s.totalPoints) &&
+    typeof s.totalSessions === 'number' && !isNaN(s.totalSessions) &&
+    typeof s.totalCorrect === 'number' && !isNaN(s.totalCorrect) &&
+    typeof s.totalAnswered === 'number' && !isNaN(s.totalAnswered) &&
+    Array.isArray(s.badges)
+  );
+}
+
 export function loadGuestState(): GuestState {
   if (typeof window === 'undefined') return getInitialGuestState();
   try {
@@ -34,7 +47,15 @@ export function loadGuestState(): GuestState {
       saveGuestState(initial);
       return initial;
     }
-    return JSON.parse(raw) as GuestState;
+    const parsed = JSON.parse(raw);
+    if (!isValidGuestState(parsed)) {
+      // Corrupted or outdated schema — preserve guestId if possible
+      const initial = getInitialGuestState();
+      if (typeof parsed?.guestId === 'string') initial.guestId = parsed.guestId;
+      saveGuestState(initial);
+      return initial;
+    }
+    return parsed;
   } catch {
     return getInitialGuestState();
   }

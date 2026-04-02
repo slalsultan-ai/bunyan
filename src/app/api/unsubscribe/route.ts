@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   if (!parent) {
     return new Response(unsubPage('رابط إلغاء الاشتراك غير صحيح أو منتهي الصلاحية.', 'error', token), {
-      status: 404,
+      status: 200,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
@@ -66,7 +66,12 @@ export async function POST(req: NextRequest) {
   return Response.json({ success: true });
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function unsubPage(message: string, state: 'confirm' | 'already' | 'error', token: string): string {
+  const safeToken = escapeHtml(token);
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://bunyan.guru';
   const icon = state === 'error' ? '❌' : state === 'already' ? '✅' : '📧';
   const title = state === 'error' ? 'خطأ' : state === 'already' ? 'تم بالفعل' : 'إلغاء الاشتراك';
@@ -87,7 +92,7 @@ function unsubPage(message: string, state: 'confirm' | 'already' | 'error', toke
         fetch(window.location.pathname, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: '${token}' })
+          body: JSON.stringify({ token: '${safeToken}' })
         }).then(function(r) {
           if (r.ok) {
             document.getElementById('unsub-form').style.display = 'none';

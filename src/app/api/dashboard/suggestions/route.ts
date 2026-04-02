@@ -2,6 +2,7 @@ import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
 import { eq, and, isNotNull, sql, desc, inArray } from 'drizzle-orm';
+import { checkRateLimit } from '@/lib/rate-limit-db';
 
 const SKILL_LABELS: Record<string, string> = {
   quantitative: 'الكمي',
@@ -13,6 +14,11 @@ export async function GET() {
   const session = await getParentSession();
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rl = await checkRateLimit(`dashboard-suggestions:${session.parentId}`, 20, 60);
+  if (!rl.allowed) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   const db = getDb();
@@ -35,7 +41,73 @@ export async function GET() {
     : [];
 
   const childRows = [...ownedChildren, ...followedChildren];
+  if (childRows.length === 0) {
+    return Response.json({ suggestions: [] });
+  }
 
+  const childIds = childRows.map(c => c.id);
+
+  // Batch: last session per child (single query instead of N)
+  const lastSessions = await db
+    .select({
+      childId: sessions.childId,
+      completedAt: sql<string>`MAX(${sessions.completedAt})`.as('completedAt'),
+    })
+    .from(sessions)
+    .where(and(inArray(sessions.childId, childIds), isNotNull(sessions.completedAt)))
+    .groupBy(sessions.childId);
+
+  const lastSessionMap = new Map(lastSessions.map(s => [s.childId, s.completedAt]));
+
+  // Batch: weakest skill per child (single query instead of N)
+  const skillRows = await db
+    .select({
+      childId: sessions.childId,
+      skillArea: questions.skillArea,
+      correct: sql<number>`SUM(CASE WHEN ${sessionAnswers.isCorrect} = 1 THEN 1 ELSE 0 END)`.as('correct'),
+      total: sql<number>`COUNT(*)`.as('total'),
+    })
+    .from(sessionAnswers)
+    .innerJoin(sessions, eq(sessionAnswers.sessionId, sessions.id))
+    .innerJoin(questions, eq(sessionAnswers.questionId, questions.id))
+    .where(and(inArray(sessions.childId, childIds), isNotNull(sessions.completedAt)))
+    .groupBy(sessions.childId, questions.skillArea);
+
+  // Build per-child weakest skill map
+  const weakestSkillMap = new Map<string, string | null>();
+  const childSkills = new Map<string, { skill: string; rate: number }[]>();
+  for (const row of skillRows) {
+    if (!row.childId) continue;
+    const rate = row.total > 0 ? row.correct / row.total : 0;
+    const arr = childSkills.get(row.childId) || [];
+    arr.push({ skill: row.skillArea, rate });
+    childSkills.set(row.childId, arr);
+  }
+  for (const [childId, skills] of childSkills) {
+    const weakest = skills.reduce((min, s) => s.rate < min.rate ? s : min);
+    weakestSkillMap.set(childId, weakest.skill);
+  }
+
+  // Batch: recent perfect scores (single query instead of N)
+  const perfectRows = await db
+    .select({
+      childId: sessions.childId,
+      count: sql<number>`COUNT(*)`.as('count'),
+    })
+    .from(sessions)
+    .where(
+      and(
+        inArray(sessions.childId, childIds),
+        isNotNull(sessions.completedAt),
+        sql`${sessions.completedAt} >= date('now', '-7 days')`,
+        sql`${sessions.score} = ${sessions.totalQuestions}`
+      )
+    )
+    .groupBy(sessions.childId);
+
+  const perfectMap = new Map(perfectRows.map(r => [r.childId, r.count > 0]));
+
+  // Build suggestions from batched data
   const suggestions: Array<{
     childId: string;
     childName: string;
@@ -45,41 +117,12 @@ export async function GET() {
   }> = [];
 
   for (const child of childRows) {
-    // Last session
-    const [lastSession] = await db
-      .select({ completedAt: sessions.completedAt, score: sessions.score, totalQuestions: sessions.totalQuestions })
-      .from(sessions)
-      .where(and(eq(sessions.childId, child.id), isNotNull(sessions.completedAt)))
-      .orderBy(desc(sessions.completedAt))
-      .limit(1);
-
-    // Weakest skill
-    const skillRows = await db
-      .select({
-        skillArea: questions.skillArea,
-        correct: sql<number>`SUM(CASE WHEN ${sessionAnswers.isCorrect} = 1 THEN 1 ELSE 0 END)`.as('correct'),
-        total: sql<number>`COUNT(*)`.as('total'),
-      })
-      .from(sessionAnswers)
-      .innerJoin(sessions, eq(sessionAnswers.sessionId, sessions.id))
-      .innerJoin(questions, eq(sessionAnswers.questionId, questions.id))
-      .where(and(eq(sessions.childId, child.id), isNotNull(sessions.completedAt)))
-      .groupBy(questions.skillArea);
-
-    let weakestSkill: string | null = null;
-    let lowestRate = Infinity;
-    for (const row of skillRows) {
-      const rate = row.total > 0 ? row.correct / row.total : 0;
-      if (rate < lowestRate) {
-        lowestRate = rate;
-        weakestSkill = row.skillArea;
-      }
-    }
-
+    const lastCompletedAt = lastSessionMap.get(child.id);
+    const weakestSkill = weakestSkillMap.get(child.id) ?? null;
     const weakestSkillLabel = weakestSkill ? (SKILL_LABELS[weakestSkill] ?? weakestSkill) : null;
+    const recentPerfectScore = perfectMap.get(child.id) ?? false;
 
-    // No sessions ever
-    if (!lastSession) {
+    if (!lastCompletedAt) {
       suggestions.push({
         childId: child.id,
         childName: child.name,
@@ -90,22 +133,8 @@ export async function GET() {
     }
 
     const now = new Date();
-    const lastDate = new Date(lastSession.completedAt!);
+    const lastDate = new Date(lastCompletedAt);
     const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    // Recent perfect score (last 7 days)
-    const [perfectRow] = await db
-      .select({ count: sql<number>`COUNT(*)`.as('count') })
-      .from(sessions)
-      .where(
-        and(
-          eq(sessions.childId, child.id),
-          isNotNull(sessions.completedAt),
-          sql`${sessions.completedAt} >= date('now', '-7 days')`,
-          sql`${sessions.score} = ${sessions.totalQuestions}`
-        )
-      );
-    const recentPerfectScore = (perfectRow?.count ?? 0) > 0;
 
     if (recentPerfectScore) {
       suggestions.push({

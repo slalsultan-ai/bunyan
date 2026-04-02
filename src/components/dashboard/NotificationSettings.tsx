@@ -87,6 +87,7 @@ export default function NotificationSettings({ parent, onUpdate }: NotificationS
           </div>
           <button
             onClick={() => handleToggle(toggle.key)}
+            onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleToggle(toggle.key); } }}
             disabled={saving === toggle.key}
             className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${
               settings[toggle.key] ? 'bg-emerald-500' : 'bg-gray-300'

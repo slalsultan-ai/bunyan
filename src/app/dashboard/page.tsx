@@ -243,7 +243,7 @@ export default function DashboardPage() {
                       {/* Child Stats */}
                       <ChildStats childId={child.id} childName={child.name} />
                       {/* PDF Report Download */}
-                      {showPdfReport.enabled && (
+                      {!showPdfReport.loading && showPdfReport.enabled && (
                         <div className="px-1">
                           <button
                             onClick={() => downloadReport(child.id)}

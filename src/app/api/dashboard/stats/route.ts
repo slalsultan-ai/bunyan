@@ -3,11 +3,17 @@ import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
 import { eq, and, isNotNull, sql, desc, or } from 'drizzle-orm';
+import { checkRateLimit } from '@/lib/rate-limit-db';
 
 export async function GET(req: NextRequest) {
   const session = await getParentSession();
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rl = await checkRateLimit(`dashboard-stats:${session.parentId}`, 30, 60);
+  if (!rl.allowed) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   const childId = req.nextUrl.searchParams.get('childId');

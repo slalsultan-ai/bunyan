@@ -28,6 +28,7 @@ export function getLevelProgress(points: number): number {
   const next = getNextLevel(current.level);
   if (!next) return 100;
   const range = next.pointsRequired - current.pointsRequired;
-  const earned = points - current.pointsRequired;
+  if (range <= 0) return 0;
+  const earned = Math.max(0, points - current.pointsRequired);
   return Math.min(100, Math.round((earned / range) * 100));
 }

@@ -27,7 +27,26 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      // Dashboard API: short cache with stale-while-revalidate
+      {
+        source: '/api/dashboard/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=30, stale-while-revalidate=120' },
+          ...securityHeaders,
+        ],
+      },
+      // Feature flags: cache briefly
+      {
+        source: '/api/features',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=60, stale-while-revalidate=300' },
+          ...securityHeaders,
+        ],
+      },
+      // All other routes: security headers
+      { source: '/(.*)', headers: securityHeaders },
+    ];
   },
 };
 

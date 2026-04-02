@@ -4,11 +4,14 @@ import { children } from '@/lib/db/schema';
 import { getParentSession, computeAgeGroup } from '@/lib/parent-auth';
 import { eq, and } from 'drizzle-orm';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getParentSession();
   if (!session) return Response.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { id } = await params;
+  if (!UUID_RE.test(id)) return Response.json({ error: 'معرّف غير صحيح' }, { status: 400 });
   let body: { name?: string; age?: number };
   try { body = await req.json(); } catch { return Response.json({ error: 'طلب غير صحيح' }, { status: 400 }); }
 
@@ -45,6 +48,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!session) return Response.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { id } = await params;
+  if (!UUID_RE.test(id)) return Response.json({ error: 'معرّف غير صحيح' }, { status: 400 });
   const db = getDb();
 
   const [child] = await db.select().from(children)

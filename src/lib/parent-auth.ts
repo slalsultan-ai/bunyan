@@ -88,7 +88,7 @@ export async function getParentSession(): Promise<ParentSession | null> {
     cookieStore.set(COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: SESSION_TTL_MS / 1000,
       path: '/',
     });
@@ -107,7 +107,7 @@ export async function setParentCookie(token: string): Promise<void> {
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: SESSION_TTL_MS / 1000,
     path: '/',
   });
@@ -159,7 +159,7 @@ export async function getAuthenticatedParent() {
     cookieStore.set(COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: SESSION_TTL_MS / 1000,
       path: '/',
     });
