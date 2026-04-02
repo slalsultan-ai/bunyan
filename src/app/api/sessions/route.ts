@@ -6,6 +6,7 @@ import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { calculateSessionPoints } from '@/lib/gamification/points';
 import { calculateStreak } from '@/lib/gamification/streaks';
 import { sendAchievementEmail } from '@/lib/email/achievement';
+import { upsertReviewItem, markReviewProgress } from '@/lib/review-queue';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -207,6 +208,37 @@ export async function POST(req: NextRequest) {
         },
       });
     });
+
+    // ── Review queue: track wrong/correct answers for spaced repetition ──
+    const childIdForReview = incomingId
+      ? (await db.select({ childId: sessions.childId }).from(sessions).where(eq(sessions.id, sessionId)).limit(1))[0]?.childId
+      : undefined;
+
+    try {
+      const wrongAnswers = validAnswers.filter((a) => !a.isCorrect);
+      const correctAnswers = validAnswers.filter((a) => a.isCorrect);
+      const now = new Date().toISOString();
+
+      for (const a of wrongAnswers) {
+        await upsertReviewItem({
+          guestId: guestId || undefined,
+          childId: childIdForReview || undefined,
+          questionId: a.questionId,
+          lastWrongAt: now,
+        });
+      }
+
+      for (const a of correctAnswers) {
+        await markReviewProgress({
+          guestId: guestId || undefined,
+          childId: childIdForReview || undefined,
+          questionId: a.questionId,
+        });
+      }
+    } catch (reviewErr) {
+      // Non-critical: don't fail the session if review queue update fails
+      console.error('Review queue update error:', reviewErr);
+    }
 
     // ── Achievement email (fire-and-forget, outside transaction) ────────
     if (incomingId) {

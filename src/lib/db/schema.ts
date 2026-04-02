@@ -177,6 +177,34 @@ export const adminAuditLog = sqliteTable('admin_audit_log', {
   createdAt: text('created_at').default(sql`(datetime('now'))`),
 });
 
+// ═══ Review queue ═══
+
+export const reviewQueue = sqliteTable('review_queue', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  guestId: text('guest_id'),
+  childId: text('child_id'),
+  questionId: text('question_id').notNull(),
+  timesWrong: integer('times_wrong').default(1),
+  timesReviewed: integer('times_reviewed').default(0),
+  lastWrongAt: text('last_wrong_at').notNull(),
+  nextReviewAt: text('next_review_at').notNull(),
+  mastered: integer('mastered').default(0),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
+// ═══ Feature flags ═══
+
+export const featureFlags = sqliteTable('feature_flags', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  flagKey: text('flag_key').notNull().unique(),
+  title: text('title').notNull(),
+  description: text('description'),
+  enabled: integer('enabled').default(0),
+  allowedEmails: text('allowed_emails').default(''),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
 // ═══ Rate limiting ═══
 
 export const rateLimits = sqliteTable('rate_limits', {

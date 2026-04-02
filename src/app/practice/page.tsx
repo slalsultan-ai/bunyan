@@ -8,6 +8,8 @@ import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import ChildSwitcher from '@/components/ui/ChildSwitcher';
 import Link from 'next/link';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useGuest } from '@/hooks/useGuest';
 
 const AGE_GROUPS: { value: AgeGroup; emoji: string; desc: string }[] = [
   { value: '4-5', emoji: '🌱', desc: 'أسئلة مصورة وأشكال وألوان' },
@@ -30,8 +32,11 @@ function getAvatar(name: string) {
 export default function PracticePage() {
   const router = useRouter();
   const { children, selectedChild, setSelectedChildId, isLoggedIn, loading } = useSelectedChild();
+  const { state } = useGuest();
   const [selectedAge, setSelectedAge] = useState<AgeGroup | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillArea>('mixed');
+  const showReviewMode = useFeatureFlag('review_mode');
+  const [reviewStats, setReviewStats] = useState<{ pending: number } | null>(null);
 
   // Show child picker step if logged in with multiple children and none selected yet via this flow
   const [childPicked, setChildPicked] = useState(false);
@@ -56,6 +61,23 @@ export default function PracticePage() {
       setChildPicked(true);
     }
   }, [loading, isLoggedIn, children]);
+
+  // Fetch review stats
+  useEffect(() => {
+    if (!showReviewMode.enabled) return;
+    const guestId = state?.guestId;
+    const childId = selectedChild?.id;
+    if (!guestId && !childId) return;
+
+    const params = new URLSearchParams();
+    if (childId) params.set('childId', childId);
+    else if (guestId) params.set('guestId', guestId);
+
+    fetch(`/api/review/stats?${params}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setReviewStats(data); })
+      .catch(() => {});
+  }, [showReviewMode.enabled, state?.guestId, selectedChild?.id]);
 
   const handleStart = () => {
     if (!selectedAge) return;
@@ -100,6 +122,21 @@ export default function PracticePage() {
           </div>
         ) : (
           <>
+            {/* Review banner */}
+            {showReviewMode.enabled && reviewStats && reviewStats.pending > 0 && (
+              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+                <span className="text-amber-800 font-medium text-sm">
+                  📝 عندك {reviewStats.pending} {reviewStats.pending === 1 ? 'سؤال يحتاج' : 'أسئلة تحتاج'} مراجعة
+                </span>
+                <Link
+                  href="/practice/review"
+                  className="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl text-sm hover:bg-amber-600 transition-colors"
+                >
+                  ابدأ المراجعة
+                </Link>
+              </div>
+            )}
+
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">ابدأ جلسة تدريب</h1>
               <p className="text-gray-600">اختر الفئة العمرية والمهارة للبدء</p>

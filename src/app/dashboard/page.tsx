@@ -10,6 +10,7 @@ import WeeklyChallenge from '@/components/dashboard/WeeklyChallenge';
 import ChildStats from '@/components/dashboard/ChildStats';
 import NotificationSettings from '@/components/dashboard/NotificationSettings';
 import Link from 'next/link';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 interface Child {
   id: string;
@@ -41,6 +42,8 @@ export default function DashboardPage() {
   const [sharingId, setSharingId] = useState<string | null>(null);
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const showPdfReport = useFeatureFlag('child_pdf_report');
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -94,6 +97,26 @@ export default function DashboardPage() {
       }
     } catch { /* ignore */ }
     setSharingId(null);
+  }
+
+  async function downloadReport(childId: string) {
+    setDownloadingPdf(childId);
+    try {
+      const res = await fetch(`/api/reports/child-pdf?childId=${childId}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.match(/filename\*?=.*?''(.+)/)?.[1]
+        ? decodeURIComponent(res.headers.get('Content-Disposition')!.match(/filename\*?=.*?''(.+)/)![1])
+        : 'bunyan-report.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setDownloadingPdf(null);
   }
 
   if (loading) {
@@ -210,6 +233,20 @@ export default function DashboardPage() {
                       )}
                       {/* Child Stats */}
                       <ChildStats childId={child.id} childName={child.name} />
+                      {/* PDF Report Download */}
+                      {showPdfReport.enabled && (
+                        <div className="px-1">
+                          <button
+                            onClick={() => downloadReport(child.id)}
+                            disabled={downloadingPdf === child.id}
+                            className="w-full text-sm bg-emerald-50 text-emerald-700 font-semibold py-2.5 rounded-xl border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                          >
+                            {downloadingPdf === child.id
+                              ? 'جاري إعداد التقرير...'
+                              : '📄 حمّل تقرير الأداء'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
