@@ -100,11 +100,17 @@ export default function DashboardPage() {
     setSharingId(null);
   }
 
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   async function downloadReport(childId: string) {
     setDownloadingPdf(childId);
+    setPdfError(null);
     try {
       const res = await fetch(`/api/reports/child-pdf?childId=${childId}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -116,7 +122,11 @@ export default function DashboardPage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch { /* ignore */ }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'فشل تحميل التقرير';
+      setPdfError(msg);
+      setTimeout(() => setPdfError(null), 5000);
+    }
     setDownloadingPdf(null);
   }
 
@@ -254,6 +264,9 @@ export default function DashboardPage() {
                               ? 'جاري إعداد التقرير...'
                               : '📄 حمّل تقرير الأداء'}
                           </button>
+                          {pdfError && (
+                            <p className="text-xs text-red-500 mt-1 text-center">{pdfError}</p>
+                          )}
                         </div>
                       )}
                     </div>

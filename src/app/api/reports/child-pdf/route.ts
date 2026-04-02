@@ -230,15 +230,20 @@ export async function GET(req: NextRequest) {
   };
 
   // Generate PDF
-  const pdfBuffer = await generateChildPdf(reportData);
+  try {
+    const pdfBuffer = await generateChildPdf(reportData);
 
-  const today = new Date().toISOString().split('T')[0];
-  const filename = `bunyan-report-${child.name}-${today}.pdf`;
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `bunyan-report-${child.name}-${today}.pdf`;
 
-  return new NextResponse(new Uint8Array(pdfBuffer), {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
-    },
-  });
+    return new NextResponse(new Uint8Array(pdfBuffer), {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      },
+    });
+  } catch (pdfErr) {
+    console.error('PDF generation failed:', pdfErr);
+    return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
+  }
 }
