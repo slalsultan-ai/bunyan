@@ -28,6 +28,7 @@ interface Parent {
   achievementEmailEnabled: boolean;
   monthlyReportEnabled: boolean;
   currentWeekNumber: number;
+  isAdmin?: boolean;
 }
 
 export default function DashboardPage() {
@@ -136,6 +137,14 @@ export default function DashboardPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
+            {parent?.isAdmin && (
+              <Link
+                href="/admin"
+                className="text-sm bg-slate-700 text-white font-medium px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                🔧 لوحة التحكم
+              </Link>
+            )}
             <ChildSwitcher />
             <button
               onClick={logout}

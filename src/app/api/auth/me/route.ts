@@ -31,6 +31,9 @@ export async function GET() {
     ...followedChildren.map(c => ({ id: c.id, name: c.name, age: c.age, ageGroup: c.ageGroup, role: 'follower' as const })),
   ];
 
+  const adminEmail = process.env.ADMIN_EMAIL || '';
+  const isAdmin = adminEmail !== '' && parent.email.toLowerCase() === adminEmail.toLowerCase();
+
   return Response.json({
     parent: {
       id: parent.id,
@@ -40,6 +43,7 @@ export async function GET() {
       achievementEmailEnabled: parent.achievementEmailEnabled,
       monthlyReportEnabled: parent.monthlyReportEnabled,
       currentWeekNumber: parent.currentWeekNumber,
+      isAdmin,
     },
     children: allChildren,
   });
