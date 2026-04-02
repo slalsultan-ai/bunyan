@@ -102,9 +102,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let inserted = 0;
   let skipped  = 0;
 
+  // Build batch of rows to insert (skip duplicates)
+  const toInsert: (typeof questions.$inferInsert)[] = [];
   for (const row of body as Record<string, unknown>[]) {
     const rowId = typeof row.id === 'string' && row.id.length > 0 ? row.id : null;
 
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    await db.insert(questions).values({
+    toInsert.push({
       id: rowId ?? crypto.randomUUID(),
       ageGroup:           String(row.ageGroup),
       skillArea:          String(row.skillArea),
@@ -128,9 +129,14 @@ export async function POST(req: NextRequest) {
       tags:               Array.isArray(row.tags) ? row.tags as string[] : [],
       isActive:           row.isActive === false ? false : true,
     });
-
-    inserted++;
   }
 
-  return NextResponse.json({ inserted, skipped, total: body.length });
+  // Batch insert in chunks of 50 (SQLite variable limit safety)
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+    const chunk = toInsert.slice(i, i + CHUNK_SIZE);
+    await db.insert(questions).values(chunk);
+  }
+
+  return NextResponse.json({ inserted: toInsert.length, skipped, total: body.length });
 }

@@ -4,7 +4,7 @@ import { getDb } from '@/lib/db';
 import { parents, children, emailLog } from '@/lib/db/schema';
 import { getWeeklyContent, seedWeeklyContent } from '@/lib/db/seed-weekly-content';
 import { sendWeeklyEmail } from '@/lib/email/weekly';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const MAX_WEEKS = 8;
 
@@ -26,16 +26,50 @@ export async function POST(req: NextRequest) {
     console.log(`Seeded ${seeded.inserted} content entries`);
   }
 
-  // Fetch all parents with weekly email enabled
-  const allParents = await db
-    .select()
+  // Fetch all parents with weekly email enabled + their children in one query
+  const parentChildRows = await db
+    .select({
+      parentId: parents.id,
+      email: parents.email,
+      weekNumber: parents.currentWeekNumber,
+      unsubscribeToken: parents.unsubscribeToken,
+      childName: children.name,
+      childAge: children.age,
+      childAgeGroup: children.ageGroup,
+    })
     .from(parents)
+    .innerJoin(children, eq(children.parentId, parents.id))
     .where(eq(parents.weeklyEmailEnabled, true));
+
+  // Group by parent
+  const parentMap = new Map<string, {
+    email: string;
+    weekNumber: number;
+    unsubscribeToken: string;
+    children: { name: string; age: number; ageGroup: string }[];
+  }>();
+
+  for (const row of parentChildRows) {
+    const wk = row.weekNumber ?? 1;
+    if (!parentMap.has(row.parentId)) {
+      parentMap.set(row.parentId, {
+        email: row.email,
+        weekNumber: wk,
+        unsubscribeToken: row.unsubscribeToken,
+        children: [],
+      });
+    }
+    parentMap.get(row.parentId)!.children.push({
+      name: row.childName,
+      age: row.childAge,
+      ageGroup: row.childAgeGroup,
+    });
+  }
 
   const results = { sent: 0, failed: 0, skipped: 0 };
 
-  for (const parent of allParents) {
-    const weekNumber = parent.currentWeekNumber ?? 1;
+  for (const [parentId, parent] of parentMap) {
+    const weekNumber = parent.weekNumber;
 
     // Stop after 8 weeks
     if (weekNumber > MAX_WEEKS) {
@@ -43,20 +77,9 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Get this parent's children
-    const childRows = await db
-      .select()
-      .from(children)
-      .where(eq(children.parentId, parent.id));
-
-    if (!childRows.length) {
-      results.skipped++;
-      continue;
-    }
-
     // Fetch content for each child
     const childrenWithContent = await Promise.all(
-      childRows.map(async child => ({
+      parent.children.map(async child => ({
         name: child.name,
         age: child.age,
         ageGroup: child.ageGroup,
@@ -81,7 +104,7 @@ export async function POST(req: NextRequest) {
       // Log success
       await db.insert(emailLog).values({
         id: crypto.randomUUID(),
-        parentId: parent.id,
+        parentId,
         weekNumber,
         status: 'sent',
         resendId,
@@ -91,15 +114,15 @@ export async function POST(req: NextRequest) {
       await db
         .update(parents)
         .set({ currentWeekNumber: weekNumber + 1 })
-        .where(eq(parents.id, parent.id));
+        .where(eq(parents.id, parentId));
 
       results.sent++;
     } catch (err) {
-      console.error(`Failed to send email to parent ${parent.id}:`, err);
+      console.error(`Failed to send email to parent ${parentId}:`, err);
 
       await db.insert(emailLog).values({
         id: crypto.randomUUID(),
-        parentId: parent.id,
+        parentId,
         weekNumber,
         status: 'failed',
       });

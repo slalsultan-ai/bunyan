@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error('Failed to send daily report:', err);
     return Response.json(
-      { error: 'Failed to send daily report', detail: String(err) },
+      { error: 'Failed to send daily report' },
       { status: 500 },
     );
   }

@@ -25,7 +25,7 @@ function makeReq(authHeader?: string) {
 }
 
 function makeSelectChainDirect(result: unknown[]) {
-  return { from: vi.fn().mockReturnThis(), where: vi.fn().mockResolvedValue(result) };
+  return { from: vi.fn().mockReturnThis(), innerJoin: vi.fn().mockReturnThis(), where: vi.fn().mockResolvedValue(result) };
 }
 function makeInsertChain() {
   return { values: vi.fn().mockResolvedValue(undefined) };
@@ -61,10 +61,11 @@ describe('POST /api/cron/weekly-email', () => {
 
   it('skips parents beyond week 8', async () => {
     process.env.CRON_SECRET = 'test-secret';
-    const parentsPastLimit = [
-      { id: 'p1', email: 'x@y.com', currentWeekNumber: 9, weeklyEmailEnabled: true, unsubscribeToken: 'tok' },
+    // Joined format: one row per parent-child pair
+    const joinedRows = [
+      { parentId: 'p1', email: 'x@y.com', weekNumber: 9, unsubscribeToken: 'tok', childName: 'أحمد', childAge: 7, childAgeGroup: '6-9' },
     ];
-    mockSelect.mockReturnValue(makeSelectChainDirect(parentsPastLimit));
+    mockSelect.mockReturnValue(makeSelectChainDirect(joinedRows));
     const res = await POST(makeReq('Bearer test-secret'));
     const body = await res.json();
     expect(body.skipped).toBe(1);
@@ -73,26 +74,20 @@ describe('POST /api/cron/weekly-email', () => {
 
   it('skips parents with no children', async () => {
     process.env.CRON_SECRET = 'test-secret';
-    mockSelect
-      .mockReturnValueOnce(makeSelectChainDirect([
-        { id: 'p1', email: 'x@y.com', currentWeekNumber: 1, weeklyEmailEnabled: true, unsubscribeToken: 'tok' },
-      ]))
-      .mockReturnValueOnce(makeSelectChainDirect([])); // no children
+    // innerJoin returns no rows when parent has no children
+    mockSelect.mockReturnValue(makeSelectChainDirect([]));
     const res = await POST(makeReq('Bearer test-secret'));
     const body = await res.json();
-    expect(body.skipped).toBe(1);
+    expect(body.sent).toBe(0);
     expect(mockSendWeeklyEmail).not.toHaveBeenCalled();
   });
 
   it('sends email and advances week counter on success', async () => {
     process.env.CRON_SECRET = 'test-secret';
-    mockSelect
-      .mockReturnValueOnce(makeSelectChainDirect([
-        { id: 'p1', email: 'parent@test.com', currentWeekNumber: 2, weeklyEmailEnabled: true, unsubscribeToken: 'unsub-tok' },
-      ]))
-      .mockReturnValueOnce(makeSelectChainDirect([
-        { id: 'c1', name: 'محمد', age: 8, ageGroup: '6-9', parentId: 'p1' },
-      ]));
+    // Joined format: one row per child
+    mockSelect.mockReturnValue(makeSelectChainDirect([
+      { parentId: 'p1', email: 'parent@test.com', weekNumber: 2, unsubscribeToken: 'unsub-tok', childName: 'محمد', childAge: 8, childAgeGroup: '6-9' },
+    ]));
 
     mockGetWeeklyContent.mockResolvedValue({ weekNumber: 2, ageGroup: '6-9', weeklyGame: { title: 'test' }, weeklyTip: { title: 't', content: 'c' } });
     mockSendWeeklyEmail.mockResolvedValue('resend-id-123');
@@ -109,13 +104,10 @@ describe('POST /api/cron/weekly-email', () => {
 
   it('records failure and continues on send error', async () => {
     process.env.CRON_SECRET = 'test-secret';
-    mockSelect
-      .mockReturnValueOnce(makeSelectChainDirect([
-        { id: 'p1', email: 'bad@test.com', currentWeekNumber: 1, weeklyEmailEnabled: true, unsubscribeToken: 'tok' },
-      ]))
-      .mockReturnValueOnce(makeSelectChainDirect([
-        { id: 'c1', name: 'هند', age: 6, ageGroup: '6-9', parentId: 'p1' },
-      ]));
+    // Joined format
+    mockSelect.mockReturnValue(makeSelectChainDirect([
+      { parentId: 'p1', email: 'bad@test.com', weekNumber: 1, unsubscribeToken: 'tok', childName: 'هند', childAge: 6, childAgeGroup: '6-9' },
+    ]));
 
     mockGetWeeklyContent.mockResolvedValue({ weekNumber: 1, ageGroup: '6-9', weeklyGame: {}, weeklyTip: {} });
     mockSendWeeklyEmail.mockRejectedValue(new Error('SMTP error'));
