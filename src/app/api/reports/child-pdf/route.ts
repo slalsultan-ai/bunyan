@@ -7,6 +7,7 @@ import { eq, and, isNotNull, sql, desc } from 'drizzle-orm';
 import { generateChildPdf } from '@/lib/pdf/child-report';
 
 export async function GET(req: NextRequest) {
+ try {
   // Auth check
   const session = await getParentSession();
   if (!session) {
@@ -245,5 +246,12 @@ export async function GET(req: NextRequest) {
   } catch (pdfErr) {
     console.error('PDF generation failed:', pdfErr);
     return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
+  }
+ } catch (err) {
+    console.error('child-pdf route error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
