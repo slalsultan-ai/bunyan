@@ -128,11 +128,11 @@ export async function GET(req: NextRequest) {
   // Weekly data (last 4 weeks)
   const weeklyRows = await db
     .select({
-      week: sql<string>`strftime('%Y-W%W', ${sessions.completedAt})`,
-      sessionCount: sql<number>`COUNT(*)`,
-      correct: sql<number>`COALESCE(SUM(${sessions.score}), 0)`,
-      total: sql<number>`COALESCE(SUM(${sessions.totalQuestions}), 0)`,
-      points: sql<number>`COALESCE(SUM(${sessions.pointsEarned}), 0)`,
+      week: sql<string>`strftime('%Y-W%W', ${sessions.completedAt})`.as('week'),
+      sessionCount: sql<number>`COUNT(*)`.as('sessionCount'),
+      correct: sql<number>`COALESCE(SUM(${sessions.score}), 0)`.as('correct'),
+      total: sql<number>`COALESCE(SUM(${sessions.totalQuestions}), 0)`.as('total'),
+      points: sql<number>`COALESCE(SUM(${sessions.pointsEarned}), 0)`.as('points'),
     })
     .from(sessions)
     .where(and(
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
       sql`${sessions.completedAt} >= date('now', '-28 days')`
     ))
     .groupBy(sql`strftime('%Y-W%W', ${sessions.completedAt})`)
-    .orderBy(sql`week`);
+    .orderBy(sql`strftime('%Y-W%W', ${sessions.completedAt})`);
 
   const weekLabels = ['الأسبوع ١', 'الأسبوع ٢', 'الأسبوع ٣', 'الأسبوع ٤'];
   const weeklyData = weeklyRows.map((w, i) => ({
