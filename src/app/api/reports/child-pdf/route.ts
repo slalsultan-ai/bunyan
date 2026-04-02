@@ -155,8 +155,8 @@ export async function GET(req: NextRequest) {
   const subSkillRows = await db
     .select({
       subSkill: questions.subSkill,
-      correct: sql<number>`SUM(CASE WHEN ${sessionAnswers.isCorrect} = 1 THEN 1 ELSE 0 END)`,
-      total: sql<number>`COUNT(*)`,
+      correct: sql<number>`SUM(CASE WHEN ${sessionAnswers.isCorrect} = 1 THEN 1 ELSE 0 END)`.as('correct'),
+      total: sql<number>`COUNT(*)`.as('total'),
     })
     .from(sessionAnswers)
     .innerJoin(sessions, eq(sessionAnswers.sessionId, sessions.id))
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
       isNotNull(sessions.completedAt),
     ))
     .groupBy(questions.subSkill)
-    .orderBy(sql`total DESC`);
+    .orderBy(sql`COUNT(*) DESC`);
 
   const subSkillsWithPct = subSkillRows
     .filter(r => r.total >= 3)
