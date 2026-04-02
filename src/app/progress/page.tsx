@@ -6,6 +6,7 @@ import { BADGES } from '@/lib/gamification/badges';
 import { LEVELS } from '@/lib/gamification/levels';
 import { getLevelForPoints, getLevelProgress, getNextLevel } from '@/lib/gamification/levels';
 import { getSkillAreaLabel, getSkillAreaIcon, formatTime } from '@/lib/utils';
+import { SkillArea } from '@/types';
 import { getSkillBreakdown } from '@/lib/guest';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Logo from '@/components/ui/Logo';
@@ -177,7 +178,7 @@ export default function ProgressPage() {
         {weakest && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <p className="text-amber-800 font-semibold text-sm mb-2">💡 توصية</p>
-            <p className="text-amber-700 text-sm">ننصحك تتدرب على مهارة <strong>{getSkillAreaLabel(weakest)}</strong> — هي أضعف نقاط عندك الآن.</p>
+            <p className="text-amber-700 text-sm">ننصحك تتدرب على مهارة <strong>{getSkillAreaLabel(weakest as SkillArea)}</strong> — هي أضعف نقاط عندك الآن.</p>
             <Link
               href={`/practice?skill=${weakest}`}
               className="mt-2 inline-block bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors"
