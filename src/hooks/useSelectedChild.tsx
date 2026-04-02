@@ -77,6 +77,20 @@ export function SelectedChildProvider({ children: reactChildren }: { children: R
     setSelectedId(id);
     if (id) {
       localStorage.setItem(STORAGE_KEY, id);
+      // Link orphaned guest sessions to the selected child
+      try {
+        const guestState = localStorage.getItem('bunyan_guest');
+        if (guestState) {
+          const parsed = JSON.parse(guestState);
+          if (parsed?.guestId) {
+            fetch('/api/sessions/link', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ guestId: parsed.guestId, childId: id }),
+            }).catch(() => {});
+          }
+        }
+      } catch { /* ignore */ }
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }

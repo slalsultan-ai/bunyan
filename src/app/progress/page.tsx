@@ -1,19 +1,51 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useGuest } from '@/hooks/useGuest';
+import { useSelectedChild } from '@/hooks/useSelectedChild';
 import { BADGES } from '@/lib/gamification/badges';
 import { LEVELS } from '@/lib/gamification/levels';
+import { getLevelForPoints, getLevelProgress, getNextLevel } from '@/lib/gamification/levels';
 import { getSkillAreaLabel, getSkillAreaIcon, formatTime } from '@/lib/utils';
-import { getWeakestSkill, getSkillBreakdown } from '@/lib/guest';
+import { getSkillBreakdown } from '@/lib/guest';
 import ProgressBar from '@/components/ui/ProgressBar';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 import RegisterPrompt from '@/components/auth/RegisterPrompt';
 
+interface DbProgressData {
+  totalSessions: number;
+  totalCorrect: number;
+  totalAnswered: number;
+  totalPoints: number;
+  currentStreak: number;
+  skillBreakdown: Record<string, { correct: number; total: number }>;
+  sessionHistory: Array<{
+    skillArea: string;
+    score: number;
+    totalQuestions: number;
+    pointsEarned: number;
+    completedAt: string;
+  }>;
+}
+
 export default function ProgressPage() {
   const { state, mounted, level, levelProgress, nextLevel } = useGuest();
+  const { selectedChild, isLoggedIn } = useSelectedChild();
+  const [dbData, setDbData] = useState<DbProgressData | null>(null);
+  const [dbLoading, setDbLoading] = useState(false);
 
-  if (!mounted || !state) {
+  // When logged in with a selected child, fetch progress from DB
+  useEffect(() => {
+    if (!isLoggedIn || !selectedChild?.id) return;
+    setDbLoading(true);
+    fetch(`/api/progress?childId=${selectedChild.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setDbData(data); })
+      .catch(() => {})
+      .finally(() => setDbLoading(false));
+  }, [isLoggedIn, selectedChild?.id]);
+
+  if (!mounted || !state || dbLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -21,9 +53,47 @@ export default function ProgressPage() {
     );
   }
 
-  const breakdown = getSkillBreakdown(state);
-  const weakest = getWeakestSkill(state);
-  const history = (state.sessionHistory || []).slice(0, 10);
+  // Use DB data if logged in with a child, otherwise fall back to guest localStorage
+  const useDb = isLoggedIn && selectedChild && dbData;
+
+  const totalSessions = useDb ? dbData.totalSessions : state.totalSessions;
+  const totalCorrect = useDb ? dbData.totalCorrect : state.totalCorrect;
+  const totalAnswered = useDb ? dbData.totalAnswered : state.totalAnswered;
+  const totalPoints = useDb ? dbData.totalPoints : state.totalPoints;
+  const currentStreak = useDb ? dbData.currentStreak : state.currentStreak;
+  const accuracyPct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+
+  const dbLevel = useDb ? getLevelForPoints(dbData.totalPoints) : null;
+  const dbLevelProgress = useDb ? getLevelProgress(dbData.totalPoints) : 0;
+  const dbNextLevel = dbLevel ? getNextLevel(dbLevel.level) : null;
+
+  const displayLevel = useDb ? dbLevel : level;
+  const displayLevelProgress = useDb ? dbLevelProgress : levelProgress;
+  const displayNextLevel = useDb ? dbNextLevel : nextLevel;
+
+  const breakdown = useDb
+    ? Object.fromEntries(
+        (['quantitative', 'verbal', 'logical_patterns'] as const).map(skill => [
+          skill,
+          dbData.skillBreakdown[skill] || { correct: 0, total: 0 },
+        ])
+      )
+    : getSkillBreakdown(state);
+  const weakest = (() => {
+    let worst: string | null = null;
+    let worstPct = Infinity;
+    for (const skill of ['quantitative', 'verbal', 'logical_patterns'] as const) {
+      const data = breakdown[skill];
+      if (data && data.total > 0) {
+        const pct = data.correct / data.total;
+        if (pct < worstPct) { worstPct = pct; worst = skill; }
+      }
+    }
+    return worst;
+  })();
+  const history = useDb
+    ? dbData.sessionHistory.slice(0, 10)
+    : (state.sessionHistory || []).slice(0, 10);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,36 +109,43 @@ export default function ProgressPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <RegisterPrompt context="progress" redirectTo="/dashboard" />
 
+        {/* Child name banner (when viewing child's progress) */}
+        {useDb && selectedChild && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 text-center">
+            <p className="text-blue-800 font-semibold text-sm">تقدم {selectedChild.name}</p>
+          </div>
+        )}
+
         {/* Level Card */}
         <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-emerald-200 text-sm">المستوى الحالي</p>
-              <h2 className="text-2xl font-extrabold">{level?.name || 'مبتدئ'}</h2>
+              <h2 className="text-2xl font-extrabold">{displayLevel?.name || 'مبتدئ'}</h2>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-black">{state.totalPoints.toLocaleString()}</div>
+              <div className="text-3xl font-black">{totalPoints.toLocaleString()}</div>
               <div className="text-emerald-200 text-sm">نقطة</div>
             </div>
           </div>
-          <ProgressBar value={levelProgress} color="amber" size="md" className="mb-2" />
+          <ProgressBar value={displayLevelProgress} color="amber" size="md" className="mb-2" />
           <p className="text-emerald-200 text-xs">
-            {nextLevel ? `${nextLevel.pointsRequired - state.totalPoints} نقطة للمستوى "${nextLevel.name}"` : 'وصلت للمستوى الأعلى! 🏆'}
+            {displayNextLevel ? `${displayNextLevel.pointsRequired - totalPoints} نقطة للمستوى "${displayNextLevel.name}"` : 'وصلت للمستوى الأعلى! 🏆'}
           </p>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
-            <div className="text-2xl font-bold text-emerald-600">{state.totalSessions}</div>
+            <div className="text-2xl font-bold text-emerald-600">{totalSessions}</div>
             <div className="text-xs text-gray-500 mt-1">جلسة</div>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
-            <div className="text-2xl font-bold text-blue-500">{state.totalAnswered > 0 ? Math.round((state.totalCorrect / state.totalAnswered) * 100) : 0}٪</div>
+            <div className="text-2xl font-bold text-blue-500">{accuracyPct}٪</div>
             <div className="text-xs text-gray-500 mt-1">نسبة الصحة</div>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center border border-gray-100 shadow-sm">
-            <div className="text-2xl font-bold text-orange-500">🔥 {state.currentStreak}</div>
+            <div className="text-2xl font-bold text-orange-500">🔥 {currentStreak}</div>
             <div className="text-xs text-gray-500 mt-1">يوم متتالي</div>
           </div>
         </div>
@@ -156,7 +233,7 @@ export default function ProgressPage() {
           </div>
         )}
 
-        {state.totalSessions === 0 && (
+        {totalSessions === 0 && (
           <div className="text-center py-8">
             <div className="text-5xl mb-3">🎯</div>
             <p className="text-gray-600 mb-4">لم تبدأ أي جلسة بعد!</p>

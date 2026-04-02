@@ -48,6 +48,7 @@ function SessionContent() {
           ageGroup,
           skillArea,
           totalQuestions: session.questions.length,
+          ...(selectedChild?.id ? { childId: selectedChild.id } : {}),
         }),
       }).catch(console.error);
     }
@@ -87,6 +88,7 @@ function SessionContent() {
             pointsEarned,
             timeTakenMs: session.timeTakenMs,
             answers: session.answers,
+            ...(selectedChild?.id ? { childId: selectedChild.id } : {}),
           }),
         }).catch(console.error);
       }

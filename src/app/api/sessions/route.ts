@@ -7,6 +7,7 @@ import { calculateSessionPoints } from '@/lib/gamification/points';
 import { calculateStreak } from '@/lib/gamification/streaks';
 import { sendAchievementEmail } from '@/lib/email/achievement';
 import { upsertReviewItem, markReviewProgress } from '@/lib/review-queue';
+import { getAuthenticatedParent } from '@/lib/parent-auth';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -132,6 +133,21 @@ export async function POST(req: NextRequest) {
     );
     const serverPoints = calculateSessionPoints(serverScore, serverTotal, isFirstSessionToday, newStreak);
 
+    // ── Validate childId for authenticated parents ──────────────────────
+    let validChildId: string | undefined;
+    let validParentId: string | undefined;
+    const parent = await getAuthenticatedParent();
+    if (parent) {
+      validParentId = parent.id;
+      const bodyChildId = body.childId;
+      if (bodyChildId && UUID_RE.test(bodyChildId)) {
+        const [child] = await db.select({ id: children.id }).from(children)
+          .where(and(eq(children.id, bodyChildId), eq(children.parentId, parent.id)))
+          .limit(1);
+        if (child) validChildId = bodyChildId;
+      }
+    }
+
     // ── Persist in a single transaction (idempotent) ───────────────────
     const incomingId = typeof body.sessionId === 'string' && UUID_RE.test(body.sessionId)
       ? body.sessionId
@@ -154,6 +170,9 @@ export async function POST(req: NextRequest) {
           timeTakenMs: safeTime,
           completedAt: now,
           ipAddress: ip,
+          // Ensure childId/parentId are set even if /start didn't have them
+          ...(validChildId ? { childId: validChildId } : {}),
+          ...(validParentId ? { parentId: validParentId } : {}),
         }).where(eq(sessions.id, incomingId));
       } else {
         await tx.insert(sessions).values({
@@ -167,6 +186,8 @@ export async function POST(req: NextRequest) {
           timeTakenMs: safeTime,
           completedAt: now,
           ipAddress: ip,
+          ...(validChildId ? { childId: validChildId } : {}),
+          ...(validParentId ? { parentId: validParentId } : {}),
         });
       }
 
