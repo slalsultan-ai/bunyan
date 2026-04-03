@@ -3,6 +3,9 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq, and, sql, notInArray } from 'drizzle-orm';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
+import { getRetiredQuestionIds } from '@/lib/question-mastery';
+import { hasFeatureAccess } from '@/lib/feature-flags';
+import { getAuthenticatedParent } from '@/lib/parent-auth';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -73,6 +76,25 @@ export async function GET(req: NextRequest) {
       eq(questions.isActive, true),
     ];
     if (exclude.length > 0) baseConditions.push(notInArray(questions.id, exclude) as ReturnType<typeof eq>);
+
+    // Question retirement: exclude questions answered correctly 5+ times
+    const guestId = searchParams.get('guestId');
+    const childIdParam = searchParams.get('childId');
+    if (guestId || childIdParam) {
+      const parent = childIdParam ? await getAuthenticatedParent() : null;
+      const parentEmail = parent?.email;
+      const retirementEnabled = await hasFeatureAccess('question_retirement', parentEmail);
+
+      if (retirementEnabled) {
+        const retiredIds = await getRetiredQuestionIds({
+          guestId: guestId || undefined,
+          childId: childIdParam || undefined,
+        });
+        if (retiredIds.length > 0) {
+          baseConditions.push(notInArray(questions.id, retiredIds) as ReturnType<typeof eq>);
+        }
+      }
+    }
 
     let rows;
 

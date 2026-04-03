@@ -205,6 +205,18 @@ export const featureFlags = sqliteTable('feature_flags', {
   updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
+// ═══ Question mastery (retirement after repeated correct answers) ═══
+
+export const questionMastery = sqliteTable('question_mastery', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  guestId: text('guest_id'),
+  childId: text('child_id'),
+  questionId: text('question_id').notNull(),
+  correctCount: integer('correct_count').default(1),
+  firstCorrectAt: text('first_correct_at').default(sql`(datetime('now'))`),
+  lastCorrectAt: text('last_correct_at').default(sql`(datetime('now'))`),
+});
+
 // ═══ Rate limiting ═══
 
 export const rateLimits = sqliteTable('rate_limits', {

@@ -7,6 +7,7 @@ import { calculateSessionPoints } from '@/lib/gamification/points';
 import { calculateStreak } from '@/lib/gamification/streaks';
 import { sendAchievementEmail } from '@/lib/email/achievement';
 import { upsertReviewItem, markReviewProgress } from '@/lib/review-queue';
+import { upsertMasteryProgress } from '@/lib/question-mastery';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
@@ -263,6 +264,20 @@ export async function POST(req: NextRequest) {
     } catch (reviewErr) {
       // Non-critical: don't fail the session if review queue update fails
       console.error('Review queue update error:', reviewErr);
+    }
+
+    // ── Question mastery: track correct answer counts for retirement ──
+    try {
+      const correctAnswers = validAnswers.filter((a) => a.isCorrect);
+      for (const a of correctAnswers) {
+        await upsertMasteryProgress({
+          guestId: guestId || undefined,
+          childId: childIdForReview || undefined,
+          questionId: a.questionId,
+        });
+      }
+    } catch (masteryErr) {
+      console.error('Mastery tracking error:', masteryErr);
     }
 
     // ── Achievement email (fire-and-forget, outside transaction) ────────

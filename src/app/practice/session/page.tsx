@@ -32,7 +32,10 @@ function SessionContent() {
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
 
   useEffect(() => {
-    session.loadQuestions(ageGroup, skillArea, 'mixed');
+    session.loadQuestions(ageGroup, skillArea, 'mixed', {
+      guestId: state?.guestId,
+      childId: selectedChild?.id,
+    });
   }, []);
 
   // Register session start once questions are loaded AND child selection is resolved
@@ -130,7 +133,7 @@ function SessionContent() {
               <p className="text-gray-700 font-bold text-lg mb-2">تعذر تحميل الأسئلة</p>
               <p className="text-gray-500 text-sm mb-4">تحقق من اتصالك بالإنترنت وحاول مرة أخرى</p>
               <button
-                onClick={() => session.loadQuestions(ageGroup, skillArea, 'mixed')}
+                onClick={() => session.loadQuestions(ageGroup, skillArea, 'mixed', { guestId: state?.guestId, childId: selectedChild?.id })}
                 className="bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-emerald-700 transition-colors"
               >
                 إعادة المحاولة
