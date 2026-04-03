@@ -3,7 +3,7 @@ import { generateChildPdf, ReportData } from '@/lib/pdf/child-report';
 
 function makeReportData(overrides: Partial<ReportData> = {}): ReportData {
   return {
-    child: { name: 'Ahmed', age: 8, ageGroup: '6-9', createdAt: '2026-01-01' },
+    child: { name: 'أحمد', age: 8, ageGroup: '6-9', createdAt: '2026-01-01' },
     stats: {
       totalSessions: 15,
       totalQuestions: 150,
@@ -19,17 +19,17 @@ function makeReportData(overrides: Partial<ReportData> = {}): ReportData {
       logical_patterns: { accuracy: 85, totalAnswered: 55, trend: 'up' },
     },
     weeklyData: [
-      { week: 'Week 1', sessions: 5, accuracy: 70, points: 150 },
-      { week: 'Week 2', sessions: 3, accuracy: 75, points: 120 },
-      { week: 'Week 3', sessions: 4, accuracy: 72, points: 140 },
-      { week: 'Week 4', sessions: 3, accuracy: 80, points: 130 },
+      { week: 'الأسبوع ١', sessions: 5, accuracy: 70, points: 150 },
+      { week: 'الأسبوع ٢', sessions: 3, accuracy: 75, points: 120 },
+      { week: 'الأسبوع ٣', sessions: 4, accuracy: 72, points: 140 },
+      { week: 'الأسبوع ٤', sessions: 3, accuracy: 80, points: 130 },
     ],
-    strengths: ['Pattern Recognition (90%)', 'Number Patterns (85%)'],
-    weaknesses: ['Word Problems (45%)', 'Context Errors (50%)'],
+    strengths: ['التعرف على الأنماط (90٪)', 'أنماط الأرقام (85٪)'],
+    weaknesses: ['المسائل اللفظية (45٪)', 'أخطاء السياق (50٪)'],
     recommendations: [
-      'Focus on word problems - accuracy at 45%',
-      'Excellent performance in pattern recognition!',
-      'Try to practice daily to maintain streak',
+      'ننصح بالتركيز على المسائل اللفظية — تحتاج تحسين',
+      'أداء ممتاز في التعرف على الأنماط — استمر!',
+      'حاول التدرب يومياً للحفاظ على سلسلة الأيام',
     ],
     ...overrides,
   };
@@ -65,7 +65,7 @@ describe('generateChildPdf', () => {
       weeklyData: [],
       strengths: [],
       weaknesses: [],
-      recommendations: ['Start practicing to see your level!'],
+      recommendations: ['ابدأ بالتدريب لمعرفة مستواك!'],
     });
     const buffer = await generateChildPdf(data);
 
@@ -85,7 +85,7 @@ describe('generateChildPdf', () => {
         currentStreak: 1,
         badges: ['starter'],
       },
-      weeklyData: [{ week: 'Week 1', sessions: 1, accuracy: 70, points: 50 }],
+      weeklyData: [{ week: 'الأسبوع ١', sessions: 1, accuracy: 70, points: 50 }],
     });
     const buffer = await generateChildPdf(data);
 

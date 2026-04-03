@@ -26,7 +26,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['jspdf'],
+  serverExternalPackages: [],
   async headers() {
     return [
       // Dashboard API: short cache with stale-while-revalidate
