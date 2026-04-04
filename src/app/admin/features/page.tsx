@@ -10,6 +10,46 @@ interface FeatureFlag {
   allowedEmails: string;
 }
 
+interface PdfStats {
+  totalChildren: number;
+  childrenWithSessions: number;
+  totalCompletedSessions: number;
+  avgAccuracy: number;
+}
+
+interface ReviewStats {
+  totalItems: number;
+  masteredItems: number;
+  pendingItems: number;
+  uniqueUsers: number;
+  masteryRate: number;
+  avgTimesWrong: number;
+  avgReviewsToMastery: number;
+}
+
+interface RetirementStats {
+  totalRetired: number;
+  totalTracked: number;
+  uniqueUsers: number;
+  avgCorrectCount: number;
+  totalQuestions: number;
+  retirementRate: number;
+}
+
+interface FeatureStats {
+  child_pdf_report: PdfStats;
+  review_mode: ReviewStats;
+  question_retirement: RetirementStats;
+}
+
+// Metric card config
+interface Metric {
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: 'emerald' | 'amber' | 'red' | 'blue' | 'purple' | 'gray';
+}
+
 // Optional cosmetic overrides — flags not listed here still render fine from DB values
 const FLAG_META: Record<string, { icon: string; color: string }> = {
   child_pdf_report: { icon: '📄', color: 'blue' },
@@ -24,6 +64,56 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string }> = 
   gray: { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-500' },
 };
 
+function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | null {
+  if (!stats) return null;
+
+  if (flagKey === 'child_pdf_report') {
+    const s = stats.child_pdf_report;
+    return [
+      { label: 'أطفال مسجّلين', value: s.totalChildren, accent: 'blue' },
+      { label: 'أطفال بجلسات', value: s.childrenWithSessions, accent: 'emerald' },
+      { label: 'جلسات مكتملة', value: s.totalCompletedSessions, accent: 'purple' },
+      { label: 'متوسط الدقة', value: `${s.avgAccuracy}%`, accent: s.avgAccuracy >= 70 ? 'emerald' : s.avgAccuracy >= 50 ? 'amber' : 'red' },
+    ];
+  }
+
+  if (flagKey === 'review_mode') {
+    const s = stats.review_mode;
+    return [
+      { label: 'مستخدمين', value: s.uniqueUsers, accent: 'purple' },
+      { label: 'عناصر مراجعة', value: s.totalItems, accent: 'blue' },
+      { label: 'تم إتقانها', value: s.masteredItems, sub: `${s.masteryRate}%`, accent: s.masteryRate >= 50 ? 'emerald' : 'amber' },
+      { label: 'معلّقة الآن', value: s.pendingItems, accent: s.pendingItems > 50 ? 'red' : 'gray' },
+      { label: 'متوسط الأخطاء', value: s.avgTimesWrong, accent: 'amber' },
+      { label: 'مراجعات للإتقان', value: s.avgReviewsToMastery || '—', accent: 'emerald' },
+    ];
+  }
+
+  if (flagKey === 'question_retirement') {
+    const s = stats.question_retirement;
+    const depletionPct = s.totalQuestions > 0 ? Math.round((s.totalRetired / s.totalQuestions) * 100) : 0;
+    return [
+      { label: 'مستخدمين', value: s.uniqueUsers, accent: 'amber' },
+      { label: 'أسئلة مُتتبّعة', value: s.totalTracked, accent: 'blue' },
+      { label: 'أسئلة مُقصاة', value: s.totalRetired, sub: `${s.retirementRate}%`, accent: 'emerald' },
+      { label: 'متوسط الإجابات', value: s.avgCorrectCount, accent: 'purple' },
+      { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'gray' },
+      { label: 'نسبة الاستنزاف', value: `${depletionPct}%`, accent: depletionPct > 30 ? 'red' : depletionPct > 15 ? 'amber' : 'emerald' },
+    ];
+  }
+
+  return null;
+}
+
+const ACCENT_COLORS: Record<string, string> = {
+  emerald: 'text-emerald-600',
+  amber: 'text-amber-600',
+  red: 'text-red-600',
+  blue: 'text-blue-600',
+  purple: 'text-purple-600',
+  gray: 'text-gray-500',
+};
+
 export default function FeaturesPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +125,7 @@ export default function FeaturesPage() {
   >({});
   const [confirmGlobal, setConfirmGlobal] = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [stats, setStats] = useState<FeatureStats | null>(null);
 
   // Track which flags have unsaved changes
   const dirtyFlags = useMemo(() => {
@@ -55,18 +146,24 @@ export default function FeaturesPage() {
   );
 
   useEffect(() => {
-    fetch('/api/admin/features')
-      .then((r) => {
+    Promise.all([
+      fetch('/api/admin/features').then((r) => {
         if (!r.ok) throw new Error('Failed to fetch');
         return r.json();
-      })
-      .then((data) => {
-        setFlags(data.flags);
+      }),
+      fetch('/api/admin/features/stats').then((r) => {
+        if (!r.ok) return null;
+        return r.json();
+      }),
+    ])
+      .then(([flagsData, statsData]) => {
+        setFlags(flagsData.flags);
         const state: Record<string, { enabled: boolean; allowedEmails: string }> = {};
-        for (const f of data.flags) {
+        for (const f of flagsData.flags) {
           state[f.flagKey] = { enabled: f.enabled, allowedEmails: f.allowedEmails };
         }
         setLocalState(state);
+        if (statsData) setStats(statsData);
       })
       .catch(() => setError('فشل تحميل الخصائص'))
       .finally(() => setLoading(false));
@@ -216,6 +313,7 @@ export default function FeaturesPage() {
             const isDirty = dirtyFlags[flag.flagKey];
             const isExpanded = expandedCard === flag.flagKey;
             const emails = parseEmails(state.allowedEmails);
+            const metrics = buildMetrics(flag.flagKey, stats);
 
             return (
               <div
@@ -284,6 +382,32 @@ export default function FeaturesPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Feature-specific metrics */}
+                {metrics && metrics.length > 0 && (
+                  <div className="mx-5 mb-3">
+                    <div className={`grid gap-2 ${metrics.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                      {metrics.map((m, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-100"
+                        >
+                          <div className={`text-lg font-bold ${ACCENT_COLORS[m.accent || 'gray']}`}>
+                            {m.value}
+                            {m.sub && (
+                              <span className="text-xs font-medium text-gray-400 mr-1">
+                                {m.sub}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                            {m.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Confirm global enable */}
                 {confirmGlobal === flag.flagKey && (
