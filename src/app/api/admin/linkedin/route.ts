@@ -6,19 +6,23 @@ import {
   markCopied,
   getRecentPosts,
 } from '@/lib/linkedin-content';
-import type { PostType } from '@/lib/linkedin-templates';
+import type { PostType, AccountType } from '@/lib/linkedin-templates';
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [todayPosts, history] = await Promise.all([
+  const [todayPosts, platformHistory, personalHistory] = await Promise.all([
     getTodayPosts(),
-    getRecentPosts(30),
+    getRecentPosts(30, 'platform'),
+    getRecentPosts(30, 'personal'),
   ]);
 
-  return NextResponse.json({ todayPosts, history });
+  return NextResponse.json({
+    todayPosts,
+    history: { platform: platformHistory, personal: personalHistory },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,13 +31,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { action, type } = body;
+  const { action, type, account } = body;
 
   if (action === 'regenerate') {
     if (!type) {
       return NextResponse.json({ error: 'type is required' }, { status: 400 });
     }
-    const post = await generatePost(type as PostType);
+    const acct: AccountType = account === 'personal' ? 'personal' : 'platform';
+    const post = await generatePost(type as PostType, undefined, acct);
     return NextResponse.json({ post });
   }
 

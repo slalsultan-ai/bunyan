@@ -3,10 +3,13 @@ import { questions } from '@/lib/db/schema';
 import { eq, sql, and } from 'drizzle-orm';
 import {
   type PostType,
+  type AccountType,
   POST_TYPE_LABELS,
   getPostTypeForDate,
   TEMPLATES,
+  PERSONAL_TEMPLATES,
   formatInteractivePost,
+  formatPersonalInteractivePost,
 } from './linkedin-templates';
 
 export interface LinkedInPost {
@@ -17,6 +20,7 @@ export interface LinkedInPost {
   comment?: string | null;
   questionId?: string | null;
   copied: boolean;
+  account: AccountType;
   generatedForDate: string;
   createdAt: string;
 }
@@ -27,7 +31,7 @@ function toDateStr(d: Date): string {
 }
 
 /** Get today's posts (generate if none exist) */
-export async function getTodayPosts(date?: Date): Promise<LinkedInPost[]> {
+export async function getTodayPosts(date?: Date): Promise<{ platform: LinkedInPost[]; personal: LinkedInPost[] }> {
   const d = date || new Date();
   const dateStr = toDateStr(d);
   const db = getDb();
@@ -39,39 +43,53 @@ export async function getTodayPosts(date?: Date): Promise<LinkedInPost[]> {
     comment: string | null;
     question_id: string | null;
     copied: number;
+    account: string;
     generated_for_date: string;
     created_at: string;
   }>(sql`SELECT * FROM linkedin_posts WHERE generated_for_date = ${dateStr} ORDER BY id DESC`);
 
-  if (rows.length > 0) {
-    return rows.map(mapRow);
+  const platformRows = rows.filter((r) => r.account !== 'personal');
+  const personalRows = rows.filter((r) => r.account === 'personal');
+
+  const type = getPostTypeForDate(d);
+
+  // Generate platform posts if none exist
+  if (platformRows.length === 0) {
+    const p1 = await generatePost(type, dateStr, 'platform');
+    const p2 = await generatePost(type, dateStr, 'platform');
+    platformRows.push(...([p1, p2] as any[]));
   }
 
-  // Generate 2 posts for today
-  const type = getPostTypeForDate(d);
-  const post1 = await generatePost(type, dateStr);
-  const post2 = await generatePost(type, dateStr);
+  // Generate personal posts if none exist
+  if (personalRows.length === 0) {
+    const p1 = await generatePost(type, dateStr, 'personal');
+    const p2 = await generatePost(type, dateStr, 'personal');
+    personalRows.push(...([p1, p2] as any[]));
+  }
 
-  return [post1, post2];
+  return {
+    platform: platformRows.length > 0 && platformRows[0].id ? platformRows.map(mapRow) : (platformRows as unknown as LinkedInPost[]),
+    personal: personalRows.length > 0 && personalRows[0].id ? personalRows.map(mapRow) : (personalRows as unknown as LinkedInPost[]),
+  };
 }
 
 /** Generate a post of a specific type */
-export async function generatePost(type: PostType, dateStr?: string): Promise<LinkedInPost> {
+export async function generatePost(type: PostType, dateStr?: string, account: AccountType = 'platform'): Promise<LinkedInPost> {
   const date = dateStr || toDateStr(new Date());
   const db = getDb();
 
   if (type === 'interactive_question') {
-    return generateInteractivePost(date);
+    return generateInteractivePost(date, account);
   }
 
-  const templates = TEMPLATES[type];
+  const templates = account === 'personal' ? PERSONAL_TEMPLATES[type] : TEMPLATES[type];
   if (!templates || templates.length === 0) {
-    throw new Error(`No templates for type: ${type}`);
+    throw new Error(`No templates for type: ${type}, account: ${account}`);
   }
 
-  // Find which templates were used in last 30 days
+  // Find which templates were used in last 30 days for this account
   const recent = await db.all<{ content: string }>(
-    sql`SELECT content FROM linkedin_posts WHERE post_type = ${type} AND generated_for_date >= date(${date}, '-30 days')`
+    sql`SELECT content FROM linkedin_posts WHERE post_type = ${type} AND account = ${account} AND generated_for_date >= date(${date}, '-30 days')`
   );
   const usedSet = new Set(recent.map((r) => r.content));
 
@@ -85,7 +103,7 @@ export async function generatePost(type: PostType, dateStr?: string): Promise<Li
   }
 
   const result = await db.run(
-    sql`INSERT INTO linkedin_posts (post_type, content, generated_for_date) VALUES (${type}, ${content}, ${date})`
+    sql`INSERT INTO linkedin_posts (post_type, content, account, generated_for_date) VALUES (${type}, ${content}, ${account}, ${date})`
   );
 
   const id = Number(result.lastInsertRowid);
@@ -98,18 +116,19 @@ export async function generatePost(type: PostType, dateStr?: string): Promise<Li
     comment: null,
     questionId: null,
     copied: false,
+    account,
     generatedForDate: date,
     createdAt: new Date().toISOString(),
   };
 }
 
 /** Generate interactive question post from the question bank */
-async function generateInteractivePost(dateStr: string): Promise<LinkedInPost> {
+async function generateInteractivePost(dateStr: string, account: AccountType = 'platform'): Promise<LinkedInPost> {
   const db = getDb();
 
-  // Find a question (age 10-12) that hasn't been used in a LinkedIn post
+  // Find a question (age 10-12) that hasn't been used in a LinkedIn post for this account
   const usedIds = await db.all<{ question_id: string }>(
-    sql`SELECT question_id FROM linkedin_posts WHERE post_type = 'interactive_question' AND question_id IS NOT NULL`
+    sql`SELECT question_id FROM linkedin_posts WHERE post_type = 'interactive_question' AND account = ${account} AND question_id IS NOT NULL`
   );
   const usedIdSet = new Set(usedIds.map((r) => r.question_id));
 
@@ -130,13 +149,14 @@ async function generateInteractivePost(dateStr: string): Promise<LinkedInPost> {
 
   if (pool.length === 0) {
     // Fallback: generate a stat_tip instead
-    return generatePost('stat_tip', dateStr);
+    return generatePost('stat_tip', dateStr, account);
   }
 
   const q = pool[Math.floor(Math.random() * pool.length)];
   const options = q.options as Array<{ text: string }>;
 
-  const { content, comment } = formatInteractivePost({
+  const formatter = account === 'personal' ? formatPersonalInteractivePost : formatInteractivePost;
+  const { content, comment } = formatter({
     questionText: q.questionTextAr,
     options,
     correctIndex: q.correctOptionIndex,
@@ -145,7 +165,7 @@ async function generateInteractivePost(dateStr: string): Promise<LinkedInPost> {
   });
 
   const result = await db.run(
-    sql`INSERT INTO linkedin_posts (post_type, content, comment, question_id, generated_for_date) VALUES ('interactive_question', ${content}, ${comment}, ${q.id}, ${dateStr})`
+    sql`INSERT INTO linkedin_posts (post_type, content, comment, question_id, account, generated_for_date) VALUES ('interactive_question', ${content}, ${comment}, ${q.id}, ${account}, ${dateStr})`
   );
 
   const id = Number(result.lastInsertRowid);
@@ -158,14 +178,29 @@ async function generateInteractivePost(dateStr: string): Promise<LinkedInPost> {
     comment,
     questionId: q.id,
     copied: false,
+    account,
     generatedForDate: dateStr,
     createdAt: new Date().toISOString(),
   };
 }
 
 /** Get recent posts history (last 30) */
-export async function getRecentPosts(limit = 30): Promise<LinkedInPost[]> {
+export async function getRecentPosts(limit = 30, account?: AccountType): Promise<LinkedInPost[]> {
   const db = getDb();
+  if (account) {
+    const rows = await db.all<{
+      id: number;
+      post_type: string;
+      content: string;
+      comment: string | null;
+      question_id: string | null;
+      copied: number;
+      account: string;
+      generated_for_date: string;
+      created_at: string;
+    }>(sql`SELECT * FROM linkedin_posts WHERE account = ${account} ORDER BY generated_for_date DESC, id DESC LIMIT ${limit}`);
+    return rows.map(mapRow);
+  }
   const rows = await db.all<{
     id: number;
     post_type: string;
@@ -173,10 +208,10 @@ export async function getRecentPosts(limit = 30): Promise<LinkedInPost[]> {
     comment: string | null;
     question_id: string | null;
     copied: number;
+    account: string;
     generated_for_date: string;
     created_at: string;
   }>(sql`SELECT * FROM linkedin_posts ORDER BY generated_for_date DESC, id DESC LIMIT ${limit}`);
-
   return rows.map(mapRow);
 }
 
@@ -193,6 +228,7 @@ function mapRow(r: {
   comment: string | null;
   question_id: string | null;
   copied: number;
+  account?: string;
   generated_for_date: string;
   created_at: string;
 }): LinkedInPost {
@@ -205,6 +241,7 @@ function mapRow(r: {
     comment: r.comment,
     questionId: r.question_id,
     copied: r.copied === 1,
+    account: (r.account as AccountType) || 'platform',
     generatedForDate: r.generated_for_date,
     createdAt: r.created_at,
   };

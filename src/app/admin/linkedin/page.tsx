@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
+type AccountType = 'platform' | 'personal';
+
 interface LinkedInPost {
   id: number;
   type: string;
@@ -9,13 +11,22 @@ interface LinkedInPost {
   comment?: string | null;
   questionId?: string | null;
   copied: boolean;
+  account: AccountType;
   generatedForDate: string;
   createdAt: string;
 }
 
+const ACCOUNT_LABELS: Record<AccountType, string> = {
+  platform: 'حساب المنصة',
+  personal: 'الحساب الشخصي',
+};
+
 export default function LinkedInPage() {
-  const [todayPosts, setTodayPosts] = useState<LinkedInPost[]>([]);
-  const [history, setHistory] = useState<LinkedInPost[]>([]);
+  const [platformPosts, setPlatformPosts] = useState<LinkedInPost[]>([]);
+  const [personalPosts, setPersonalPosts] = useState<LinkedInPost[]>([]);
+  const [platformHistory, setPlatformHistory] = useState<LinkedInPost[]>([]);
+  const [personalHistory, setPersonalHistory] = useState<LinkedInPost[]>([]);
+  const [activeTab, setActiveTab] = useState<AccountType>('platform');
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -26,8 +37,10 @@ export default function LinkedInPage() {
       const res = await fetch('/api/admin/linkedin');
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
-      setTodayPosts(data.todayPosts);
-      setHistory(data.history);
+      setPlatformPosts(data.todayPosts.platform);
+      setPersonalPosts(data.todayPosts.personal);
+      setPlatformHistory(data.history.platform);
+      setPersonalHistory(data.history.personal);
     } catch {
       setToast('حدث خطأ في تحميل البيانات');
     } finally {
@@ -41,6 +54,11 @@ export default function LinkedInPage() {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
+
+  const todayPosts = activeTab === 'platform' ? platformPosts : personalPosts;
+  const setTodayPosts = activeTab === 'platform' ? setPlatformPosts : setPersonalPosts;
+  const history = activeTab === 'platform' ? platformHistory : personalHistory;
+  const setHistory = activeTab === 'platform' ? setPlatformHistory : setPersonalHistory;
 
   const copyToClipboard = async (post: LinkedInPost, withEmoji = true) => {
     let text = post.content;
@@ -59,9 +77,12 @@ export default function LinkedInPage() {
         body: JSON.stringify({ id: post.id, copied: true }),
       });
 
-      // Update local state
-      setTodayPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, copied: true } : p)));
-      setHistory((prev) => prev.map((p) => (p.id === post.id ? { ...p, copied: true } : p)));
+      // Update local state for both sets
+      const updater = (prev: LinkedInPost[]) => prev.map((p) => (p.id === post.id ? { ...p, copied: true } : p));
+      setPlatformPosts(updater);
+      setPersonalPosts(updater);
+      setPlatformHistory(updater);
+      setPersonalHistory(updater);
     } catch {
       showToast('فشل النسخ — جرّب يدوياً');
     }
@@ -83,7 +104,7 @@ export default function LinkedInPage() {
       const res = await fetch('/api/admin/linkedin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'regenerate', type }),
+        body: JSON.stringify({ action: 'regenerate', type, account: activeTab }),
       });
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
@@ -116,12 +137,36 @@ export default function LinkedInPage() {
         </div>
       )}
 
+      {/* Account Tabs */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+        {(['platform', 'personal'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab
+                ? tab === 'platform'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'bg-white text-purple-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab === 'platform' ? '🏢' : '👤'} {ACCOUNT_LABELS[tab]}
+          </button>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">📝 محتوى لينكدإن — بوست اليوم</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+            {activeTab === 'platform' ? '🏢' : '👤'} محتوى لينكدإن — {ACCOUNT_LABELS[activeTab]}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             النوع: <span className="font-medium text-gray-700">{postTypeLabel}</span>
+            {activeTab === 'personal' && (
+              <span className="mr-2 text-purple-500 font-medium"> • أسلوب شخصي بشري</span>
+            )}
           </p>
         </div>
         <button
@@ -158,7 +203,9 @@ export default function LinkedInPage() {
       {/* History */}
       {history.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">سجل المنشورات السابقة</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
+            سجل المنشورات السابقة — {ACCOUNT_LABELS[activeTab]}
+          </h2>
           <div className="space-y-2">
             {history.map((post) => (
               <HistoryRow key={post.id} post={post} />
@@ -187,11 +234,12 @@ function PostCard({
 }) {
   const label = index === 0 && total > 1 ? 'البوست الأول' : index === 1 ? 'البوست الثاني' : `بوست #${index + 1}`;
   const isCopied = copiedId === post.id || post.copied;
+  const isPersonal = post.account === 'personal';
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${isPersonal ? 'border-purple-200' : 'border-gray-200'}`}>
       {total > 1 && (
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-500">
+        <div className={`px-4 py-2 border-b text-xs font-medium ${isPersonal ? 'bg-purple-50 border-purple-100 text-purple-500' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
           {label}
         </div>
       )}
