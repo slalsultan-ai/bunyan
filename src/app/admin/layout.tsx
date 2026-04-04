@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/coverage', label: 'تغطية المحتوى', icon: '🗺️' },
   { href: '/admin/content', label: 'المحتوى', icon: '✏️' },
   { href: '/admin/analytics', label: 'التحليلات', icon: '📈' },
+  { href: '/admin/linkedin', label: 'محتوى لينكدإن', icon: '📝' },
   { href: '/admin/features', label: 'الخصائص', icon: '⚙️' },
 ];
 
