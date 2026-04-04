@@ -58,45 +58,38 @@ async function getChildPdfStats(db: DB) {
     totalChildren: r?.totalChildren ?? 0,
     childrenWithSessions: r?.childrenWithSessions ?? 0,
     totalCompletedSessions: r?.totalCompletedSessions ?? 0,
-    avgAccuracy: r?.avgAccuracy ?? 0,
+    avgAccuracy: r?.avgAccuracy ?? null,
     recentSessions: recent?.recentSessions ?? 0,
-    recentAccuracy: recent?.recentAccuracy ?? 0,
+    recentAccuracy: recent?.recentAccuracy ?? null,
   };
 }
 
 async function getReviewModeStats(db: DB) {
-  const [[r], [recentMastered]] = await Promise.all([
-    db
-      .select({
-        totalItems: sql<number>`COUNT(*)`,
-        masteredItems: sql<number>`SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END)`,
-        pendingItems: sql<number>`SUM(CASE WHEN mastered = 0 AND next_review_at <= datetime('now') THEN 1 ELSE 0 END)`,
-        uniqueUsers: sql<number>`COUNT(DISTINCT COALESCE(child_id, guest_id))`,
-        avgTimesWrong: sql<number>`ROUND(AVG(times_wrong), 1)`,
-        avgReviewsToMastery: sql<number>`ROUND(AVG(CASE WHEN mastered = 1 THEN times_reviewed ELSE NULL END), 1)`,
-      })
-      .from(reviewQueue),
-    // Mastered in last 7 days
-    db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(reviewQueue)
-      .where(sql`mastered = 1 AND created_at >= datetime('now', '-7 days')`),
-  ]);
+  const [r] = await db
+    .select({
+      totalItems: sql<number>`COUNT(*)`,
+      masteredItems: sql<number>`SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END)`,
+      pendingItems: sql<number>`SUM(CASE WHEN mastered = 0 AND next_review_at <= datetime('now') THEN 1 ELSE 0 END)`,
+      uniqueUsers: sql<number>`COUNT(DISTINCT COALESCE(child_id, guest_id))`,
+      avgTimesWrong: sql<number>`ROUND(AVG(times_wrong), 1)`,
+      avgReviewsToMastery: sql<number>`ROUND(AVG(CASE WHEN mastered = 1 THEN times_reviewed ELSE NULL END), 1)`,
+    })
+    .from(reviewQueue);
 
   const total = r?.totalItems ?? 0;
   const mastered = r?.masteredItems ?? 0;
+
+  // Use ceil so 0.4% shows as 1% instead of rounding to 0%
+  const masteryRate = total > 0 ? Math.max(Math.round((mastered / total) * 100), mastered > 0 ? 1 : 0) : 0;
 
   return {
     totalItems: total,
     masteredItems: mastered,
     pendingItems: r?.pendingItems ?? 0,
     uniqueUsers: r?.uniqueUsers ?? 0,
-    masteryRate: total > 0 ? Math.round((mastered / total) * 100) : 0,
-    avgTimesWrong: r?.avgTimesWrong ?? 0,
-    avgReviewsToMastery: r?.avgReviewsToMastery ?? 0,
-    recentMastered: recentMastered?.count ?? 0,
+    masteryRate,
+    avgTimesWrong: total > 0 ? (r?.avgTimesWrong ?? null) : null,
+    avgReviewsToMastery: mastered > 0 ? (r?.avgReviewsToMastery ?? null) : null,
   };
 }
 
@@ -148,9 +141,9 @@ async function getQuestionRetirementStats(db: DB) {
     totalRetired: retired,
     totalTracked: tracked,
     uniqueUsers: r?.uniqueUsers ?? 0,
-    avgCorrectCount: r?.avgCorrectCount ?? 0,
+    avgCorrectCount: tracked > 0 ? (r?.avgCorrectCount ?? null) : null,
     totalQuestions: pool?.totalQuestions ?? 0,
-    retirementRate: tracked > 0 ? Math.round((retired / tracked) * 100) : 0,
+    retirementRate: tracked > 0 ? Math.max(Math.round((retired / tracked) * 100), retired > 0 ? 1 : 0) : 0,
     byAgeGroup,
   };
 }

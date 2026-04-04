@@ -16,9 +16,9 @@ interface PdfStats {
   totalChildren: number;
   childrenWithSessions: number;
   totalCompletedSessions: number;
-  avgAccuracy: number;
+  avgAccuracy: number | null;
   recentSessions: number;
-  recentAccuracy: number;
+  recentAccuracy: number | null;
 }
 
 interface ReviewStats {
@@ -27,9 +27,8 @@ interface ReviewStats {
   pendingItems: number;
   uniqueUsers: number;
   masteryRate: number;
-  avgTimesWrong: number;
-  avgReviewsToMastery: number;
-  recentMastered: number;
+  avgTimesWrong: number | null;
+  avgReviewsToMastery: number | null;
 }
 
 interface AgeGroupDepletion {
@@ -43,7 +42,7 @@ interface RetirementStats {
   totalRetired: number;
   totalTracked: number;
   uniqueUsers: number;
-  avgCorrectCount: number;
+  avgCorrectCount: number | null;
   totalQuestions: number;
   retirementRate: number;
   byAgeGroup: AgeGroupDepletion[];
@@ -127,13 +126,15 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     const s = stats.child_pdf_report;
     const coverage = s.totalChildren > 0
       ? Math.round((s.childrenWithSessions / s.totalChildren) * 100) : 0;
+    const acc = s.avgAccuracy;
+    const rAcc = s.recentAccuracy;
     return [
       { label: 'أطفال مسجّلين', value: s.totalChildren, accent: 'blue' },
       { label: 'لديهم جلسات', value: s.childrenWithSessions, sub: `${coverage}%`, accent: 'emerald', progress: coverage },
       { label: 'جلسات مكتملة', value: s.totalCompletedSessions, accent: 'purple' },
-      { label: 'متوسط الدقة', value: `${s.avgAccuracy}%`, accent: s.avgAccuracy >= 70 ? 'emerald' : s.avgAccuracy >= 50 ? 'amber' : 'red', progress: s.avgAccuracy },
+      { label: 'متوسط الدقة', value: acc != null ? `${acc}%` : '—', accent: acc != null ? (acc >= 70 ? 'emerald' : acc >= 50 ? 'amber' : 'red') : 'gray', progress: acc ?? undefined },
       { label: 'جلسات آخر ٧ أيام', value: s.recentSessions, accent: s.recentSessions > 0 ? 'blue' : 'gray' },
-      { label: 'دقة آخر ٧ أيام', value: s.recentAccuracy ? `${s.recentAccuracy}%` : '—', accent: (s.recentAccuracy ?? 0) >= 70 ? 'emerald' : (s.recentAccuracy ?? 0) >= 50 ? 'amber' : 'gray' },
+      { label: 'دقة آخر ٧ أيام', value: rAcc != null ? `${rAcc}%` : '—', accent: rAcc != null ? (rAcc >= 70 ? 'emerald' : rAcc >= 50 ? 'amber' : 'red') : 'gray' },
     ];
   }
 
@@ -144,8 +145,8 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
       { label: 'عناصر مراجعة', value: s.totalItems, accent: 'blue' },
       { label: 'تم إتقانها', value: s.masteredItems, sub: `${s.masteryRate}%`, accent: s.masteryRate >= 50 ? 'emerald' : 'amber', progress: s.masteryRate },
       { label: 'معلّقة الآن', value: s.pendingItems, accent: s.pendingItems > 50 ? 'red' : s.pendingItems > 0 ? 'amber' : 'gray' },
-      { label: 'متوسط الأخطاء', value: s.avgTimesWrong, accent: 'amber' },
-      { label: 'مراجعات للإتقان', value: s.avgReviewsToMastery || '—', accent: 'emerald' },
+      { label: 'متوسط الأخطاء', value: s.avgTimesWrong ?? '—', accent: 'amber' },
+      { label: 'مراجعات للإتقان', value: s.avgReviewsToMastery ?? '—', accent: 'emerald' },
     ];
   }
 
@@ -156,7 +157,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
       { label: 'مستخدمين', value: s.uniqueUsers, accent: 'amber' },
       { label: 'أسئلة مُتتبّعة', value: s.totalTracked, accent: 'blue' },
       { label: 'أسئلة مُقصاة', value: s.totalRetired, sub: `${s.retirementRate}%`, accent: 'emerald', progress: s.retirementRate },
-      { label: 'متوسط الإجابات', value: s.avgCorrectCount, accent: 'purple' },
+      { label: 'متوسط الإجابات', value: s.avgCorrectCount ?? '—', accent: 'purple' },
       { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'gray' },
       { label: 'نسبة الاستنزاف', value: `${depletionPct}%`, accent: depletionPct > 30 ? 'red' : depletionPct > 15 ? 'amber' : 'emerald', progress: depletionPct },
     ];
@@ -170,10 +171,10 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'child_pdf_report') {
     const s = stats.child_pdf_report;
-    if (s.childrenWithSessions >= 5 && s.avgAccuracy > 0 && s.recentSessions >= 3) {
+    if (s.childrenWithSessions >= 5 && s.avgAccuracy != null && s.recentSessions >= 3) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `بيانات كافية: ${s.childrenWithSessions} طفل بجلسات، نشاط حديث مستمر` };
     }
-    if (s.childrenWithSessions >= 2) {
+    if (s.childrenWithSessions >= 1) {
       return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.childrenWithSessions} أطفال فقط جرّبوا النظام — يُفضّل ≥ ٥ قبل الإطلاق` };
     }
     return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات كافية — فعّل لمختبرين أولاً' };
@@ -181,7 +182,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
-    if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && s.avgReviewsToMastery > 0) {
+    if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsers} مستخدمين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
     }
     if (s.uniqueUsers >= 1 && s.totalItems >= 5) {
@@ -192,7 +193,10 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
-    const maxDepletion = Math.max(...(s.byAgeGroup.map((a) => a.depletionPct) || [0]), 0);
+    if (s.uniqueUsers === 0) {
+      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات استخدام — فعّل لمختبرين أولاً لجمع بيانات الإقصاء' };
+    }
+    const maxDepletion = Math.max(...s.byAgeGroup.map((a) => a.depletionPct), 0);
     if (s.uniqueUsers >= 3 && maxDepletion <= 15) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `استنزاف منخفض (أعلى فئة ${maxDepletion}%) — بنك الأسئلة يتحمّل` };
     }
