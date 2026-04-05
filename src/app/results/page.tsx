@@ -7,6 +7,7 @@ import Confetti from '@/components/ui/Confetti';
 import { getBadgeById } from '@/lib/gamification/badges';
 import { getSkillAreaLabel, formatTime } from '@/lib/utils';
 import RegisterPrompt from '@/components/auth/RegisterPrompt';
+import ShareAchievement from '@/components/results/ShareAchievement';
 
 function ResultsContent() {
   const params = useSearchParams();
@@ -98,6 +99,9 @@ function ResultsContent() {
             </div>
           </div>
         )}
+
+        {/* 📣 شارك الإنجاز */}
+        <ShareAchievement name={childName} score={score} total={total} skill={skill} age={age} />
 
         {/* 🎓 شهادة إتمام */}
         <div className="bg-gradient-to-l from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-2xl p-4 mb-3 shadow-sm">
