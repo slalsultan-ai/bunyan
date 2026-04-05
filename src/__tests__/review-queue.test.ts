@@ -115,10 +115,21 @@ describe('markReviewProgress', () => {
     expect(mockUpdate).toHaveBeenCalledOnce();
   });
 
-  it('marks as mastered when timesReviewed reaches 3', async () => {
-    mockSelect.mockReturnValue(makeSelectChain([
-      { id: 1, timesReviewed: 2 },
-    ]));
+  it('schedules 3 days ahead after 1st correct review', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([{ id: 1, timesReviewed: 0 }]));
+    const setFn = vi.fn().mockReturnThis();
+    const whereFn = vi.fn().mockResolvedValue(undefined);
+    mockUpdate.mockReturnValue({ set: setFn, where: whereFn });
+
+    await markReviewProgress({ guestId: 'g1', questionId: 'q1' });
+
+    expect(setFn).toHaveBeenCalledWith(expect.objectContaining({ timesReviewed: 1 }));
+    // mastered is not set when scheduling next review
+    expect(setFn.mock.calls[0][0]).not.toHaveProperty('mastered');
+  });
+
+  it('marks as mastered after 4th correct review (3/7/14 intervals complete)', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([{ id: 1, timesReviewed: 3 }]));
     const setFn = vi.fn().mockReturnThis();
     const whereFn = vi.fn().mockResolvedValue(undefined);
     mockUpdate.mockReturnValue({ set: setFn, where: whereFn });
@@ -127,7 +138,7 @@ describe('markReviewProgress', () => {
 
     expect(mockUpdate).toHaveBeenCalledOnce();
     expect(setFn).toHaveBeenCalledWith(expect.objectContaining({
-      timesReviewed: 3,
+      timesReviewed: 4,
       mastered: 1,
     }));
   });

@@ -73,10 +73,17 @@ export async function upsertReviewItem(params: {
 }
 
 /**
+ * Spaced repetition intervals (in days) per review count.
+ *   1st correct review → schedule 3 days out
+ *   2nd correct review → 7 days out
+ *   3rd correct review → 14 days out
+ *   4th correct review → mastered
+ */
+const REVIEW_INTERVALS_DAYS = [3, 7, 14] as const;
+
+/**
  * Mark progress when user answers correctly during review.
- * - times_reviewed++
- * - If times_reviewed >= 3: mastered = 1
- * - Otherwise: next_review_at = now + (times_reviewed * 1 day)
+ * Uses the REVIEW_INTERVALS_DAYS schedule; masters after all intervals pass.
  */
 export async function markReviewProgress(params: {
   guestId?: string;
@@ -104,19 +111,19 @@ export async function markReviewProgress(params: {
 
   const newTimesReviewed = (item.timesReviewed ?? 0) + 1;
 
-  if (newTimesReviewed >= 3) {
-    // Mastered!
+  if (newTimesReviewed > REVIEW_INTERVALS_DAYS.length) {
+    // Mastered after completing all intervals
     await db
       .update(reviewQueue)
       .set({ timesReviewed: newTimesReviewed, mastered: 1 })
       .where(eq(reviewQueue.id, item.id));
   } else {
-    // Schedule next review: now + (timesReviewed * 1 day)
+    const daysAhead = REVIEW_INTERVALS_DAYS[newTimesReviewed - 1];
     await db
       .update(reviewQueue)
       .set({
         timesReviewed: newTimesReviewed,
-        nextReviewAt: sql`datetime('now', '+' || ${newTimesReviewed} || ' days')`,
+        nextReviewAt: sql`datetime('now', '+' || ${daysAhead} || ' days')`,
       })
       .where(eq(reviewQueue.id, item.id));
   }
