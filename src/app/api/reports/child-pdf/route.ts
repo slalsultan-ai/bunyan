@@ -3,8 +3,9 @@ import { getParentSession } from '@/lib/parent-auth';
 import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getDb } from '@/lib/db';
 import { children, sessions, sessionAnswers, questions, guestProgress, childParents } from '@/lib/db/schema';
-import { eq, and, isNotNull, sql, desc } from 'drizzle-orm';
+import { eq, and, isNotNull, sql } from 'drizzle-orm';
 import { generateChildPdf } from '@/lib/pdf/child-report';
+import { getStrengthDescription } from '@/lib/pdf/child-report-content';
 
 export async function GET(req: NextRequest) {
  try {
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Gather data ─────────────────────────────���────────────────────────────
+  // ── Gather data ─────────────────────────────────────────────────────────
 
   // Total stats
   const [totals] = await db
@@ -104,11 +105,17 @@ export async function GET(req: NextRequest) {
     ))
     .groupBy(questions.skillArea);
 
-  type SkillInfo = { accuracy: number; totalAnswered: number; trend: 'up' | 'down' | 'stable' };
+  type SkillInfo = {
+    accuracy: number;
+    totalAnswered: number;
+    trend: 'up' | 'down' | 'stable';
+    strongest?: { name: string; accuracy: number } | null;
+    weakest?: { name: string; accuracy: number } | null;
+  };
   const skills: Record<string, SkillInfo> = {
-    quantitative: { accuracy: 0, totalAnswered: 0, trend: 'stable' },
-    verbal: { accuracy: 0, totalAnswered: 0, trend: 'stable' },
-    logical_patterns: { accuracy: 0, totalAnswered: 0, trend: 'stable' },
+    quantitative: { accuracy: 0, totalAnswered: 0, trend: 'stable', strongest: null, weakest: null },
+    verbal: { accuracy: 0, totalAnswered: 0, trend: 'stable', strongest: null, weakest: null },
+    logical_patterns: { accuracy: 0, totalAnswered: 0, trend: 'stable', strongest: null, weakest: null },
   };
 
   const prevMap = new Map(prevSkillRows.map(r => [r.skillArea, r.total > 0 ? (r.correct / r.total) * 100 : 0]));
@@ -121,6 +128,8 @@ export async function GET(req: NextRequest) {
         accuracy: acc,
         totalAnswered: row.total,
         trend: acc > prevAcc + 5 ? 'up' : acc < prevAcc - 5 ? 'down' : 'stable',
+        strongest: null,
+        weakest: null,
       };
     }
   }
@@ -143,7 +152,7 @@ export async function GET(req: NextRequest) {
     .groupBy(sql`strftime('%Y-W%W', ${sessions.completedAt})`)
     .orderBy(sql`strftime('%Y-W%W', ${sessions.completedAt})`);
 
-  const weekLabels = ['الأسبوع ١', 'الأسبوع ٢', 'الأسبوع ٣', 'الأسبوع ٤'];
+  const weekLabels = ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4'];
   const weeklyData = weeklyRows.map((w, i) => ({
     week: weekLabels[i] ?? `أسبوع ${i + 1}`,
     sessions: w.sessionCount,
@@ -151,10 +160,11 @@ export async function GET(req: NextRequest) {
     points: w.points,
   }));
 
-  // Sub-skill breakdown for strengths/weaknesses
+  // Sub-skill breakdown per skill area
   const subSkillRows = await db
     .select({
       subSkill: questions.subSkill,
+      skillArea: questions.skillArea,
       correct: sql<number>`SUM(CASE WHEN ${sessionAnswers.isCorrect} = 1 THEN 1 ELSE 0 END)`.as('correct'),
       total: sql<number>`COUNT(*)`.as('total'),
     })
@@ -165,28 +175,53 @@ export async function GET(req: NextRequest) {
       eq(sessions.childId, childId),
       isNotNull(sessions.completedAt),
     ))
-    .groupBy(questions.subSkill)
+    .groupBy(questions.subSkill, questions.skillArea)
     .orderBy(sql`COUNT(*) DESC`);
 
-  const subSkillsWithPct = subSkillRows
+  type SubSkillWithPct = { name: string; accuracy: number; total: number; skillArea: string };
+  const subSkillsWithPct: SubSkillWithPct[] = subSkillRows
     .filter(r => r.total >= 3)
     .map(r => ({
       name: r.subSkill,
       accuracy: Math.round((r.correct / r.total) * 100),
       total: r.total,
+      skillArea: r.skillArea,
     }));
 
-  const strengths = subSkillsWithPct
-    .sort((a, b) => b.accuracy - a.accuracy)
-    .slice(0, 3)
-    .map(s => `${s.name} (${s.accuracy}٪)`);
+  // Attach strongest/weakest sub-skill per skill area
+  for (const area of Object.keys(skills)) {
+    const inArea = subSkillsWithPct.filter(s => s.skillArea === area);
+    if (inArea.length > 0) {
+      const sorted = [...inArea].sort((a, b) => b.accuracy - a.accuracy);
+      skills[area].strongest = { name: sorted[0].name, accuracy: sorted[0].accuracy };
+      if (inArea.length > 1) {
+        skills[area].weakest = {
+          name: sorted[sorted.length - 1].name,
+          accuracy: sorted[sorted.length - 1].accuracy,
+        };
+      }
+    }
+  }
 
-  const weaknesses = subSkillsWithPct
-    .sort((a, b) => a.accuracy - b.accuracy)
-    .slice(0, 3)
-    .map(s => `${s.name} (${s.accuracy}٪)`);
+  // Legacy strings (kept for backwards compatibility)
+  const sortedDesc = [...subSkillsWithPct].sort((a, b) => b.accuracy - a.accuracy);
+  const sortedAsc = [...subSkillsWithPct].sort((a, b) => a.accuracy - b.accuracy);
+  const strengths = sortedDesc.slice(0, 3).map(s => `${s.name} (${s.accuracy}%)`);
+  const weaknesses = sortedAsc.slice(0, 3).map(s => `${s.name} (${s.accuracy}%)`);
 
-  // Recommendations
+  // Enriched strong/weak points
+  const strongPoints = sortedDesc.slice(0, 3).map(s => ({
+    name: s.name,
+    accuracy: s.accuracy,
+    description: getStrengthDescription(s.name),
+  }));
+  const weakPoints = sortedAsc.slice(0, 3).map(s => ({
+    name: s.name,
+    accuracy: s.accuracy,
+    skillArea: s.skillArea,
+  }));
+
+  // Recommendations (legacy)
   const recommendations: string[] = [];
   for (const w of weaknesses.slice(0, 2)) {
     recommendations.push(`ننصح بالتركيز على ${w} — تحتاج تحسين`);
@@ -207,6 +242,119 @@ export async function GET(req: NextRequest) {
     ? Math.round((totals.totalCorrect / totals.totalAnswered) * 100)
     : 0;
 
+  // Peer comparison: average accuracy of children in same age group (completed sessions)
+  let peerAvg = 68;
+  let peerN = 0;
+  try {
+    const [peerRow] = await db
+      .select({
+        avg: sql<number>`COALESCE(AVG(CAST(${sessions.score} AS REAL) * 100.0 / NULLIF(${sessions.totalQuestions}, 0)), 0)`,
+        n: sql<number>`COUNT(DISTINCT ${sessions.childId})`,
+      })
+      .from(sessions)
+      .where(and(
+        eq(sessions.ageGroup, child.ageGroup),
+        isNotNull(sessions.completedAt),
+        isNotNull(sessions.childId),
+        sql`${sessions.childId} != ${childId}`,
+      ));
+    if (peerRow) {
+      peerAvg = peerRow.avg ? Math.round(peerRow.avg) : 68;
+      peerN = peerRow.n ?? 0;
+    }
+  } catch {
+    // Fall back to defaults
+  }
+  const peerIsEstimated = peerN < 10;
+  if (peerIsEstimated) peerAvg = 68;
+  // Percentile: simple heuristic from distance to mean
+  const percentile = Math.max(5, Math.min(95,
+    overallAccuracy >= peerAvg
+      ? 50 + Math.round((overallAccuracy - peerAvg) * 1.5)
+      : 50 - Math.round((peerAvg - overallAccuracy) * 1.5)
+  ));
+
+  // Activity rate: avg sessions/week, avg questions/day, best day of week
+  let avgSessionsPerWeek = 0;
+  let avgQuestionsPerDay = 0;
+  let bestDayOfWeek: string | undefined;
+  try {
+    const [activityRow] = await db
+      .select({
+        totalSessions30: sql<number>`COUNT(*)`,
+        totalQuestions30: sql<number>`COALESCE(SUM(${sessions.totalQuestions}), 0)`,
+      })
+      .from(sessions)
+      .where(and(
+        eq(sessions.childId, childId),
+        isNotNull(sessions.completedAt),
+        sql`${sessions.completedAt} >= date('now', '-30 days')`,
+      ));
+    if (activityRow) {
+      avgSessionsPerWeek = Math.round((activityRow.totalSessions30 / 30) * 7);
+      avgQuestionsPerDay = Math.round(activityRow.totalQuestions30 / 30);
+    }
+
+    const dayRows = await db
+      .select({
+        dow: sql<string>`strftime('%w', ${sessions.completedAt})`.as('dow'),
+        avgAcc: sql<number>`COALESCE(AVG(CAST(${sessions.score} AS REAL) * 100.0 / NULLIF(${sessions.totalQuestions}, 0)), 0)`.as('avgAcc'),
+        count: sql<number>`COUNT(*)`.as('count'),
+      })
+      .from(sessions)
+      .where(and(
+        eq(sessions.childId, childId),
+        isNotNull(sessions.completedAt),
+      ))
+      .groupBy(sql`strftime('%w', ${sessions.completedAt})`)
+      .orderBy(sql`COALESCE(AVG(CAST(${sessions.score} AS REAL) * 100.0 / NULLIF(${sessions.totalQuestions}, 0)), 0) DESC`);
+    if (dayRows.length > 0 && dayRows[0].count >= 2) {
+      const dayNames: Record<string, string> = {
+        '0': 'الأحد', '1': 'الاثنين', '2': 'الثلاثاء', '3': 'الأربعاء',
+        '4': 'الخميس', '5': 'الجمعة', '6': 'السبت',
+      };
+      bestDayOfWeek = dayNames[dayRows[0].dow];
+    }
+  } catch {
+    // ignore
+  }
+
+  // Longest correct-answer streak (within any single session)
+  let longestCorrectStreak = 0;
+  try {
+    const answers = await db
+      .select({
+        sessionId: sessionAnswers.sessionId,
+        isCorrect: sessionAnswers.isCorrect,
+      })
+      .from(sessionAnswers)
+      .innerJoin(sessions, eq(sessionAnswers.sessionId, sessions.id))
+      .where(and(
+        eq(sessions.childId, childId),
+        isNotNull(sessions.completedAt),
+      ))
+      .orderBy(sessions.completedAt, sessionAnswers.id);
+    let cur = 0;
+    let prevSession: string | null = null;
+    for (const a of answers) {
+      if (a.sessionId !== prevSession) {
+        cur = 0;
+        prevSession = a.sessionId;
+      }
+      if (a.isCorrect) {
+        cur += 1;
+        if (cur > longestCorrectStreak) longestCorrectStreak = cur;
+      } else {
+        cur = 0;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const nowIso = new Date().toISOString();
+  const nextReportDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
   const reportData = {
     child: {
       name: child.name,
@@ -222,12 +370,25 @@ export async function GET(req: NextRequest) {
       currentLevel: progress?.currentLevel ?? 1,
       currentStreak: progress?.currentStreak ?? 0,
       badges,
+      longestCorrectStreak,
+      avgSessionsPerWeek,
+      avgQuestionsPerDay,
+      bestDayOfWeek,
     },
     skills,
     weeklyData,
     strengths,
     weaknesses,
     recommendations,
+    peerComparison: {
+      averageAccuracy: peerAvg,
+      percentile,
+      isEstimated: peerIsEstimated,
+    },
+    strongPoints,
+    weakPoints,
+    generatedAt: nowIso,
+    nextReportDate,
   };
 
   // Generate PDF
