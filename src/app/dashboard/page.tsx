@@ -6,6 +6,7 @@ import ChildSwitcher from '@/components/ui/ChildSwitcher';
 import ChildCard from '@/components/dashboard/ChildCard';
 import AddChildModal from '@/components/dashboard/AddChildModal';
 import DailySuggestion from '@/components/dashboard/DailySuggestion';
+import QuickWeaknessCard from '@/components/dashboard/QuickWeaknessCard';
 import WeeklyChallenge from '@/components/dashboard/WeeklyChallenge';
 import ChildStats from '@/components/dashboard/ChildStats';
 import NotificationSettings from '@/components/dashboard/NotificationSettings';
@@ -176,6 +177,15 @@ export default function DashboardPage() {
 
         {/* Daily Suggestions */}
         <DailySuggestion />
+
+        {/* Quick weakness sessions (3-minute targeted practice) */}
+        {childrenList.length > 0 && (
+          <div className="space-y-3">
+            {childrenList.map(c => (
+              <QuickWeaknessCard key={c.id} childId={c.id} childName={c.name} />
+            ))}
+          </div>
+        )}
 
         {/* Weekly Challenge */}
         <WeeklyChallenge />

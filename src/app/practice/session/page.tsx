@@ -18,6 +18,10 @@ function SessionContent() {
   const searchParams = useSearchParams();
   const ageGroup = (searchParams.get('age') || '6-9') as AgeGroup;
   const skillArea = (searchParams.get('skill') || 'mixed') as SkillArea;
+  const subSkill = searchParams.get('subskill') || undefined;
+  const countParam = parseInt(searchParams.get('count') || '10', 10);
+  const requestedCount = Number.isFinite(countParam) ? Math.min(Math.max(countParam, 1), 20) : 10;
+  const difficultyParam = (searchParams.get('difficulty') || 'mixed') as 'easy' | 'medium' | 'hard' | 'mixed' | 'adaptive';
 
   const session = useSession();
   const { selectedChild, loading: childLoading } = useSelectedChild();
@@ -32,9 +36,11 @@ function SessionContent() {
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
 
   useEffect(() => {
-    session.loadQuestions(ageGroup, skillArea, 'mixed', {
+    session.loadQuestions(ageGroup, skillArea, difficultyParam, {
       guestId: state?.guestId,
       childId: selectedChild?.id,
+      subSkill,
+      count: requestedCount,
     });
   }, []);
 

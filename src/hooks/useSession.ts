@@ -30,13 +30,15 @@ export function useSession() {
 
   const [error, setError] = useState(false);
 
-  const loadQuestions = useCallback(async (ageGroup: AgeGroup, skillArea: SkillArea, difficulty: Difficulty = 'mixed', opts?: { guestId?: string; childId?: string }) => {
+  const loadQuestions = useCallback(async (ageGroup: AgeGroup, skillArea: SkillArea, difficulty: Difficulty = 'mixed', opts?: { guestId?: string; childId?: string; subSkill?: string; count?: number }) => {
     setPhase('loading');
     setError(false);
     try {
-      const params = new URLSearchParams({ age_group: ageGroup, skill_area: skillArea, difficulty, count: '10' });
+      const count = Math.min(Math.max(opts?.count ?? 10, 1), 20);
+      const params = new URLSearchParams({ age_group: ageGroup, skill_area: skillArea, difficulty, count: String(count) });
       if (opts?.guestId) params.set('guestId', opts.guestId);
       if (opts?.childId) params.set('childId', opts.childId);
+      if (opts?.subSkill) params.set('sub_skill', opts.subSkill);
       const res = await fetch(`/api/questions?${params}`);
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json();
