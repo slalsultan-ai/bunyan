@@ -6,10 +6,11 @@ import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { getRetiredQuestionIds } from '@/lib/question-mastery';
 import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
+import { recommendDifficulty } from '@/lib/adaptive-difficulty';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
-const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
+const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed', 'adaptive']);
 
 /** Fetch random questions using offset-based selection for large sets */
 async function fetchRandomQuestions(
@@ -58,8 +59,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const ageGroup = searchParams.get('age_group');
     const skillArea = searchParams.get('skill_area');
-    const difficulty = searchParams.get('difficulty') || 'mixed';
+    let difficulty = searchParams.get('difficulty') || 'mixed';
     const count = Math.min(Math.max(parseInt(searchParams.get('count') || '10') || 10, 1), 20);
+    const subSkillRaw = searchParams.get('sub_skill');
+    const subSkill = subSkillRaw && subSkillRaw.length > 0 && subSkillRaw.length <= 80 ? subSkillRaw : null;
     const excludeRaw = searchParams.get('exclude');
     const exclude = excludeRaw ? excludeRaw.split(',').filter(s => /^[0-9a-f-]{36}$/.test(s)).slice(0, 50) : [];
 
@@ -76,10 +79,18 @@ export async function GET(req: NextRequest) {
       eq(questions.isActive, true),
     ];
     if (exclude.length > 0) baseConditions.push(notInArray(questions.id, exclude) as ReturnType<typeof eq>);
+    if (subSkill) baseConditions.push(eq(questions.subSkill, subSkill));
 
-    // Question retirement: exclude questions answered correctly 5+ times
     const guestId = searchParams.get('guestId');
     const childIdParam = searchParams.get('childId');
+
+    // Adaptive difficulty: pick easy/medium/hard from recent answer history
+    if (difficulty === 'adaptive') {
+      const rec = await recommendDifficulty({ childId: childIdParam, guestId });
+      difficulty = rec.difficulty;
+    }
+
+    // Question retirement: exclude questions answered correctly 5+ times
     if (guestId || childIdParam) {
       const parent = childIdParam ? await getAuthenticatedParent() : null;
       const parentEmail = parent?.email;
