@@ -85,10 +85,12 @@ export async function GET(req: NextRequest) {
     const parentEmail = parent?.email ?? null;
 
     // Sub-skill filter (gated by sub_skill_filter flag)
+    let subSkillCondition: ReturnType<typeof eq> | null = null;
     if (subSkill) {
       const subSkillAllowed = await hasFeatureAccess('sub_skill_filter', parentEmail);
       if (subSkillAllowed) {
-        baseConditions.push(eq(questions.subSkill, subSkill));
+        subSkillCondition = eq(questions.subSkill, subSkill);
+        baseConditions.push(subSkillCondition);
       }
     }
 
@@ -135,6 +137,25 @@ export async function GET(req: NextRequest) {
       const conds = [...baseConditions, eq(questions.skillArea, skillArea)];
       if (difficulty !== 'mixed') conds.push(eq(questions.difficulty, difficulty));
       rows = await fetchRandomQuestions(db, conds, count);
+    }
+
+    // Fallback: if sub_skill filter returned 0 results, retry without it
+    if (rows.length === 0 && subSkillCondition) {
+      const fallbackConditions = baseConditions.filter(c => c !== subSkillCondition);
+      if (skillArea === 'mixed') {
+        const skills = ['quantitative', 'verbal', 'logical_patterns'];
+        const perSkill = Math.ceil(count / skills.length);
+        const results = await Promise.all(skills.map(skill => {
+          const conds = [...fallbackConditions, eq(questions.skillArea, skill)];
+          if (difficulty !== 'mixed') conds.push(eq(questions.difficulty, difficulty));
+          return fetchRandomQuestions(db, conds, perSkill);
+        }));
+        rows = results.flat().sort(() => Math.random() - 0.5).slice(0, count);
+      } else {
+        const conds = [...fallbackConditions, eq(questions.skillArea, skillArea)];
+        if (difficulty !== 'mixed') conds.push(eq(questions.difficulty, difficulty));
+        rows = await fetchRandomQuestions(db, conds, count);
+      }
     }
 
     const safe = rows.map(({ correctOptionIndex: _c, explanationAr: _e, ...q }) => q);

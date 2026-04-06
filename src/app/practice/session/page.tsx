@@ -11,6 +11,7 @@ import QuestionCard from '@/components/practice/QuestionCard';
 import AnswerOption from '@/components/practice/AnswerOption';
 import ExplanationPanel from '@/components/practice/ExplanationPanel';
 import { useSelectedChild } from '@/hooks/useSelectedChild';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { AgeGroup, SkillArea } from '@/types';
 
 function SessionContent() {
@@ -28,12 +29,14 @@ function SessionContent() {
   const { state, recordSession } = useGuest();
   const [pointsThisSession, setPointsThisSession] = useState(0);
   const [exitConfirm, setExitConfirm] = useState(false);
+  const [sessionLimitReached, setSessionLimitReached] = useState(false);
   const [muted, setMuted] = useState(false);
   const sessionIdRef = useRef(crypto.randomUUID());
   const resultSavedRef = useRef(false);
   const startRegisteredRef = useRef(false);
 
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
+  const { enabled: showExplanations } = useFeatureFlag('answer_explanations');
 
   useEffect(() => {
     session.loadQuestions(ageGroup, skillArea, difficultyParam, {
@@ -59,6 +62,13 @@ function SessionContent() {
           totalQuestions: session.questions.length,
           ...(selectedChild?.id ? { childId: selectedChild.id } : {}),
         }),
+      }).then(async (res) => {
+        if (res.status === 429) {
+          const data = await res.json().catch(() => ({}));
+          if (data.error === 'SESSION_LIMIT_REACHED') {
+            setSessionLimitReached(true);
+          }
+        }
       }).catch(console.error);
     }
   }, [session.phase, state?.guestId, childLoading, selectedChild?.id]);
@@ -216,6 +226,7 @@ function SessionContent() {
               explanationAr={session.reveal.explanationAr}
               isCorrect={lastAnswer.isCorrect}
               pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0}
+              showExplanation={showExplanations}
             />
           )}
         </div>
@@ -252,6 +263,36 @@ function SessionContent() {
             <div className="flex gap-3">
               <button onClick={() => router.push('/practice')} className="flex-1 bg-red-500 text-white py-2.5 rounded-xl font-semibold hover:bg-red-600 transition-colors">إنهاء</button>
               <button onClick={() => setExitConfirm(false)} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors">تراجع</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sessionLimitReached && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
+            <div className="text-4xl mb-3">⏰</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">أكملت جلساتك اليوم!</h3>
+            <p className="text-gray-600 mb-1">استخدمت 3/3 جلسات اليوم.</p>
+            <p className="text-gray-500 text-sm mb-4">الجلسات تتجدد 12:00 صباحاً.</p>
+            <div className="border-t border-gray-100 pt-4 mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                🚀 بُنيان+ يعطيك جلسات غير محدودة + تحدي يومي + مسار ذكي + تقارير
+              </p>
+              <a
+                href="/premium"
+                className="block w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition-colors mb-3"
+              >
+                🔓 اعرف أكثر عن بُنيان+
+              </a>
+            </div>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-gray-500 text-xs mb-2">💡 لو تبي تتمرن أكثر، جرّب تحدي اليوم — ما يُحسب من الجلسات!</p>
+              <div className="flex gap-3">
+                <a href="/practice/daily" className="flex-1 bg-gradient-to-l from-amber-500 to-orange-500 text-white py-2.5 rounded-xl font-semibold text-sm text-center">⭐ ابدأ تحدي اليوم</a>
+                <button onClick={() => router.push('/practice')} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors">الرئيسية</button>
+              </div>
             </div>
           </div>
         </div>

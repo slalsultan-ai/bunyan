@@ -33,6 +33,7 @@ export const sessions = sqliteTable('sessions', {
   pointsEarned: integer('points_earned').default(0),
   timeTakenMs: integer('time_taken_ms'),
   ipAddress: text('ip_address'),
+  isDailyChallenge: integer('is_daily_challenge').default(0),
 });
 
 export const sessionAnswers = sqliteTable('session_answers', {

@@ -26,6 +26,7 @@ interface ReviewStats {
   masteredItems: number;
   pendingItems: number;
   uniqueUsers: number;
+  allowedUsers: number; // -1 = everyone, 0+ = count of allowed emails
   masteryRate: number;
   avgTimesWrong: number | null;
   avgReviewsToMastery: number | null;
@@ -42,6 +43,7 @@ interface RetirementStats {
   totalRetired: number;
   totalTracked: number;
   uniqueUsers: number;
+  allowedUsers: number; // -1 = everyone, 0+ = count of allowed emails
   avgCorrectCount: number | null;
   totalQuestions: number;
   retirementRate: number;
@@ -140,9 +142,10 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
+    const accessLabel = s.allowedUsers === -1 ? 'الجميع' : String(s.allowedUsers);
     return [
-      { label: 'مستخدمين نشطين', value: s.uniqueUsers, accent: 'purple' },
-      { label: 'عناصر مراجعة', value: s.totalItems, accent: 'blue' },
+      { label: 'وصول مفعّل لـ', value: accessLabel, accent: s.allowedUsers === -1 ? 'emerald' : 'purple' },
+      { label: 'لديهم بيانات مراجعة', value: s.uniqueUsers, accent: 'blue' },
       { label: 'تم إتقانها', value: s.masteredItems, sub: `${s.masteryRate}%`, accent: s.masteryRate >= 50 ? 'emerald' : 'amber', progress: s.masteryRate },
       { label: 'معلّقة الآن', value: s.pendingItems, accent: s.pendingItems > 50 ? 'red' : s.pendingItems > 0 ? 'amber' : 'gray' },
       { label: 'متوسط الأخطاء', value: s.avgTimesWrong ?? '—', accent: 'amber' },
@@ -153,9 +156,10 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
     const depletionPct = s.totalQuestions > 0 ? Math.round((s.totalRetired / s.totalQuestions) * 100) : 0;
+    const accessLabel = s.allowedUsers === -1 ? 'الجميع' : String(s.allowedUsers);
     return [
-      { label: 'مستخدمين', value: s.uniqueUsers, accent: 'amber' },
-      { label: 'أسئلة مُتتبّعة', value: s.totalTracked, accent: 'blue' },
+      { label: 'وصول مفعّل لـ', value: accessLabel, accent: s.allowedUsers === -1 ? 'emerald' : 'amber' },
+      { label: 'لديهم بيانات تتبع', value: s.uniqueUsers, accent: 'blue' },
       { label: 'أسئلة مُقصاة', value: s.totalRetired, sub: `${s.retirementRate}%`, accent: 'emerald', progress: s.retirementRate },
       { label: 'متوسط الإجابات', value: s.avgCorrectCount ?? '—', accent: 'purple' },
       { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'gray' },
@@ -182,22 +186,24 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
-    if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsers} مستخدمين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
+    const testers = s.allowedUsers === -1 ? s.uniqueUsers : s.allowedUsers;
+    if (testers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${testers} مختبرين مفعّلين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
     }
-    if (s.uniqueUsers >= 1 && s.totalItems >= 5) {
-      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `نسبة الإتقان ${s.masteryRate}% — راقب تقدم المستخدمين الحاليين` };
+    if (testers >= 1 && s.totalItems >= 5) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${testers} مختبر مفعّل فقط — نسبة الإتقان ${s.masteryRate}%` };
     }
     return { level: 'not_ready', label: 'غير جاهزة', detail: 'بيانات غير كافية — أضف مختبرين لجمع بيانات المراجعة' };
   }
 
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
-    if (s.uniqueUsers === 0) {
-      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات استخدام — فعّل لمختبرين أولاً لجمع بيانات الإقصاء' };
+    const testers = s.allowedUsers === -1 ? s.uniqueUsers : s.allowedUsers;
+    if (testers === 0) {
+      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد مختبرين مفعّلين — أضف إيميلات في allowedEmails أولاً' };
     }
     const maxDepletion = Math.max(...s.byAgeGroup.map((a) => a.depletionPct), 0);
-    if (s.uniqueUsers >= 3 && maxDepletion <= 15) {
+    if (testers >= 3 && maxDepletion <= 15) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `استنزاف منخفض (أعلى فئة ${maxDepletion}%) — بنك الأسئلة يتحمّل` };
     }
     if (maxDepletion <= 30) {

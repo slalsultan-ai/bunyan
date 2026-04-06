@@ -36,7 +36,15 @@ export default function PracticePage() {
   const [selectedAge, setSelectedAge] = useState<AgeGroup | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillArea>('mixed');
   const showReviewMode = useFeatureFlag('review_mode');
+  const showDailyChallenge = useFeatureFlag('daily_challenge');
+  const showSessionLimit = useFeatureFlag('session_limit');
+  const showAdaptivePath = useFeatureFlag('adaptive_path');
   const [reviewStats, setReviewStats] = useState<{ pending: number } | null>(null);
+  const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState<boolean | null>(null);
+  const [dailyStreak, setDailyStreak] = useState<number>(0);
+  const [sessionLimitInfo, setSessionLimitInfo] = useState<{ remaining: number; total: number; limit: number } | null>(null);
+  const [adaptivePathReady, setAdaptivePathReady] = useState(false);
+  const [adaptiveFocus, setAdaptiveFocus] = useState<string[]>([]);
 
   // Show child picker step if logged in with multiple children and none selected yet via this flow
   const [childPicked, setChildPicked] = useState(false);
@@ -61,6 +69,53 @@ export default function PracticePage() {
       setChildPicked(true);
     }
   }, [loading, isLoggedIn, children]);
+
+  // Fetch daily challenge status
+  useEffect(() => {
+    if (!showDailyChallenge.enabled || !selectedChild) return;
+    const ageGroup = computeAgeGroupClient(selectedChild.age);
+    fetch(`/api/daily-challenge?childId=${selectedChild.id}&ageGroup=${ageGroup}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.enabled) {
+          setDailyChallengeCompleted(data.streak?.completedToday ?? false);
+          setDailyStreak(data.streak?.currentStreak ?? 0);
+        }
+      })
+      .catch(() => {});
+  }, [showDailyChallenge.enabled, selectedChild]);
+
+  // Fetch session limit
+  useEffect(() => {
+    if (!showSessionLimit.enabled) return;
+    const childId = selectedChild?.id;
+    const guestId = state?.guestId;
+    if (!childId && !guestId) return;
+
+    const params = new URLSearchParams();
+    if (childId) params.set('childId', childId);
+    else if (guestId) params.set('guestId', guestId);
+
+    fetch(`/api/session-limit?${params}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setSessionLimitInfo(data); })
+      .catch(() => {});
+  }, [showSessionLimit.enabled, selectedChild?.id, state?.guestId]);
+
+  // Fetch adaptive path status
+  useEffect(() => {
+    if (!showAdaptivePath.enabled || !selectedChild) return;
+    fetch(`/api/adaptive-path/analysis?childId=${selectedChild.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.enabled) {
+          setAdaptivePathReady(true);
+          const weak = (data.weakPoints || []).slice(0, 2).map((p: any) => p.name);
+          setAdaptiveFocus(weak);
+        }
+      })
+      .catch(() => {});
+  }, [showAdaptivePath.enabled, selectedChild]);
 
   // Fetch review stats
   useEffect(() => {
@@ -122,6 +177,77 @@ export default function PracticePage() {
           </div>
         ) : (
           <>
+            {/* Adaptive path banner */}
+            {showAdaptivePath.enabled && adaptivePathReady && (
+              <div className="mb-4 bg-gradient-to-l from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-indigo-800 font-bold text-sm">🧠 المسار الذكي جاهز</p>
+                  {adaptiveFocus.length > 0 && (
+                    <p className="text-indigo-600 text-xs">تركيز اليوم: {adaptiveFocus.join(' و ')}</p>
+                  )}
+                </div>
+                <Link
+                  href="/practice/smart"
+                  className="bg-gradient-to-l from-indigo-500 to-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
+                >
+                  ابدأ جلستك الذكية
+                </Link>
+              </div>
+            )}
+
+            {/* Daily challenge banner */}
+            {showDailyChallenge.enabled && dailyChallengeCompleted !== null && (
+              <div className={`mb-4 rounded-2xl p-4 flex items-center justify-between ${
+                dailyChallengeCompleted
+                  ? 'bg-emerald-50 border border-emerald-200'
+                  : 'bg-gradient-to-l from-amber-50 to-orange-50 border border-amber-200'
+              }`}>
+                {dailyChallengeCompleted ? (
+                  <>
+                    <span className="text-emerald-700 font-medium text-sm">
+                      ✅ أكملت تحدي اليوم! 🔥 سلسلة {dailyStreak} {dailyStreak === 1 ? 'يوم' : 'أيام'}
+                    </span>
+                    <span className="text-emerald-500 text-sm">التحدي القادم غداً</span>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-amber-800 font-bold text-sm">⭐ تحدي اليوم جاهز!</p>
+                      <p className="text-amber-600 text-xs">3 أسئلة في انتظارك</p>
+                    </div>
+                    <Link
+                      href="/practice/daily"
+                      className="bg-gradient-to-l from-amber-500 to-orange-500 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
+                    >
+                      ابدأ الآن
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Session limit indicator */}
+            {showSessionLimit.enabled && sessionLimitInfo && (
+              <div className="mb-4 flex items-center justify-center gap-2 text-sm">
+                <span className="text-gray-600">الجلسات:</span>
+                <span className={`font-bold ${sessionLimitInfo.remaining === 0 ? 'text-red-500' : 'text-gray-700'}`}>
+                  {sessionLimitInfo.total}/{sessionLimitInfo.limit}
+                </span>
+                <div className="flex gap-1">
+                  {Array.from({ length: sessionLimitInfo.limit }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-full ${
+                        i < sessionLimitInfo.total
+                          ? sessionLimitInfo.remaining === 0 ? 'bg-red-400' : 'bg-emerald-400'
+                          : 'bg-gray-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Review banner */}
             {showReviewMode.enabled && reviewStats && reviewStats.pending > 0 && (
               <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">

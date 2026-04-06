@@ -12,6 +12,9 @@ import ChildStats from '@/components/dashboard/ChildStats';
 import NotificationSettings from '@/components/dashboard/NotificationSettings';
 import Link from 'next/link';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import MonthlyProgressChart from '@/components/parent/MonthlyProgressChart';
+import ChildrenComparison from '@/components/parent/ChildrenComparison';
+import GoalSetting from '@/components/parent/GoalSetting';
 
 interface Child {
   id: string;
@@ -46,6 +49,8 @@ export default function DashboardPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const showPdfReport = useFeatureFlag('child_pdf_report');
+  const showDashboardPro = useFeatureFlag('parent_dashboard_pro');
+  const [proData, setProData] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -63,6 +68,15 @@ export default function DashboardPage() {
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  // Fetch dashboard pro data
+  useEffect(() => {
+    if (!showDashboardPro.enabled || showDashboardPro.loading) return;
+    fetch('/api/parent/dashboard-pro')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.enabled) setProData(data); })
+      .catch(() => {});
+  }, [showDashboardPro.enabled, showDashboardPro.loading]);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -294,6 +308,55 @@ export default function DashboardPage() {
             setParent(prev => prev ? { ...prev, ...settings } : null);
           }}
         />
+
+        {/* Pro Dashboard Sections */}
+        {showDashboardPro.enabled && proData && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-gray-900 text-lg">📊 لوحة متقدمة</h2>
+              <span className="text-xs bg-indigo-100 text-indigo-600 font-semibold px-2 py-0.5 rounded-full">Pro</span>
+            </div>
+
+            {/* Monthly Progress Chart per child */}
+            {childrenList.map(child => {
+              const data = proData.monthlyProgress?.[child.id];
+              if (!data) return null;
+              return <MonthlyProgressChart key={child.id} data={data} childName={child.name} />;
+            })}
+
+            {/* Children Comparison */}
+            {proData.childrenComparison && (
+              <ChildrenComparison children={proData.childrenComparison} />
+            )}
+
+            {/* Goal Setting per child */}
+            {childrenList.map(child => {
+              const goal = proData.goals?.find((g: any) => g.childId === child.id);
+              const weeklyData = proData.monthlyProgress?.[child.id] || [];
+              const recent = weeklyData.filter((w: any) => w.sessions > 0);
+              const currentAcc = recent.length > 0 ? recent[recent.length - 1].accuracy : 0;
+              return (
+                <GoalSetting
+                  key={child.id}
+                  childId={child.id}
+                  childName={child.name}
+                  currentAccuracy={currentAcc}
+                  goal={goal || null}
+                  prediction={goal?.prediction || null}
+                  onGoalSet={(newGoal) => {
+                    setProData((prev: any) => ({
+                      ...prev,
+                      goals: [
+                        ...(prev.goals || []).filter((g: any) => g.childId !== child.id),
+                        ...(newGoal.status === 'active' ? [{ ...newGoal, childId: child.id }] : []),
+                      ],
+                    }));
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">

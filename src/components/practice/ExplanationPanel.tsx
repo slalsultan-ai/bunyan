@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { QuestionOption } from '@/types';
 
 const LETTERS = ['أ', 'ب', 'ج', 'د'];
@@ -8,11 +11,17 @@ interface ExplanationPanelProps {
   explanationAr: string;
   isCorrect: boolean;
   pointsEarned: number;
+  showExplanation?: boolean; // controlled by answer_explanations feature flag
 }
 
-export default function ExplanationPanel({ options, correctOptionIndex, explanationAr, isCorrect, pointsEarned }: ExplanationPanelProps) {
+export default function ExplanationPanel({ options, correctOptionIndex, explanationAr, isCorrect, pointsEarned, showExplanation = false }: ExplanationPanelProps) {
   const correctLetter = LETTERS[correctOptionIndex];
   const correctText = options[correctOptionIndex]?.text;
+  const [expanded, setExpanded] = useState(false);
+
+  // Determine if explanation text should be visible
+  const hasExplanation = showExplanation && explanationAr && explanationAr.length > 0;
+  const explanationVisible = hasExplanation && (!isCorrect || expanded);
 
   return (
     <div className={`mt-3 rounded-xl px-4 py-3 border-2 animate-fade-in-up ${isCorrect ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'}`}>
@@ -29,7 +38,31 @@ export default function ExplanationPanel({ options, correctOptionIndex, explanat
           </span>
         )}
       </div>
-      <p className="text-gray-600 text-xs leading-relaxed mt-1">{explanationAr}</p>
+
+      {/* Correct answer: show toggle button */}
+      {hasExplanation && isCorrect && !expanded && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="mt-2 text-emerald-600 text-xs font-medium hover:text-emerald-700 flex items-center gap-1"
+        >
+          💡 كيف حليتها؟
+        </button>
+      )}
+
+      {/* Explanation text */}
+      {explanationVisible && (
+        <div className={`mt-2 rounded-lg px-3 py-2 text-xs leading-relaxed ${
+          isCorrect ? 'bg-emerald-100/60 text-emerald-800' : 'bg-amber-100/60 text-amber-900'
+        }`}>
+          <span className="font-bold">💡 الشرح: </span>
+          {explanationAr}
+        </div>
+      )}
+
+      {/* Fallback: if no explanation feature, still show the old-style inline text */}
+      {!showExplanation && explanationAr && (
+        <p className="text-gray-600 text-xs leading-relaxed mt-1">{explanationAr}</p>
+      )}
     </div>
   );
 }

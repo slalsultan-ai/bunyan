@@ -4,6 +4,8 @@ import { sessions, children } from '@/lib/db/schema';
 import { sql, and, eq } from 'drizzle-orm';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
+import { hasFeatureAccess } from '@/lib/feature-flags';
+import { checkSessionLimit, checkGuestSessionLimit } from '@/lib/session-limit';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -74,6 +76,30 @@ export async function POST(req: NextRequest) {
     } else {
       // Guest (unauthenticated) — ignore any parentId/childId from body
       // They can only create guest sessions
+    }
+
+    // Session limit check (if feature flag enabled)
+    const sessionLimitEnabled = await hasFeatureAccess('session_limit');
+    if (sessionLimitEnabled) {
+      if (validChildId) {
+        const { allowed, remaining } = await checkSessionLimit(validChildId);
+        if (!allowed) {
+          return NextResponse.json({
+            error: 'SESSION_LIMIT_REACHED',
+            remaining: 0,
+            limit: 3,
+          }, { status: 429 });
+        }
+      } else {
+        const { allowed } = await checkGuestSessionLimit(guestId);
+        if (!allowed) {
+          return NextResponse.json({
+            error: 'SESSION_LIMIT_REACHED',
+            remaining: 0,
+            limit: 3,
+          }, { status: 429 });
+        }
+      }
     }
 
     // Insert session with completedAt = null (not yet completed)

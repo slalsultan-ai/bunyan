@@ -6,6 +6,7 @@ import {
   reviewQueue,
   questionMastery,
   questions,
+  featureFlags,
 } from '@/lib/db/schema';
 import { sql, eq } from 'drizzle-orm';
 
@@ -18,16 +19,17 @@ export async function GET() {
 
   const db = getDb();
 
-  const [pdfStats, reviewStats, retirementStats] = await Promise.all([
+  const [pdfStats, reviewStats, retirementStats, accessCounts] = await Promise.all([
     getChildPdfStats(db),
     getReviewModeStats(db),
     getQuestionRetirementStats(db),
+    getFeatureAccessCounts(db),
   ]);
 
   return NextResponse.json({
     child_pdf_report: pdfStats,
-    review_mode: reviewStats,
-    question_retirement: retirementStats,
+    review_mode: { ...reviewStats, allowedUsers: accessCounts['review_mode'] ?? 0 },
+    question_retirement: { ...retirementStats, allowedUsers: accessCounts['question_retirement'] ?? 0 },
   });
 }
 
@@ -146,4 +148,34 @@ async function getQuestionRetirementStats(db: DB) {
     retirementRate: tracked > 0 ? Math.max(Math.round((retired / tracked) * 100), retired > 0 ? 1 : 0) : 0,
     byAgeGroup,
   };
+}
+
+/**
+ * Count real users with access to each feature flag.
+ * - enabled=1 → "all" (we return the count of parents who have children, as a proxy)
+ * - enabled=0 with allowedEmails → count the emails in the comma-separated list
+ */
+async function getFeatureAccessCounts(db: DB): Promise<Record<string, number>> {
+  const rows = await db
+    .select({
+      flagKey: featureFlags.flagKey,
+      enabled: featureFlags.enabled,
+      allowedEmails: featureFlags.allowedEmails,
+    })
+    .from(featureFlags);
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    if (row.enabled === 1) {
+      // Globally enabled — mark as -1 to signal "everyone"
+      counts[row.flagKey] = -1;
+    } else {
+      const emails = (row.allowedEmails ?? '')
+        .split(',')
+        .map(e => e.trim())
+        .filter(Boolean);
+      counts[row.flagKey] = emails.length;
+    }
+  }
+  return counts;
 }
