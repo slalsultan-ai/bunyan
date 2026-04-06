@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import { reviewQueue, questions as questionsTable } from './db/schema';
 import { eq, and, sql, lte } from 'drizzle-orm';
+import { hasFeatureAccess } from './feature-flags';
 
 interface UserIdentifier {
   guestId?: string;
@@ -72,18 +73,15 @@ export async function upsertReviewItem(params: {
   }
 }
 
-/**
- * Spaced repetition intervals (in days) per review count.
- *   1st correct review → schedule 3 days out
- *   2nd correct review → 7 days out
- *   3rd correct review → 14 days out
- *   4th correct review → mastered
- */
-const REVIEW_INTERVALS_DAYS = [3, 7, 14] as const;
+/** V2 intervals (3/7/14 days) — gated by spaced_repetition_v2 flag. */
+const INTERVALS_V2 = [3, 7, 14] as const;
+/** V1 intervals (1/2/3 days) — original schedule. */
+const INTERVALS_V1 = [1, 2, 3] as const;
 
 /**
  * Mark progress when user answers correctly during review.
- * Uses the REVIEW_INTERVALS_DAYS schedule; masters after all intervals pass.
+ * If spaced_repetition_v2 flag is enabled → uses 3/7/14 day intervals.
+ * Otherwise → falls back to 1/2/3 day intervals.
  */
 export async function markReviewProgress(params: {
   guestId?: string;
@@ -109,16 +107,18 @@ export async function markReviewProgress(params: {
 
   if (!item) return;
 
+  const v2 = await hasFeatureAccess('spaced_repetition_v2');
+  const intervals = v2 ? INTERVALS_V2 : INTERVALS_V1;
   const newTimesReviewed = (item.timesReviewed ?? 0) + 1;
 
-  if (newTimesReviewed > REVIEW_INTERVALS_DAYS.length) {
+  if (newTimesReviewed > intervals.length) {
     // Mastered after completing all intervals
     await db
       .update(reviewQueue)
       .set({ timesReviewed: newTimesReviewed, mastered: 1 })
       .where(eq(reviewQueue.id, item.id));
   } else {
-    const daysAhead = REVIEW_INTERVALS_DAYS[newTimesReviewed - 1];
+    const daysAhead = intervals[newTimesReviewed - 1];
     await db
       .update(reviewQueue)
       .set({

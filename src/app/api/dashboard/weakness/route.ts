@@ -4,17 +4,24 @@ import { getDb } from '@/lib/db';
 import { sessions, sessionAnswers, questions, children, childParents } from '@/lib/db/schema';
 import { eq, and, isNotNull, sql, or } from 'drizzle-orm';
 import { checkRateLimit } from '@/lib/rate-limit-db';
+import { hasFeatureAccess } from '@/lib/feature-flags';
 
 const MIN_ANSWERS = 3;
 
 /**
  * Returns the child's weakest sub-skill (lowest accuracy with at least
  * MIN_ANSWERS attempts). Used by the dashboard's "3-minute quick session" card.
+ * Gated by `quick_weakness` feature flag.
  */
 export async function GET(req: NextRequest) {
   const session = await getParentSession();
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const hasAccess = await hasFeatureAccess('quick_weakness', session.email);
+  if (!hasAccess) {
+    return Response.json({ weakness: null }, { status: 200 });
   }
 
   const rl = await checkRateLimit(`dashboard-weakness:${session.parentId}`, 30, 60);

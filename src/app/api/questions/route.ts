@@ -79,21 +79,32 @@ export async function GET(req: NextRequest) {
       eq(questions.isActive, true),
     ];
     if (exclude.length > 0) baseConditions.push(notInArray(questions.id, exclude) as ReturnType<typeof eq>);
-    if (subSkill) baseConditions.push(eq(questions.subSkill, subSkill));
-
     const guestId = searchParams.get('guestId');
     const childIdParam = searchParams.get('childId');
+    const parent = childIdParam ? await getAuthenticatedParent() : null;
+    const parentEmail = parent?.email ?? null;
 
-    // Adaptive difficulty: pick easy/medium/hard from recent answer history
+    // Sub-skill filter (gated by sub_skill_filter flag)
+    if (subSkill) {
+      const subSkillAllowed = await hasFeatureAccess('sub_skill_filter', parentEmail);
+      if (subSkillAllowed) {
+        baseConditions.push(eq(questions.subSkill, subSkill));
+      }
+    }
+
+    // Adaptive difficulty (gated by adaptive_difficulty flag)
     if (difficulty === 'adaptive') {
-      const rec = await recommendDifficulty({ childId: childIdParam, guestId });
-      difficulty = rec.difficulty;
+      const adaptiveAllowed = await hasFeatureAccess('adaptive_difficulty', parentEmail);
+      if (adaptiveAllowed) {
+        const rec = await recommendDifficulty({ childId: childIdParam, guestId });
+        difficulty = rec.difficulty;
+      } else {
+        difficulty = 'mixed';
+      }
     }
 
     // Question retirement: exclude questions answered correctly 5+ times
     if (guestId || childIdParam) {
-      const parent = childIdParam ? await getAuthenticatedParent() : null;
-      const parentEmail = parent?.email;
       const retirementEnabled = await hasFeatureAccess('question_retirement', parentEmail);
 
       if (retirementEnabled) {
