@@ -60,7 +60,8 @@ export async function hasFeatureAccess(flagKey: string, userEmail?: string | nul
     if (toBoolean(row.enabled)) return true;
     if (!userEmail) return false;
     return emailInList(userEmail, row.allowedEmails);
-  } catch {
+  } catch (e) {
+    console.error(`[feature-flags] hasFeatureAccess error for "${flagKey}":`, e instanceof Error ? e.message : e);
     return false;
   }
 }
@@ -85,7 +86,8 @@ export async function getUserFeatures(userEmail?: string | null): Promise<Record
     }
 
     return result;
-  } catch {
+  } catch (e) {
+    console.error('[feature-flags] getUserFeatures error:', e instanceof Error ? e.message : e);
     return {};
   }
 }

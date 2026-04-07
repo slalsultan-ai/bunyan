@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasFeatureAccess } from '@/lib/feature-flags';
+import { getAuthenticatedParent } from '@/lib/parent-auth';
 import { checkComebackStatus, checkFirstVisit } from '@/lib/mascot/bunaa-triggers';
 
 export async function GET(req: NextRequest) {
   try {
-    const enabled = await hasFeatureAccess('mascot_bunaa');
+    const parent = await getAuthenticatedParent();
+    const enabled = await hasFeatureAccess('mascot_bunaa', parent?.email);
     if (!enabled) {
       return NextResponse.json({ enabled: false });
     }

@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Session limit check (if feature flag enabled)
-    const sessionLimitEnabled = await hasFeatureAccess('session_limit');
+    const sessionLimitEnabled = await hasFeatureAccess('session_limit', parent?.email);
     if (sessionLimitEnabled) {
       if (validChildId) {
         const { allowed, remaining } = await checkSessionLimit(validChildId);
