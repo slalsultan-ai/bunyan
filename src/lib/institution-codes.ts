@@ -45,11 +45,9 @@ function mapCodeRow(row: any): InstitutionCode {
 export async function validateCode(code: string, parentId?: string): Promise<CodeValidation> {
   const db = getDb();
   const codeUpper = code.toUpperCase().trim();
-  const rows = await db
-    .select()
-    .from(sql`institution_codes`)
-    .where(sql`code = ${codeUpper}`)
-    .limit(1) as any[];
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT * FROM institution_codes WHERE code = ${codeUpper} LIMIT 1`
+  );
 
   if (rows.length === 0) {
     return { valid: false, error: 'CODE_NOT_FOUND' };
@@ -73,13 +71,10 @@ export async function validateCode(code: string, parentId?: string): Promise<Cod
     return { valid: false, error: 'CODE_FULL', code: codeRow };
   }
 
-  // تحقق لو فعّله من قبل
   if (parentId) {
-    const activations = await db
-      .select()
-      .from(sql`code_activations`)
-      .where(sql`code_id = ${codeRow.id} AND parent_id = ${parentId}`)
-      .limit(1) as any[];
+    const activations = await db.all<Record<string, unknown>>(
+      sql`SELECT id FROM code_activations WHERE code_id = ${codeRow.id} AND parent_id = ${parentId} LIMIT 1`
+    );
     if (activations.length > 0) {
       return { valid: false, error: 'ALREADY_ACTIVATED', code: codeRow };
     }
@@ -111,18 +106,15 @@ export async function activateCode(
   const db = getDb();
   const expiresAt = new Date(Date.now() + codeRow.durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-  // أنشئ code_activation
   await db.run(sql`
     INSERT INTO code_activations (code_id, parent_id, expires_at, status)
     VALUES (${codeRow.id}, ${parentId}, ${expiresAt}, 'active')
   `);
 
-  // حدّث current_users
   await db.run(sql`
     UPDATE institution_codes SET current_users = current_users + 1 WHERE id = ${codeRow.id}
   `);
 
-  // أنشئ premium_subscription
   await db.run(sql`
     INSERT INTO premium_subscriptions (parent_id, plan, amount, status, expires_at, payment_method, code_id)
     VALUES (${parentId}, 'code', 0, 'active', ${expiresAt}, 'code', ${codeRow.id})
@@ -136,10 +128,9 @@ export async function activateCode(
  */
 export async function getAllCodes(): Promise<InstitutionCode[]> {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(sql`institution_codes`)
-    .orderBy(sql`created_at DESC`) as any[];
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT * FROM institution_codes ORDER BY created_at DESC`
+  );
   return rows.map(mapCodeRow);
 }
 
@@ -148,11 +139,9 @@ export async function getAllCodes(): Promise<InstitutionCode[]> {
  */
 export async function getCodeById(id: number): Promise<InstitutionCode | null> {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(sql`institution_codes`)
-    .where(sql`id = ${id}`)
-    .limit(1) as any[];
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT * FROM institution_codes WHERE id = ${id} LIMIT 1`
+  );
   return rows.length > 0 ? mapCodeRow(rows[0]) : null;
 }
 
@@ -176,11 +165,9 @@ export async function createCode(data: {
     VALUES (${codeUpper}, ${data.institutionName}, ${data.institutionType}, ${data.institutionTypeOther || null}, ${data.maxUsers}, ${data.durationDays}, ${data.notes || null})
   `);
 
-  const rows = await db
-    .select()
-    .from(sql`institution_codes`)
-    .where(sql`code = ${codeUpper}`)
-    .limit(1) as any[];
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT * FROM institution_codes WHERE code = ${codeUpper} LIMIT 1`
+  );
   return mapCodeRow(rows[0]);
 }
 
@@ -212,11 +199,9 @@ export async function updateCode(
  */
 export async function deleteCode(id: number): Promise<{ success: boolean; error?: string }> {
   const db = getDb();
-  const activations = await db
-    .select()
-    .from(sql`code_activations`)
-    .where(sql`code_id = ${id}`)
-    .limit(1) as any[];
+  const activations = await db.all<Record<string, unknown>>(
+    sql`SELECT id FROM code_activations WHERE code_id = ${id} LIMIT 1`
+  );
   if (activations.length > 0) {
     return { success: false, error: 'لا يمكن حذف كود تم تفعيله من قبل مستخدمين' };
   }
@@ -237,17 +222,27 @@ export async function getCodeUsers(codeId: number): Promise<{
   status: string;
 }[]> {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(sql`code_activations ca JOIN parents p ON ca.parent_id = p.id LEFT JOIN children c ON c.parent_id = ca.parent_id`)
-    .where(sql`ca.code_id = ${codeId}`)
-    .orderBy(sql`ca.activated_at DESC`) as any[];
+  const rows = await db.all<Record<string, unknown>>(sql`
+    SELECT
+      ca.parent_id,
+      p.email as parent_email,
+      ca.activated_at,
+      ca.expires_at,
+      ca.status,
+      c.name as child_name,
+      c.age_group as child_age_group
+    FROM code_activations ca
+    JOIN parents p ON ca.parent_id = p.id
+    LEFT JOIN children c ON c.parent_id = ca.parent_id
+    WHERE ca.code_id = ${codeId}
+    ORDER BY ca.activated_at DESC
+  `);
 
   return rows.map((r: any) => ({
     parentId: r.parent_id as string,
-    parentEmail: r.email as string,
-    childName: r.name as string | null,
-    childAgeGroup: r.age_group as string | null,
+    parentEmail: r.parent_email as string,
+    childName: r.child_name as string | null,
+    childAgeGroup: r.child_age_group as string | null,
     activatedAt: r.activated_at as string,
     expiresAt: r.expires_at as string,
     status: r.status as string,

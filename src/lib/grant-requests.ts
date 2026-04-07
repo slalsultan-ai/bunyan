@@ -48,12 +48,11 @@ function mapRow(row: any): GrantRequest {
 async function generateRequestNumber(): Promise<string> {
   const db = getDb();
   const year = new Date().getFullYear();
-  const prefix = `GR-${year}-`;
-  const rows = await db
-    .select()
-    .from(sql`grant_requests`)
-    .where(sql`request_number LIKE ${prefix + '%'}`) as any[];
-  const count = rows.length + 1;
+  const prefix = `GR-${year}-%`;
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT COUNT(*) as cnt FROM grant_requests WHERE request_number LIKE ${prefix}`
+  );
+  const count = ((rows[0]?.cnt as number) ?? 0) + 1;
   return `GR-${year}-${String(count).padStart(4, '0')}`;
 }
 
@@ -136,18 +135,15 @@ export async function submitGrantRequest(data: {
  */
 export async function getAllGrantRequests(statusFilter?: string): Promise<GrantRequest[]> {
   const db = getDb();
-  let rows: any[];
+  let rows: Record<string, unknown>[];
   if (statusFilter) {
-    rows = await db
-      .select()
-      .from(sql`grant_requests`)
-      .where(sql`status = ${statusFilter}`)
-      .orderBy(sql`created_at DESC`) as any[];
+    rows = await db.all<Record<string, unknown>>(
+      sql`SELECT * FROM grant_requests WHERE status = ${statusFilter} ORDER BY created_at DESC`
+    );
   } else {
-    rows = await db
-      .select()
-      .from(sql`grant_requests`)
-      .orderBy(sql`created_at DESC`) as any[];
+    rows = await db.all<Record<string, unknown>>(
+      sql`SELECT * FROM grant_requests ORDER BY created_at DESC`
+    );
   }
   return rows.map(mapRow);
 }
@@ -157,11 +153,9 @@ export async function getAllGrantRequests(statusFilter?: string): Promise<GrantR
  */
 export async function getGrantRequestById(id: number): Promise<GrantRequest | null> {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(sql`grant_requests`)
-    .where(sql`id = ${id}`)
-    .limit(1) as any[];
+  const rows = await db.all<Record<string, unknown>>(
+    sql`SELECT * FROM grant_requests WHERE id = ${id} LIMIT 1`
+  );
   return rows.length > 0 ? mapRow(rows[0]) : null;
 }
 
@@ -181,21 +175,18 @@ export async function reviewGrantRequest(
   if (!request) throw new Error('طلب غير موجود');
 
   if (action === 'approve' && codeData) {
-    // أنشئ الكود
     const codeUpper = codeData.code.toUpperCase().trim();
     await db.run(sql`
       INSERT INTO institution_codes (code, institution_name, institution_type, institution_type_other, max_users, duration_days, notes)
       VALUES (${codeUpper}, ${request.institutionName}, ${request.institutionType}, ${request.institutionTypeOther || null}, ${codeData.maxUsers}, ${codeData.durationDays}, ${'منحة: ' + request.requestNumber})
     `);
 
-    // حدّث الطلب
     await db.run(sql`
       UPDATE grant_requests
       SET status = 'approved', admin_notes = ${adminNotes || null}, reviewed_at = ${now}, generated_code = ${codeUpper}
       WHERE id = ${requestId}
     `);
 
-    // أرسل إيميل قبول
     const expiresDate = new Date(Date.now() + codeData.durationDays * 24 * 60 * 60 * 1000);
     const formattedDate = expiresDate.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -238,14 +229,12 @@ export async function reviewGrantRequest(
       console.error('[grant-requests] Failed to send approval email:', e);
     }
   } else {
-    // رفض
     await db.run(sql`
       UPDATE grant_requests
       SET status = 'rejected', admin_notes = ${adminNotes || null}, reviewed_at = ${now}
       WHERE id = ${requestId}
     `);
 
-    // أرسل إيميل رفض
     try {
       await resend.emails.send({
         from: 'بُنيان <noreply@bunyan.guru>',
