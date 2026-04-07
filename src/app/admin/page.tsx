@@ -24,6 +24,7 @@ interface SessionInfo {
   guestId: string | null;
   parentId: string | null;
   childId: string | null;
+  childName: string | null;
   ageGroup: string;
   skillArea: string;
   score: number | null;
@@ -299,6 +300,7 @@ export default function AdminDashboard() {
             <thead className="bg-gray-50 text-gray-500 text-xs">
               <tr>
                 <th className="px-4 py-3 text-right font-semibold">النوع</th>
+                <th className="px-4 py-3 text-right font-semibold">الطفل</th>
                 <th className="px-4 py-3 text-right font-semibold">الفئة العمرية</th>
                 <th className="px-4 py-3 text-right font-semibold">المهارة</th>
                 <th className="px-4 py-3 text-right font-semibold">النتيجة</th>
@@ -320,6 +322,7 @@ export default function AdminDashboard() {
                         {s.parentId ? 'مسجّل' : 'زائر'}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-gray-700 text-xs">{s.childName || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-800">{AGE_LABELS[s.ageGroup] || s.ageGroup}</td>
                     <td className="px-4 py-3 text-gray-600">{SKILL_LABELS[s.skillArea] || s.skillArea}</td>
                     <td className="px-4 py-3">

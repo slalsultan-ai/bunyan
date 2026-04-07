@@ -93,12 +93,13 @@ export async function GET(req: NextRequest) {
       .from(parents)
       .leftJoin(children, eq(parents.id, children.parentId))
       .orderBy(desc(parents.createdAt)),
-    // Paginated sessions with answer count via subquery
+    // Paginated sessions with answer count via subquery + child name via LEFT JOIN
     db.select({
       id: sessions.id,
       guestId: sessions.guestId,
       parentId: sessions.parentId,
       childId: sessions.childId,
+      childName: children.name,
       ageGroup: sessions.ageGroup,
       skillArea: sessions.skillArea,
       score: sessions.score,
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
       completedAt: sessions.completedAt,
       ipAddress: sessions.ipAddress,
       answerCount: sql<number>`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id})`,
-    }).from(sessions).orderBy(desc(sessions.startedAt)).limit(limit).offset(offset),
+    }).from(sessions).leftJoin(children, eq(sessions.childId, children.id)).orderBy(desc(sessions.startedAt)).limit(limit).offset(offset),
   ]);
 
   // Group parents with children from JOIN results (in-memory but from a single query)
