@@ -7,6 +7,7 @@ import { getRetiredQuestionIds } from '@/lib/question-mastery';
 import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
 import { recommendDifficulty } from '@/lib/adaptive-difficulty';
+import { getTierCondition } from '@/lib/question-access';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -83,6 +84,13 @@ export async function GET(req: NextRequest) {
     const childIdParam = searchParams.get('childId');
     const parent = childIdParam ? await getAuthenticatedParent() : null;
     const parentEmail = parent?.email ?? null;
+
+    // Tier filtering: hide premium questions when gat_extended_bank flag is enabled
+    const tierEnabled = await hasFeatureAccess('gat_extended_bank', parentEmail);
+    if (tierEnabled) {
+      // TODO: check isPremium on child when premium system is built
+      baseConditions.push(sql`(tier = 'free' OR tier IS NULL)` as ReturnType<typeof eq>);
+    }
 
     // Sub-skill filter (gated by sub_skill_filter flag)
     let subSkillCondition: ReturnType<typeof eq> | null = null;

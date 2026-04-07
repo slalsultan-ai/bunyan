@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import { questions } from './db/schema';
 import { eq, and, sql, notInArray } from 'drizzle-orm';
+import { getTierCondition } from './question-access';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ export async function selectChallengeQuestions(ageGroup: string, date?: string):
 
   const selectedIds: string[] = [];
   const usedDifficulties: string[] = [];
+  const tierClause = await getTierCondition();
 
   for (const skill of SKILL_AREAS) {
     // Pick a difficulty that differs from the previously selected one
@@ -127,20 +129,20 @@ export async function selectChallengeQuestions(ageGroup: string, date?: string):
       : DIFFICULTIES[Math.floor(Math.random() * DIFFICULTIES.length)];
 
     // Try to find a question with the target difficulty first
-    let question = await findQuestion(db, ageGroup, skill, targetDiff, excludeIds);
+    let question = await findQuestion(db, ageGroup, skill, targetDiff, excludeIds, tierClause);
 
     // Fallback: any difficulty for this skill
     if (!question) {
-      question = await findQuestion(db, ageGroup, skill, null, excludeIds);
+      question = await findQuestion(db, ageGroup, skill, null, excludeIds, tierClause);
     }
 
     // Last resort: ignore exclusion list
     if (!question) {
-      question = await findQuestion(db, ageGroup, skill, targetDiff, []);
+      question = await findQuestion(db, ageGroup, skill, targetDiff, [], tierClause);
     }
 
     if (!question) {
-      question = await findQuestion(db, ageGroup, skill, null, []);
+      question = await findQuestion(db, ageGroup, skill, null, [], tierClause);
     }
 
     if (question) {
@@ -158,17 +160,19 @@ async function findQuestion(
   ageGroup: string,
   skillArea: string,
   difficulty: string | null,
-  excludeIds: string[]
+  excludeIds: string[],
+  tierClause?: string
 ): Promise<{ id: string; difficulty: string } | null> {
   const diffClause = difficulty ? sql` AND difficulty = ${difficulty}` : sql``;
   const excludeClause = excludeIds.length > 0
     ? sql` AND id NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`
     : sql``;
+  const tierSql = tierClause ? sql.raw(tierClause) : sql``;
 
   const [row] = await db
     .select({ id: questions.id, difficulty: questions.difficulty })
     .from(questions)
-    .where(sql`age_group = ${ageGroup} AND skill_area = ${skillArea} AND is_active = 1${diffClause}${excludeClause}`)
+    .where(sql`age_group = ${ageGroup} AND skill_area = ${skillArea} AND is_active = 1${diffClause}${excludeClause}${tierSql}`)
     .orderBy(sql`RANDOM()`)
     .limit(1) as any[];
 

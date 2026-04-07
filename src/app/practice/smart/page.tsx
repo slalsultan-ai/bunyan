@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useSelectedChild } from '@/hooks/useSelectedChild';
 import { useGuest } from '@/hooks/useGuest';
+import { useBunaa } from '@/hooks/useBunaa';
+import BunaaBubble from '@/components/mascot/BunaaBubble';
 import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
@@ -43,6 +45,7 @@ export default function SmartPathPage() {
   const router = useRouter();
   const { enabled: flagEnabled, loading: flagLoading } = useFeatureFlag('adaptive_path');
   const { selectedChild, loading: childLoading } = useSelectedChild();
+  const bunaa = useBunaa();
   const { state } = useGuest();
 
   const [phase, setPhase] = useState<Phase>('loading');
@@ -105,6 +108,7 @@ export default function SmartPathPage() {
     setPhase('playing');
     setCurrentIndex(0);
     setAnswers([]);
+    bunaa.trigger('session_start');
   };
 
   const handleSelectAnswer = async (optionIndex: number) => {
@@ -123,6 +127,13 @@ export default function SmartPathPage() {
       setIsCorrect(data.isCorrect);
       setCorrectOptionIndex(data.correctOptionIndex);
       setAnswers((prev) => [...prev, { questionId: q.id, isCorrect: data.isCorrect }]);
+      bunaa.onAnswer(data.isCorrect);
+
+      // Session half check
+      const answered = currentIndex + 1;
+      if (answered === Math.floor(questions.length / 2)) {
+        bunaa.trigger('session_half');
+      }
     } catch {
       setIsCorrect(false);
       setCorrectOptionIndex(-1);
@@ -143,6 +154,11 @@ export default function SmartPathPage() {
           const data = await res.json();
           setCompletionAccuracy(data.accuracy);
           setSummary(data.summary);
+          if (data.accuracy === 100) {
+            bunaa.trigger('perfect_session');
+          } else {
+            bunaa.trigger('session_end');
+          }
           if (data.needsRecalculation && data.recalculation) {
             setRecalculation(data.recalculation.skills);
             setPhase('recalculation');
@@ -360,6 +376,16 @@ export default function SmartPathPage() {
             )}
           </div>
         </div>
+
+        {bunaa.enabled && (
+          <BunaaBubble
+            message={bunaa.message}
+            visible={bunaa.visible}
+            position="bottom-right"
+            autoHide={4000}
+            onClose={bunaa.hide}
+          />
+        )}
 
         {isReviewing && (
           <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-indigo-100 shadow-lg p-4 z-40">

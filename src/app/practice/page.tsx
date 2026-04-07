@@ -10,6 +10,8 @@ import ChildSwitcher from '@/components/ui/ChildSwitcher';
 import Link from 'next/link';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useGuest } from '@/hooks/useGuest';
+import { useBunaa } from '@/hooks/useBunaa';
+import BunaaBubble from '@/components/mascot/BunaaBubble';
 
 const AGE_GROUPS: { value: AgeGroup; emoji: string; desc: string }[] = [
   { value: '4-5', emoji: '🌱', desc: 'أسئلة مصورة وأشكال وألوان' },
@@ -39,12 +41,18 @@ export default function PracticePage() {
   const showDailyChallenge = useFeatureFlag('daily_challenge');
   const showSessionLimit = useFeatureFlag('session_limit');
   const showAdaptivePath = useFeatureFlag('adaptive_path');
+  const showExtendedBank = useFeatureFlag('gat_extended_bank');
+  const showMockTests = useFeatureFlag('mock_tests');
   const [reviewStats, setReviewStats] = useState<{ pending: number } | null>(null);
   const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState<boolean | null>(null);
   const [dailyStreak, setDailyStreak] = useState<number>(0);
   const [sessionLimitInfo, setSessionLimitInfo] = useState<{ remaining: number; total: number; limit: number } | null>(null);
   const [adaptivePathReady, setAdaptivePathReady] = useState(false);
   const [adaptiveFocus, setAdaptiveFocus] = useState<string[]>([]);
+  const [bankStats, setBankStats] = useState<{ totalFree: number; totalPremium: number } | null>(null);
+  const [mockTestInfo, setMockTestInfo] = useState<{ total: number; completed: number } | null>(null);
+  const [paywallShown, setPaywallShown] = useState(false);
+  const bunaa = useBunaa();
 
   // Show child picker step if logged in with multiple children and none selected yet via this flow
   const [childPicked, setChildPicked] = useState(false);
@@ -116,6 +124,51 @@ export default function PracticePage() {
       })
       .catch(() => {});
   }, [showAdaptivePath.enabled, selectedChild]);
+
+  // Check comeback / first visit for Bunaa
+  useEffect(() => {
+    if (!bunaa.enabled || !selectedChild) return;
+    fetch(`/api/bunaa-status?childId=${selectedChild.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (data.isFirstVisit) {
+          bunaa.trigger('first_visit');
+        } else if (data.isComeback) {
+          bunaa.trigger('comeback');
+        }
+      })
+      .catch(() => {});
+  }, [bunaa.enabled, selectedChild]);
+
+  // Fetch question bank stats
+  useEffect(() => {
+    if (!showExtendedBank.enabled || !selectedChild) return;
+    const ageGroup = computeAgeGroupClient(selectedChild.age);
+    fetch(`/api/question-bank-stats?ageGroup=${ageGroup}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBankStats(data); })
+      .catch(() => {});
+  }, [showExtendedBank.enabled, selectedChild]);
+
+  // Fetch mock test info
+  useEffect(() => {
+    if (!showMockTests.enabled || !selectedChild) return;
+    const ageGroup = computeAgeGroupClient(selectedChild.age);
+    if (ageGroup !== '10-12') return;
+
+    fetch(`/api/mock-tests?childId=${selectedChild.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.enabled && !data.ageRestricted) {
+          setMockTestInfo({
+            total: data.tests?.length ?? 0,
+            completed: data.completedTestIds?.length ?? 0,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [showMockTests.enabled, selectedChild]);
 
   // Fetch review stats
   useEffect(() => {
@@ -319,6 +372,46 @@ export default function PracticePage() {
               </div>
             </div>
 
+            {/* Question bank stats */}
+            {showExtendedBank.enabled && bankStats && (
+              <div className="mb-4 bg-gradient-to-l from-violet-50 to-purple-50 border border-violet-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-violet-800 font-bold text-sm">📚 بنك الأسئلة</p>
+                    <p className="text-violet-600 text-xs mt-1">
+                      تستخدم: {bankStats.totalFree} سؤال مجاني
+                    </p>
+                  </div>
+                  <div className="text-left">
+                    <Link
+                      href="/premium"
+                      className="text-violet-500 text-xs hover:underline"
+                    >
+                      🔒 {bankStats.totalPremium} سؤال إضافي في بُنيان+
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mock tests card */}
+            {showMockTests.enabled && mockTestInfo && selectedChild && computeAgeGroupClient(selectedChild.age) === '10-12' && (
+              <div className="mb-4 bg-gradient-to-l from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-blue-800 font-bold text-sm">📝 اختبارات المحاكاة</p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    {mockTestInfo.total} اختبارات تحاكي القدرات · أكملت: {mockTestInfo.completed}/{mockTestInfo.total}
+                  </p>
+                </div>
+                <Link
+                  href="/practice/mock"
+                  className="bg-gradient-to-l from-blue-500 to-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
+                >
+                  ابدأ اختبار
+                </Link>
+              </div>
+            )}
+
             <button
               onClick={handleStart}
               disabled={!selectedAge}
@@ -337,6 +430,16 @@ export default function PracticePage() {
           </>
         )}
       </div>
+
+      {bunaa.enabled && (
+        <BunaaBubble
+          message={bunaa.message}
+          visible={bunaa.visible}
+          position="bottom-right"
+          autoHide={4000}
+          onClose={bunaa.hide}
+        />
+      )}
     </div>
   );
 }

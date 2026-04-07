@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import { sessions, sessionAnswers, questions } from './db/schema';
 import { sql, eq, and, desc } from 'drizzle-orm';
+import { getTierCondition } from './question-access';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -240,17 +241,15 @@ async function selectDiagnosticQuestions(ageGroup: string): Promise<string[]> {
   const skillAreas = ['quantitative', 'verbal', 'logical_patterns'];
   const perSkill = Math.ceil(SESSION_SIZE / skillAreas.length);
   const allIds: string[] = [];
+  const tierClause = await getTierCondition();
 
   for (const skill of skillAreas) {
+    const tierSql = tierClause ? sql.raw(tierClause) : sql``;
     const rows = await db
       .select({ id: questions.id })
       .from(questions)
       .where(
-        and(
-          eq(questions.ageGroup, ageGroup),
-          eq(questions.skillArea, skill),
-          eq(questions.isActive, true)
-        )
+        sql`age_group = ${ageGroup} AND skill_area = ${skill} AND is_active = 1${tierSql}`
       )
       .orderBy(sql`RANDOM()`)
       .limit(perSkill);
@@ -293,18 +292,16 @@ async function selectSmartQuestions(
   const questionIds: string[] = [];
   const focusAreas: string[] = [];
 
+  const tierClause = await getTierCondition();
+
   // Helper to fetch questions for a sub-skill
   async function fetchForSubSkill(subSkill: string, skillArea: string, count: number): Promise<string[]> {
+    const tierSql = tierClause ? sql.raw(tierClause) : sql``;
     const rows = await db
       .select({ id: questions.id })
       .from(questions)
       .where(
-        and(
-          eq(questions.ageGroup, ageGroup),
-          eq(questions.skillArea, skillArea),
-          eq(questions.subSkill, subSkill),
-          eq(questions.isActive, true)
-        )
+        sql`age_group = ${ageGroup} AND skill_area = ${skillArea} AND sub_skill = ${subSkill} AND is_active = 1${tierSql}`
       )
       .orderBy(sql`RANDOM()`)
       .limit(count * 3); // Fetch extra to filter out recent
@@ -350,10 +347,11 @@ async function selectSmartQuestions(
     const excludeClause = excludeList.length > 0
       ? sql` AND id NOT IN (${sql.join(excludeList.map(id => sql`${id}`), sql`, `)})`
       : sql``;
+    const tierSql = tierClause ? sql.raw(tierClause) : sql``;
     const filler = await db
       .select({ id: questions.id })
       .from(questions)
-      .where(sql`age_group = ${ageGroup} AND is_active = 1${excludeClause}`)
+      .where(sql`age_group = ${ageGroup} AND is_active = 1${excludeClause}${tierSql}`)
       .orderBy(sql`RANDOM()`)
       .limit(SESSION_SIZE - questionIds.length);
     questionIds.push(...filler.map((r) => r.id));

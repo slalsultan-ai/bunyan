@@ -12,6 +12,8 @@ import AnswerOption from '@/components/practice/AnswerOption';
 import ExplanationPanel from '@/components/practice/ExplanationPanel';
 import { useSelectedChild } from '@/hooks/useSelectedChild';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useBunaa } from '@/hooks/useBunaa';
+import BunaaBubble from '@/components/mascot/BunaaBubble';
 import { AgeGroup, SkillArea } from '@/types';
 
 function SessionContent() {
@@ -37,6 +39,7 @@ function SessionContent() {
 
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
   const { enabled: showExplanations } = useFeatureFlag('answer_explanations');
+  const bunaa = useBunaa();
 
   useEffect(() => {
     session.loadQuestions(ageGroup, skillArea, difficultyParam, {
@@ -45,6 +48,7 @@ function SessionContent() {
       subSkill,
       count: requestedCount,
     });
+    bunaa.trigger('session_start');
   }, []);
 
   // Register session start once questions are loaded AND child selection is resolved
@@ -91,7 +95,12 @@ function SessionContent() {
 
       const { pointsEarned, newBadges } = recordSession(result);
 
-      if (session.score === session.questions.length) playFanfare();
+      if (session.score === session.questions.length) {
+        playFanfare();
+        bunaa.trigger('perfect_session');
+      } else {
+        bunaa.trigger('session_end');
+      }
 
       if (state.guestId) {
         fetch('/api/sessions', {
@@ -128,10 +137,18 @@ function SessionContent() {
 
   const handleAnswer = (idx: number) => {
     if (!session.currentQuestion) return;
+    const difficulty = session.currentQuestion.difficulty;
     session.selectAnswer(idx, (isCorrect) => {
       const pts = isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0;
       setPointsThisSession(p => p + pts);
       if (isCorrect) playCorrect(); else playWrong();
+      bunaa.onAnswer(isCorrect, difficulty);
+
+      // Session half check
+      const answered = session.currentIndex + 1;
+      if (answered === Math.floor(session.questions.length / 2)) {
+        bunaa.trigger('session_half');
+      }
     });
   };
 
@@ -252,6 +269,16 @@ function SessionContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {bunaa.enabled && (
+        <BunaaBubble
+          message={bunaa.message}
+          visible={bunaa.visible}
+          position="bottom-right"
+          autoHide={4000}
+          onClose={bunaa.hide}
+        />
       )}
 
       {exitConfirm && (

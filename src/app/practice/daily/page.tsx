@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useSelectedChild } from '@/hooks/useSelectedChild';
+import { useBunaa } from '@/hooks/useBunaa';
+import BunaaBubble from '@/components/mascot/BunaaBubble';
 import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
@@ -30,6 +32,7 @@ export default function DailyChallengePage() {
   const router = useRouter();
   const { enabled: flagEnabled, loading: flagLoading } = useFeatureFlag('daily_challenge');
   const { selectedChild, loading: childLoading } = useSelectedChild();
+  const bunaa = useBunaa();
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
@@ -134,6 +137,7 @@ export default function DailyChallengePage() {
 
   const handleStartChallenge = () => {
     setPhase('playing');
+    bunaa.trigger('daily_challenge_start');
   };
 
   const handleSelectAnswer = async (optionIndex: number) => {
@@ -156,10 +160,14 @@ export default function DailyChallengePage() {
       setIsCorrect(data.isCorrect);
       setCorrectOptionIndex(data.correctOptionIndex);
       setResults((prev) => [...prev, { questionId: q.id, correct: data.isCorrect }]);
+      bunaa.onAnswer(data.isCorrect);
 
       if (data.completed && data.completion) {
         setCompletion(data.completion);
         setStreak(data.streak);
+        bunaa.trigger('daily_challenge_done');
+        if (data.completion.earnedBadge) bunaa.trigger('badge_earned');
+        if (data.completion.earnedStar) bunaa.trigger('star_earned');
       } else if (data.streak) {
         setStreak(data.streak);
       }
@@ -422,6 +430,16 @@ export default function DailyChallengePage() {
             )}
           </div>
         </div>
+
+        {bunaa.enabled && (
+          <BunaaBubble
+            message={bunaa.message}
+            visible={bunaa.visible}
+            position="bottom-right"
+            autoHide={4000}
+            onClose={bunaa.hide}
+          />
+        )}
 
         {/* Next button */}
         {isReviewing && (
