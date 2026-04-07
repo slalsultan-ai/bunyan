@@ -15,11 +15,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'محاولات كثيرة. انتظر قليلاً.' }, { status: 429 });
   }
 
-  let body: { email?: string; code?: string };
+  let body: { email?: string; code?: string; institutionCode?: string };
   try { body = await req.json(); } catch { return Response.json({ error: 'طلب غير صحيح' }, { status: 400 }); }
 
   const email = (body.email || '').trim().toLowerCase();
   const code = (body.code || '').trim();
+  const institutionCode = (body.institutionCode || '').trim();
 
   if (!email || !EMAIL_REGEX.test(email) || !code || code.length !== 6) {
     return Response.json({ error: 'بيانات غير صحيحة' }, { status: 400 });
@@ -87,5 +88,17 @@ export async function POST(req: NextRequest) {
   const token = await createParentSession(parent.id);
   await setParentCookie(token);
 
-  return Response.json({ success: true, isNewUser });
+  // Activate institution code if provided
+  let codeActivated = false;
+  if (institutionCode) {
+    try {
+      const { activateCode } = await import('@/lib/institution-codes');
+      const result = await activateCode(institutionCode, parent.id);
+      codeActivated = result.success;
+    } catch {
+      // Code activation failure should not block login
+    }
+  }
+
+  return Response.json({ success: true, isNewUser, codeActivated });
 }

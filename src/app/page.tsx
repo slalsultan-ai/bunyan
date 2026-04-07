@@ -28,6 +28,9 @@ export default async function HomePage() {
             <Link href="/worksheet" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
               أوراق عمل
             </Link>
+            <Link href="/premium" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors hidden sm:block">
+              بُنيان+
+            </Link>
             <Link href="/auth" className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block border border-gray-200 px-3 py-1.5 rounded-lg">
               سجّل
             </Link>

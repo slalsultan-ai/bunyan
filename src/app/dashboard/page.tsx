@@ -359,12 +359,15 @@ export default function DashboardPage() {
         )}
 
         {/* Quick links */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/practice" className="bg-emerald-600 text-white text-center font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition-colors">
             🎯 ابدأ تدريباً
           </Link>
           <Link href="/progress" className="bg-white text-gray-700 text-center font-semibold py-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-colors">
             📊 التقدم
+          </Link>
+          <Link href="/premium" className="bg-amber-50 text-amber-700 text-center font-semibold py-3.5 rounded-2xl border border-amber-200 hover:bg-amber-100 transition-colors">
+            ⭐ بُنيان+
           </Link>
         </div>
       </div>

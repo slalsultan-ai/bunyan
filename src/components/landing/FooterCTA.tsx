@@ -31,6 +31,7 @@ export default function FooterCTA() {
 
             <div className="flex items-center gap-6 text-sm">
               <Link href="/practice" className="hover:text-white transition-colors">تدريب</Link>
+              <Link href="/premium" className="hover:text-white transition-colors">بُنيان+</Link>
               <Link href="/worksheet" className="hover:text-white transition-colors">أوراق عمل</Link>
               <Link href="/about" className="hover:text-white transition-colors">عن المنصة</Link>
             </div>

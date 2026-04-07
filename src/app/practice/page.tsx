@@ -199,6 +199,7 @@ export default function PracticePage() {
           <Logo size="sm" />
           <div className="flex items-center gap-3">
             <ChildSwitcher />
+            <Link href="/premium" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">بُنيان+</Link>
             <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">الرئيسية</Link>
           </div>
         </div>

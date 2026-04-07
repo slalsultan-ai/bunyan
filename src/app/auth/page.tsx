@@ -16,6 +16,7 @@ function AuthContent() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [institutionCode, setInstitutionCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
@@ -54,7 +55,11 @@ function AuthContent() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), code }),
+        body: JSON.stringify({
+          email: email.trim(),
+          code,
+          ...(institutionCode ? { institutionCode: institutionCode.trim() } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'حدث خطأ'); return; }
@@ -99,6 +104,21 @@ function AuthContent() {
                   className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-base focus:border-emerald-500 focus:outline-none transition-colors"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">كود المؤسسة <span className="font-normal text-gray-400">(اختياري)</span></label>
+                <input
+                  type="text"
+                  value={institutionCode}
+                  onChange={e => setInstitutionCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل الكود لو عندك"
+                  dir="ltr"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-base font-mono tracking-wider focus:border-emerald-500 focus:outline-none transition-colors"
+                />
+                <Link href="/premium/grant" className="text-xs text-emerald-600 hover:text-emerald-700 mt-1.5 inline-block">
+                  مؤسسة تعليمية؟ تقدّم بطلب منحة
+                </Link>
               </div>
 
               {error && (
