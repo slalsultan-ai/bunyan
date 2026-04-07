@@ -26,7 +26,7 @@ vi.mock('@/lib/db/schema', () => ({
 }));
 
 import { cookies } from 'next/headers';
-const { computeAgeGroup, createParentSession, getParentSession } =
+const { computeAgeGroup, createParentSession, getParentSession, getAuthenticatedParent } =
   await import('@/lib/parent-auth');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -176,6 +176,111 @@ describe('getParentSession', () => {
     const session = await getParentSession();
     expect(session).not.toBeNull();
     expect(session?.parentId).toBe('p1');
+    expect(mockUpdate).toHaveBeenCalled();
+    expect(setCookie).toHaveBeenCalled();
+  });
+});
+
+// ─── getAuthenticatedParent ─────────────────────────────────────────────────
+
+describe('getAuthenticatedParent', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns null when no cookie is set', async () => {
+    mockCookies(undefined);
+    const result = await getAuthenticatedParent();
+    expect(result).toBeNull();
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('returns null when session is not found in DB', async () => {
+    mockCookies('some-token');
+    mockSelect.mockReturnValue(makeSelectChain([]));
+
+    const result = await getAuthenticatedParent();
+    expect(result).toBeNull();
+  });
+
+  it('returns parent data for a valid session', async () => {
+    mockCookies('valid-token');
+
+    const futureDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+    const parentData = { id: 'parent-123', email: 'parent@test.com', name: 'Test Parent' };
+    const row = {
+      parent_sessions: {
+        token: 'hashed',
+        parentId: 'parent-123',
+        expiresAt: futureDate,
+      },
+      parents: parentData,
+    };
+
+    mockSelect.mockReturnValue(makeSelectChain([row]));
+
+    const result = await getAuthenticatedParent();
+    expect(result).toEqual(parentData);
+  });
+
+  it('returns null for an expired session and deletes it', async () => {
+    mockCookies('expired-token');
+
+    const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const row = {
+      parent_sessions: {
+        token: 'hashed',
+        parentId: 'parent-123',
+        expiresAt: pastDate,
+      },
+      parents: { id: 'parent-123', email: 'parent@test.com' },
+    };
+
+    mockSelect.mockReturnValue(makeSelectChain([row]));
+    mockDelete.mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const result = await getAuthenticatedParent();
+    expect(result).toBeNull();
+    expect(mockDelete).toHaveBeenCalled();
+  });
+
+  it('throws on DB error (no try/catch in getAuthenticatedParent)', async () => {
+    mockCookies('error-token');
+    mockSelect.mockImplementation(() => {
+      throw new Error('DB connection failed');
+    });
+
+    await expect(getAuthenticatedParent()).rejects.toThrow('DB connection failed');
+  });
+
+  it('triggers sliding session renewal when less than 7 days remain', async () => {
+    const setCookie = vi.fn();
+    (cookies as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      get: () => ({ value: 'renew-token' }),
+      set: setCookie,
+    });
+
+    // 3 days remaining — should trigger renewal
+    const nearExpiry = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const parentData = { id: 'parent-456', email: 'renew@test.com' };
+    const row = {
+      parent_sessions: {
+        token: 'hashed',
+        parentId: 'parent-456',
+        expiresAt: nearExpiry,
+      },
+      parents: parentData,
+    };
+
+    mockSelect.mockReturnValue(makeSelectChain([row]));
+    mockUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    const result = await getAuthenticatedParent();
+    expect(result).toEqual(parentData);
     expect(mockUpdate).toHaveBeenCalled();
     expect(setCookie).toHaveBeenCalled();
   });
