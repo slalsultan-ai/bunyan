@@ -16,7 +16,7 @@ export async function GET() {
     total: sql<number>`COUNT(*)`,
     completed: sql<number>`SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END)`,
     incomplete: sql<number>`SUM(CASE WHEN completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) > 0 THEN 1 ELSE 0 END)`,
-    fake: sql<number>`SUM(CASE WHEN score IS NULL AND completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) = 0 THEN 1 ELSE 0 END)`,
+    fake: sql<number>`SUM(CASE WHEN completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = sessions.id) = 0 AND time_taken_ms IS NOT NULL AND time_taken_ms < 500 THEN 1 ELSE 0 END)`,
   }).from(sessions);
 
   return NextResponse.json({
@@ -35,14 +35,14 @@ export async function DELETE() {
 
   const db = getDb();
 
-  // Find truly fake sessions: no score, no completedAt, AND zero answers
+  // Find truly fake sessions: no completedAt, zero answers, AND suspiciously fast (<500ms)
   const fakeSessions = await db
     .select({ id: sessions.id })
     .from(sessions)
     .where(and(
-      isNull(sessions.score),
       isNull(sessions.completedAt),
-      sql`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id}) = 0`
+      sql`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id}) = 0`,
+      sql`time_taken_ms IS NOT NULL AND time_taken_ms < 500`
     ));
 
   if (fakeSessions.length === 0) {

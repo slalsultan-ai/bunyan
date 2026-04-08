@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
       .leftJoin(children, eq(parents.id, children.parentId))
       .orderBy(desc(parents.createdAt)),
     // Paginated sessions with answer count via subquery + child name via LEFT JOIN
+    // isSuspicious: no answers AND (too fast <500ms) — matches cleanup-fake-sessions.ts criteria
     db.select({
       id: sessions.id,
       guestId: sessions.guestId,
@@ -109,6 +110,7 @@ export async function GET(req: NextRequest) {
       completedAt: sessions.completedAt,
       ipAddress: sessions.ipAddress,
       answerCount: sql<number>`(SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id})`,
+      isSuspicious: sql<number>`CASE WHEN completed_at IS NULL AND (SELECT COUNT(*) FROM session_answers WHERE session_id = ${sessions.id}) = 0 AND time_taken_ms IS NOT NULL AND time_taken_ms < 500 THEN 1 ELSE 0 END`,
     }).from(sessions).leftJoin(children, eq(sessions.childId, children.id)).orderBy(desc(sessions.startedAt)).limit(limit).offset(offset),
   ]);
 
