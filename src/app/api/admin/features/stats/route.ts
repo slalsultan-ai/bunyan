@@ -21,6 +21,26 @@ export async function GET() {
 
   const db = getDb();
 
+  // Wrap each query so one failure doesn't kill the whole response
+  async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try { return await fn(); } catch (e) {
+      console.error('[features/stats] query failed:', e instanceof Error ? e.message : e);
+      return fallback;
+    }
+  }
+
+  const emptyPdf = { totalChildren: 0, childrenWithSessions: 0, totalCompletedSessions: 0, avgAccuracy: null, recentSessions: 0, recentAccuracy: null };
+  const emptyReview = { totalItems: 0, masteredItems: 0, pendingItems: 0, uniqueUsers: 0, masteryRate: 0, avgTimesWrong: null, avgReviewsToMastery: null };
+  const emptyRetirement = { totalRetired: 0, totalTracked: 0, uniqueUsers: 0, avgCorrectCount: null, totalQuestions: 0, retirementRate: 0, byAgeGroup: [] };
+  const emptyDaily = { totalDays: 0, uniqueChildren: 0, totalAnswers: 0, correctAnswers: 0, accuracy: null, maxCurrentStreak: 0, longestStreak: 0, totalStars: 0, totalBadges: 0, activeStreakers: 0, recentChildren: 0 };
+  const emptyLimit = { sessionsToday: 0, uniqueUsersToday: 0, maxSessionsByOneUser: 0, usersHittingLimit: 0, avgSessionsPerUser: 0 };
+  const emptyAdaptive = { totalSessions: 0, completedSessions: 0, completionRate: 0, uniqueChildren: 0, avgAccuracy: null, maxSessionNumber: 0 };
+  const emptyDigest = { totalSent: 0, uniqueParents: 0, lastSentAt: null, sentThisWeek: 0, unsubscribed: 0, totalParents: 0, subscribedParents: 0 };
+  const emptyDashboard = { totalGoals: 0, activeGoals: 0, achievedGoals: 0, abandonedGoals: 0, achievementRate: 0, uniqueChildren: 0 };
+  const emptyBank = { totalQuestions: 0, freeQuestions: 0, premiumQuestions: 0, sources: {} };
+  const emptyMock = { totalTests: 0, activeTests: 0, totalAttempts: 0, completed: 0, timedOut: 0, completionRate: 0, uniqueChildren: 0, avgAccuracy: null, avgTimeMinutes: null };
+  const emptyPremium = { activeSubscriptions: 0, activeCodeActivations: 0, totalParents: 0 };
+
   const [
     pdfStats,
     reviewStats,
@@ -35,18 +55,18 @@ export async function GET() {
     mockTestsStats,
     premiumStats,
   ] = await Promise.all([
-    getChildPdfStats(db),
-    getReviewModeStats(db),
-    getQuestionRetirementStats(db),
-    getFeatureAccessCounts(db),
-    getDailyChallengeStats(db),
-    getSessionLimitStats(db),
-    getAdaptivePathStats(db),
-    getWeeklyDigestStats(db),
-    getDashboardProStats(db),
-    getExtendedBankStats(db),
-    getMockTestsStats(db),
-    getPremiumStats(db),
+    safe(() => getChildPdfStats(db), emptyPdf),
+    safe(() => getReviewModeStats(db), emptyReview),
+    safe(() => getQuestionRetirementStats(db), emptyRetirement),
+    safe(() => getFeatureAccessCounts(db), {} as Record<string, number>),
+    safe(() => getDailyChallengeStats(db), emptyDaily),
+    safe(() => getSessionLimitStats(db), emptyLimit),
+    safe(() => getAdaptivePathStats(db), emptyAdaptive),
+    safe(() => getWeeklyDigestStats(db), emptyDigest),
+    safe(() => getDashboardProStats(db), emptyDashboard),
+    safe(() => getExtendedBankStats(db), emptyBank),
+    safe(() => getMockTestsStats(db), emptyMock),
+    safe(() => getPremiumStats(db), emptyPremium),
   ]);
 
   return NextResponse.json({

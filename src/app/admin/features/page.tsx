@@ -578,8 +578,11 @@ export default function FeaturesPage() {
       });
 
     const statsPromise = fetch('/api/admin/features/stats')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) setStats(data); })
+      .then((r) => {
+        if (!r.ok) { console.error('[features] stats API returned', r.status); return null; }
+        return r.json();
+      })
+      .then((data) => { if (data) { console.log('[features] stats loaded', Object.keys(data)); setStats(data); } })
       .finally(() => setStatsLoading(false));
 
     Promise.all([flagsPromise, statsPromise])
