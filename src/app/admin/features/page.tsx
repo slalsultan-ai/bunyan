@@ -124,6 +124,12 @@ interface Metric {
   progress?: number;
 }
 
+interface Readiness {
+  level: 'ready' | 'caution' | 'not_ready';
+  label: string;
+  detail: string;
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const FLAG_META: Record<string, { icon: string; color: string }> = {
@@ -165,6 +171,12 @@ const ACCENT_BG: Record<AccentColor, string> = {
   blue: 'bg-blue-500',
   purple: 'bg-purple-500',
   gray: 'bg-gray-400',
+};
+
+const READINESS_STYLES: Record<string, { bg: string; border: string; text: string; icon: string; dot: string }> = {
+  ready: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: '✓', dot: 'bg-emerald-500' },
+  caution: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: '!', dot: 'bg-amber-500' },
+  not_ready: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '✕', dot: 'bg-red-500' },
 };
 
 const AGE_GROUP_LABELS: Record<string, string> = {
@@ -310,6 +322,139 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
   return null;
 }
 
+// ─── Readiness evaluation ────────────────────────────────────────────────────
+
+function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | null {
+  if (!stats) return null;
+
+  if (flagKey === 'child_pdf_report') {
+    const s = stats.child_pdf_report;
+    if (s.childrenWithSessions >= 5 && s.avgAccuracy != null && s.recentSessions >= 3) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `بيانات كافية: ${s.childrenWithSessions} طفل بجلسات، نشاط حديث مستمر` };
+    }
+    if (s.childrenWithSessions >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.childrenWithSessions} أطفال فقط جرّبوا النظام — يُفضّل ≥ ٥ قبل الإطلاق` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات كافية — فعّل لمختبرين أولاً' };
+  }
+
+  if (flagKey === 'review_mode') {
+    const s = stats.review_mode;
+    if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsers} مستخدمين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
+    }
+    if (s.uniqueUsers >= 1 && s.totalItems >= 5) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.uniqueUsers} مستخدم فقط — نسبة الإتقان ${s.masteryRate}%` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'بيانات غير كافية — أضف مختبرين لجمع بيانات المراجعة' };
+  }
+
+  if (flagKey === 'question_retirement') {
+    const s = stats.question_retirement;
+    if (s.uniqueUsers === 0) {
+      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا يوجد مختبرين — أضف إيميلات في allowedEmails أولاً' };
+    }
+    const maxDepletion = Math.max(...s.byAgeGroup.map((a) => a.depletionPct), 0);
+    if (s.uniqueUsers >= 3 && maxDepletion <= 15) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `استنزاف منخفض (أعلى فئة ${maxDepletion}%) — بنك الأسئلة يتحمّل` };
+    }
+    if (maxDepletion <= 30) {
+      return { level: 'caution', label: 'تحتاج مراقبة', detail: `استنزاف ${maxDepletion}% في بعض الفئات — راقب بنك الأسئلة` };
+    }
+    return { level: 'not_ready', label: 'خطر استنزاف', detail: `استنزاف ${maxDepletion}% — أضف أسئلة جديدة قبل الإطلاق` };
+  }
+
+  if (flagKey === 'daily_challenge') {
+    const s = stats.daily_challenge;
+    if (s.uniqueChildren >= 5 && s.totalDays >= 7 && s.accuracy != null && s.accuracy >= 50) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} طفل جرّبوا خلال ${s.totalDays} يوم، دقة ${s.accuracy}%` };
+    }
+    if (s.uniqueChildren >= 1 && s.totalDays >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.uniqueChildren} أطفال، ${s.totalDays} أيام — يُفضّل ≥ ٥ أطفال و ≥ ٧ أيام` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات — فعّل لمختبرين وانتظر أسبوع' };
+  }
+
+  if (flagKey === 'session_limit') {
+    const s = stats.session_limit;
+    if (s.uniqueUsersToday >= 3) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsersToday} مستخدم اليوم، النظام يعمل بشكل طبيعي` };
+    }
+    if (s.sessionsToday >= 1) {
+      return { level: 'caution', label: 'تحتاج مراقبة', detail: `${s.sessionsToday} جلسة اليوم — راقب سلوك المستخدمين عند الحد` };
+    }
+    return { level: 'not_ready', label: 'لا بيانات اليوم', detail: 'لا توجد جلسات اليوم بعد — انتظر نشاط المستخدمين' };
+  }
+
+  if (flagKey === 'adaptive_path') {
+    const s = stats.adaptive_path;
+    if (s.uniqueChildren >= 3 && s.completionRate >= 50 && s.avgAccuracy != null) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} أطفال، إكمال ${s.completionRate}%، دقة ${s.avgAccuracy}%` };
+    }
+    if (s.uniqueChildren >= 1 && s.totalSessions >= 3) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.uniqueChildren} أطفال، ${s.totalSessions} جلسات — يُفضّل ≥ ٣ أطفال` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'بيانات غير كافية — فعّل لمختبرين أولاً' };
+  }
+
+  if (flagKey === 'weekly_digest') {
+    const s = stats.weekly_digest;
+    if (s.totalSent >= 5 && s.subscribedParents >= 3) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.totalSent} رسالة أُرسلت، ${s.subscribedParents} مشترك` };
+    }
+    if (s.totalSent >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.totalSent} رسالة أُرسلت — تأكد من المحتوى` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لم تُرسل أي رسائل بعد — اختبر بإرسال بريد تجريبي' };
+  }
+
+  if (flagKey === 'parent_dashboard_pro') {
+    const s = stats.parent_dashboard_pro;
+    if (s.uniqueChildren >= 3 && s.achievedGoals >= 1) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} أطفال بأهداف، ${s.achievedGoals} هدف تم تحقيقه` };
+    }
+    if (s.totalGoals >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.totalGoals} أهداف — جرّب مع مزيد من الأطفال` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد أهداف — فعّل لمختبرين لتجربة الأهداف' };
+  }
+
+  if (flagKey === 'gat_extended_bank') {
+    const s = stats.gat_extended_bank;
+    if (s.premiumQuestions >= 100) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.premiumQuestions} سؤال مدفوع، ${s.freeQuestions} مجاني — بنك كافي` };
+    }
+    if (s.premiumQuestions >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الأسئلة', detail: `${s.premiumQuestions} سؤال مدفوع فقط — يُفضّل ≥ ١٠٠` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد أسئلة مدفوعة — أضف أسئلة بـ tier = premium' };
+  }
+
+  if (flagKey === 'mock_tests') {
+    const s = stats.mock_tests;
+    if (s.activeTests >= 3 && s.uniqueChildren >= 3 && s.completionRate >= 50) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.activeTests} اختبارات، ${s.uniqueChildren} أطفال، إكمال ${s.completionRate}%` };
+    }
+    if (s.activeTests >= 1 && s.totalAttempts >= 1) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.activeTests} اختبارات، ${s.totalAttempts} محاولة — يُفضّل ≥ ٣ اختبارات و ≥ ٣ أطفال` };
+    }
+    if (s.activeTests >= 1) {
+      return { level: 'caution', label: 'بحاجة لمختبرين', detail: `${s.activeTests} اختبارات جاهزة لكن بدون محاولات — فعّل لمختبرين` };
+    }
+    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد اختبارات — أنشئ اختبارات محاكاة أولاً' };
+  }
+
+  if (flagKey === 'mascot_bunaa') {
+    return { level: 'caution', label: 'خاصية تفاعلية', detail: 'شخصية بُنّاء — لا تحتاج بيانات، اختبرها يدوياً' };
+  }
+
+  if (flagKey === 'answer_explanations') {
+    return { level: 'ready', label: 'جاهزة', detail: 'الشروحات تظهر مع كل سؤال — لا تحتاج بيانات منفصلة' };
+  }
+
+  return null;
+}
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function ProgressBar({ value, accent }: { value: number; accent: AccentColor }) {
@@ -334,6 +479,21 @@ function MetricCard({ m }: { m: Metric }) {
       </div>
       <div className="text-[11px] text-gray-500 leading-tight mt-0.5">{m.label}</div>
       {m.progress != null && <ProgressBar value={m.progress} accent={m.accent} />}
+    </div>
+  );
+}
+
+function ReadinessBar({ readiness }: { readiness: Readiness }) {
+  const style = READINESS_STYLES[readiness.level];
+  return (
+    <div className={`mx-5 mb-3 ${style.bg} border ${style.border} rounded-xl px-4 py-3 flex items-center gap-3`}>
+      <span className={`w-6 h-6 ${style.dot} rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+        {style.icon}
+      </span>
+      <div className="min-w-0">
+        <span className={`text-sm font-bold ${style.text}`}>{readiness.label}</span>
+        <p className={`text-xs ${style.text} opacity-80 mt-0.5 leading-relaxed`}>{readiness.detail}</p>
+      </div>
     </div>
   );
 }
@@ -600,6 +760,7 @@ export default function FeaturesPage() {
             const isExpanded = expandedCard === flag.flagKey;
             const emails = parseEmails(state.allowedEmails);
             const metrics = buildMetrics(flag.flagKey, stats);
+            const readiness = getReadiness(flag.flagKey, stats);
             const ageGroupData = flag.flagKey === 'question_retirement'
               ? (stats?.question_retirement?.byAgeGroup ?? [])
               : [];
@@ -658,6 +819,9 @@ export default function FeaturesPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Readiness indicator */}
+                {readiness && <ReadinessBar readiness={readiness} />}
 
                 {/* Stats metrics */}
                 {metrics && metrics.length > 0 && (
