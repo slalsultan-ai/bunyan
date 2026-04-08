@@ -7,6 +7,8 @@ import {
   questionMastery,
   questions,
   featureFlags,
+  parents,
+  children,
 } from '@/lib/db/schema';
 import { sql, eq } from 'drizzle-orm';
 
@@ -19,21 +21,56 @@ export async function GET() {
 
   const db = getDb();
 
-  const [pdfStats, reviewStats, retirementStats, accessCounts] = await Promise.all([
+  const [
+    pdfStats,
+    reviewStats,
+    retirementStats,
+    accessCounts,
+    dailyChallengeStats,
+    sessionLimitStats,
+    adaptivePathStats,
+    weeklyDigestStats,
+    dashboardProStats,
+    extendedBankStats,
+    mockTestsStats,
+    premiumStats,
+  ] = await Promise.all([
     getChildPdfStats(db),
     getReviewModeStats(db),
     getQuestionRetirementStats(db),
     getFeatureAccessCounts(db),
+    getDailyChallengeStats(db),
+    getSessionLimitStats(db),
+    getAdaptivePathStats(db),
+    getWeeklyDigestStats(db),
+    getDashboardProStats(db),
+    getExtendedBankStats(db),
+    getMockTestsStats(db),
+    getPremiumStats(db),
   ]);
 
   return NextResponse.json({
     child_pdf_report: pdfStats,
     review_mode: { ...reviewStats, allowedUsers: accessCounts['review_mode'] ?? 0 },
     question_retirement: { ...retirementStats, allowedUsers: accessCounts['question_retirement'] ?? 0 },
+    daily_challenge: dailyChallengeStats,
+    session_limit: sessionLimitStats,
+    adaptive_path: adaptivePathStats,
+    weekly_digest: weeklyDigestStats,
+    parent_dashboard_pro: dashboardProStats,
+    gat_extended_bank: extendedBankStats,
+    mock_tests: mockTestsStats,
+    mascot_bunaa: { note: 'شخصية تفاعلية — لا بيانات قابلة للقياس' },
+    answer_explanations: { note: 'تُعرض مع كل سؤال — لا بيانات منفصلة' },
+    _premium: premiumStats,
   });
 }
 
 type DB = ReturnType<typeof getDb>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>;
+
+// ─── child_pdf_report ─────────────────────────────────────────────────────────
 
 async function getChildPdfStats(db: DB) {
   const [[r], [recent]] = await Promise.all([
@@ -46,7 +83,6 @@ async function getChildPdfStats(db: DB) {
       })
       .from(sessions)
       .where(sql`completed_at IS NOT NULL AND child_id IS NOT NULL`),
-    // Last 7 days activity
     db
       .select({
         recentSessions: sql<number>`COUNT(*)`,
@@ -66,6 +102,8 @@ async function getChildPdfStats(db: DB) {
   };
 }
 
+// ─── review_mode ──────────────────────────────────────────────────────────────
+
 async function getReviewModeStats(db: DB) {
   const [r] = await db
     .select({
@@ -80,8 +118,6 @@ async function getReviewModeStats(db: DB) {
 
   const total = r?.totalItems ?? 0;
   const mastered = r?.masteredItems ?? 0;
-
-  // Use ceil so 0.4% shows as 1% instead of rounding to 0%
   const masteryRate = total > 0 ? Math.max(Math.round((mastered / total) * 100), mastered > 0 ? 1 : 0) : 0;
 
   return {
@@ -94,6 +130,8 @@ async function getReviewModeStats(db: DB) {
     avgReviewsToMastery: mastered > 0 ? (r?.avgReviewsToMastery ?? null) : null,
   };
 }
+
+// ─── question_retirement ──────────────────────────────────────────────────────
 
 async function getQuestionRetirementStats(db: DB) {
   const [[r], [pool], ageGroups] = await Promise.all([
@@ -109,7 +147,6 @@ async function getQuestionRetirementStats(db: DB) {
       .select({ totalQuestions: sql<number>`COUNT(*)` })
       .from(questions)
       .where(eq(questions.isActive, true)),
-    // Per-age-group pool sizes
     db
       .select({
         ageGroup: questions.ageGroup,
@@ -150,11 +187,296 @@ async function getQuestionRetirementStats(db: DB) {
   };
 }
 
-/**
- * Count real users with access to each feature flag.
- * - enabled=1 → "all" (we return the count of parents who have children, as a proxy)
- * - enabled=0 with allowedEmails → count the emails in the comma-separated list
- */
+// ─── daily_challenge ──────────────────────────────────────────────────────────
+
+async function getDailyChallengeStats(db: DB) {
+  const [[r], [streaks], [recent]] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COUNT(DISTINCT challenge_date) as totalDays,
+        (SELECT COUNT(DISTINCT child_id) FROM daily_challenge_results) as uniqueChildren,
+        (SELECT COUNT(*) FROM daily_challenge_results WHERE is_correct = 1) as correctAnswers,
+        (SELECT COUNT(*) FROM daily_challenge_results) as totalAnswers
+      FROM daily_challenges
+    `),
+    db.all<Row>(sql`
+      SELECT
+        MAX(current_streak) as maxCurrentStreak,
+        MAX(longest_streak) as longestStreak,
+        SUM(total_stars) as totalStars,
+        SUM(total_badges) as totalBadges,
+        COUNT(*) as activeStreakers
+      FROM daily_streaks
+      WHERE current_streak > 0
+    `),
+    db.all<Row>(sql`
+      SELECT COUNT(DISTINCT child_id) as recentChildren
+      FROM daily_challenge_results
+      WHERE answered_at >= datetime('now', '-7 days')
+    `),
+  ]);
+
+  const row = r?.[0] ?? {};
+  const streakRow = streaks?.[0] ?? {};
+  const recentRow = recent?.[0] ?? {};
+  const totalAnswers = Number(row.totalAnswers ?? 0);
+  const correctAnswers = Number(row.correctAnswers ?? 0);
+
+  return {
+    totalDays: Number(row.totalDays ?? 0),
+    uniqueChildren: Number(row.uniqueChildren ?? 0),
+    totalAnswers,
+    correctAnswers,
+    accuracy: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : null,
+    maxCurrentStreak: Number(streakRow.maxCurrentStreak ?? 0),
+    longestStreak: Number(streakRow.longestStreak ?? 0),
+    totalStars: Number(streakRow.totalStars ?? 0),
+    totalBadges: Number(streakRow.totalBadges ?? 0),
+    activeStreakers: Number(streakRow.activeStreakers ?? 0),
+    recentChildren: Number(recentRow.recentChildren ?? 0),
+  };
+}
+
+// ─── session_limit ────────────────────────────────────────────────────────────
+
+async function getSessionLimitStats(db: DB) {
+  const today = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Riyadh' }).split(',')[0];
+
+  const [[todayStats], [overall]] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COUNT(*) as sessionsToday,
+        COUNT(DISTINCT COALESCE(child_id, guest_id)) as uniqueUsersToday,
+        MAX(cnt) as maxSessionsByOneUser
+      FROM (
+        SELECT COALESCE(child_id, guest_id) as uid, COUNT(*) as cnt
+        FROM sessions
+        WHERE DATE(started_at) = ${today} AND completed_at IS NOT NULL
+          AND COALESCE(is_daily_challenge, 0) = 0
+        GROUP BY uid
+      )
+    `),
+    db.all<Row>(sql`
+      SELECT
+        COUNT(DISTINCT CASE WHEN cnt >= 3 THEN uid END) as usersHittingLimit,
+        ROUND(AVG(cnt), 1) as avgSessionsPerUser
+      FROM (
+        SELECT COALESCE(child_id, guest_id) as uid, COUNT(*) as cnt
+        FROM sessions
+        WHERE DATE(started_at) = ${today} AND completed_at IS NOT NULL
+          AND COALESCE(is_daily_challenge, 0) = 0
+        GROUP BY uid
+      )
+    `),
+  ]);
+
+  const t = todayStats?.[0] ?? {};
+  const o = overall?.[0] ?? {};
+
+  return {
+    sessionsToday: Number(t.sessionsToday ?? 0),
+    uniqueUsersToday: Number(t.uniqueUsersToday ?? 0),
+    maxSessionsByOneUser: Number(t.maxSessionsByOneUser ?? 0),
+    usersHittingLimit: Number(o.usersHittingLimit ?? 0),
+    avgSessionsPerUser: Number(o.avgSessionsPerUser ?? 0),
+  };
+}
+
+// ─── adaptive_path ────────────────────────────────────────────────────────────
+
+async function getAdaptivePathStats(db: DB) {
+  const [rows] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COUNT(*) as totalSessions,
+        SUM(CASE WHEN completed = 1 THEN 1 ELSE 0 END) as completedSessions,
+        COUNT(DISTINCT child_id) as uniqueChildren,
+        ROUND(AVG(CASE WHEN completed = 1 THEN accuracy ELSE NULL END), 1) as avgAccuracy,
+        MAX(session_number) as maxSessionNumber
+      FROM adaptive_sessions
+    `),
+  ]);
+
+  const r = rows?.[0] ?? {};
+  const total = Number(r.totalSessions ?? 0);
+  const completed = Number(r.completedSessions ?? 0);
+
+  return {
+    totalSessions: total,
+    completedSessions: completed,
+    completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+    uniqueChildren: Number(r.uniqueChildren ?? 0),
+    avgAccuracy: r.avgAccuracy != null ? Number(r.avgAccuracy) : null,
+    maxSessionNumber: Number(r.maxSessionNumber ?? 0),
+  };
+}
+
+// ─── weekly_digest ────────────────────────────────────────────────────────────
+
+async function getWeeklyDigestStats(db: DB) {
+  const [[digest], [unsub], [parentCount]] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COUNT(*) as totalSent,
+        COUNT(DISTINCT parent_id) as uniqueParents,
+        MAX(sent_at) as lastSentAt,
+        (SELECT COUNT(*) FROM digest_log WHERE sent_at >= datetime('now', '-7 days')) as sentThisWeek
+      FROM digest_log
+    `),
+    db.all<Row>(sql`
+      SELECT COUNT(*) as unsubscribed FROM digest_unsubscribe
+    `),
+    db.select({ v: sql<number>`COUNT(*)` }).from(parents),
+  ]);
+
+  const d = digest?.[0] ?? {};
+  const u = unsub?.[0] ?? {};
+  const totalParents = parentCount?.v ?? 0;
+  const unsubscribed = Number(u.unsubscribed ?? 0);
+
+  return {
+    totalSent: Number(d.totalSent ?? 0),
+    uniqueParents: Number(d.uniqueParents ?? 0),
+    lastSentAt: d.lastSentAt as string | null,
+    sentThisWeek: Number(d.sentThisWeek ?? 0),
+    unsubscribed,
+    totalParents,
+    subscribedParents: totalParents - unsubscribed,
+  };
+}
+
+// ─── parent_dashboard_pro ─────────────────────────────────────────────────────
+
+async function getDashboardProStats(db: DB) {
+  const [rows] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COUNT(*) as totalGoals,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as activeGoals,
+        SUM(CASE WHEN status = 'achieved' THEN 1 ELSE 0 END) as achievedGoals,
+        SUM(CASE WHEN status = 'abandoned' THEN 1 ELSE 0 END) as abandonedGoals,
+        COUNT(DISTINCT child_id) as uniqueChildren
+      FROM child_goals
+    `),
+  ]);
+
+  const r = rows?.[0] ?? {};
+  const total = Number(r.totalGoals ?? 0);
+  const achieved = Number(r.achievedGoals ?? 0);
+
+  return {
+    totalGoals: total,
+    activeGoals: Number(r.activeGoals ?? 0),
+    achievedGoals: achieved,
+    abandonedGoals: Number(r.abandonedGoals ?? 0),
+    achievementRate: total > 0 ? Math.round((achieved / total) * 100) : 0,
+    uniqueChildren: Number(r.uniqueChildren ?? 0),
+  };
+}
+
+// ─── gat_extended_bank ────────────────────────────────────────────────────────
+
+async function getExtendedBankStats(db: DB) {
+  const rows = await db.all<Row>(sql`
+    SELECT
+      COALESCE(tier, 'free') as tier,
+      COUNT(*) as cnt
+    FROM questions
+    WHERE is_active = 1
+    GROUP BY COALESCE(tier, 'free')
+  `);
+
+  let freeCount = 0;
+  let premiumCount = 0;
+  for (const r of rows) {
+    if (r.tier === 'free') freeCount = Number(r.cnt);
+    else premiumCount += Number(r.cnt);
+  }
+
+  const [sourceRows] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        COALESCE(source, 'original') as source,
+        COUNT(*) as cnt
+      FROM questions
+      WHERE is_active = 1
+      GROUP BY COALESCE(source, 'original')
+    `),
+  ]);
+
+  const sources: Record<string, number> = {};
+  for (const r of sourceRows) {
+    sources[r.source as string] = Number(r.cnt);
+  }
+
+  return {
+    totalQuestions: freeCount + premiumCount,
+    freeQuestions: freeCount,
+    premiumQuestions: premiumCount,
+    sources,
+  };
+}
+
+// ─── mock_tests ───────────────────────────────────────────────────────────────
+
+async function getMockTestsStats(db: DB) {
+  const [[tests], [results]] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT COUNT(*) as totalTests, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as activeTests
+      FROM mock_tests
+    `),
+    db.all<Row>(sql`
+      SELECT
+        COUNT(*) as totalAttempts,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'timed_out' THEN 1 ELSE 0 END) as timedOut,
+        COUNT(DISTINCT child_id) as uniqueChildren,
+        ROUND(AVG(CASE WHEN status = 'completed' THEN accuracy ELSE NULL END), 1) as avgAccuracy,
+        ROUND(AVG(CASE WHEN status = 'completed' THEN time_spent_seconds ELSE NULL END)) as avgTimeSeconds
+      FROM mock_test_results
+    `),
+  ]);
+
+  const t = tests?.[0] ?? {};
+  const r = results?.[0] ?? {};
+  const totalAttempts = Number(r.totalAttempts ?? 0);
+  const completed = Number(r.completed ?? 0);
+
+  return {
+    totalTests: Number(t.totalTests ?? 0),
+    activeTests: Number(t.activeTests ?? 0),
+    totalAttempts,
+    completed,
+    timedOut: Number(r.timedOut ?? 0),
+    completionRate: totalAttempts > 0 ? Math.round((completed / totalAttempts) * 100) : 0,
+    uniqueChildren: Number(r.uniqueChildren ?? 0),
+    avgAccuracy: r.avgAccuracy != null ? Number(r.avgAccuracy) : null,
+    avgTimeMinutes: r.avgTimeSeconds != null ? Math.round(Number(r.avgTimeSeconds) / 60) : null,
+  };
+}
+
+// ─── Premium stats (global) ───────────────────────────────────────────────────
+
+async function getPremiumStats(db: DB) {
+  const [rows] = await Promise.all([
+    db.all<Row>(sql`
+      SELECT
+        (SELECT COUNT(*) FROM premium_subscriptions WHERE status = 'active' AND expires_at > datetime('now')) as activeSubscriptions,
+        (SELECT COUNT(*) FROM code_activations WHERE status = 'active' AND expires_at > datetime('now')) as activeCodeActivations,
+        (SELECT COUNT(*) FROM parents) as totalParents
+    `),
+  ]);
+
+  const r = rows?.[0] ?? {};
+  return {
+    activeSubscriptions: Number(r.activeSubscriptions ?? 0),
+    activeCodeActivations: Number(r.activeCodeActivations ?? 0),
+    totalParents: Number(r.totalParents ?? 0),
+  };
+}
+
+// ─── Feature access counts ────────────────────────────────────────────────────
+
 async function getFeatureAccessCounts(db: DB): Promise<Record<string, number>> {
   const rows = await db
     .select({
@@ -167,7 +489,6 @@ async function getFeatureAccessCounts(db: DB): Promise<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const row of rows) {
     if (row.enabled === 1) {
-      // Globally enabled — mark as -1 to signal "everyone"
       counts[row.flagKey] = -1;
     } else {
       const emails = (row.allowedEmails ?? '')

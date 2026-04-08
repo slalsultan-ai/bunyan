@@ -12,48 +12,104 @@ interface FeatureFlag {
   allowedEmails: string;
 }
 
-interface PdfStats {
-  totalChildren: number;
-  childrenWithSessions: number;
-  totalCompletedSessions: number;
-  avgAccuracy: number | null;
-  recentSessions: number;
-  recentAccuracy: number | null;
-}
-
-interface ReviewStats {
-  totalItems: number;
-  masteredItems: number;
-  pendingItems: number;
-  uniqueUsers: number;
-  allowedUsers: number; // -1 = everyone, 0+ = count of allowed emails
-  masteryRate: number;
-  avgTimesWrong: number | null;
-  avgReviewsToMastery: number | null;
-}
-
-interface AgeGroupDepletion {
-  ageGroup: string;
-  total: number;
-  retired: number;
-  depletionPct: number;
-}
-
-interface RetirementStats {
-  totalRetired: number;
-  totalTracked: number;
-  uniqueUsers: number;
-  allowedUsers: number; // -1 = everyone, 0+ = count of allowed emails
-  avgCorrectCount: number | null;
-  totalQuestions: number;
-  retirementRate: number;
-  byAgeGroup: AgeGroupDepletion[];
-}
-
 interface FeatureStats {
-  child_pdf_report: PdfStats;
-  review_mode: ReviewStats;
-  question_retirement: RetirementStats;
+  child_pdf_report: {
+    totalChildren: number;
+    childrenWithSessions: number;
+    totalCompletedSessions: number;
+    avgAccuracy: number | null;
+    recentSessions: number;
+    recentAccuracy: number | null;
+  };
+  review_mode: {
+    totalItems: number;
+    masteredItems: number;
+    pendingItems: number;
+    uniqueUsers: number;
+    allowedUsers: number;
+    masteryRate: number;
+    avgTimesWrong: number | null;
+    avgReviewsToMastery: number | null;
+  };
+  question_retirement: {
+    totalRetired: number;
+    totalTracked: number;
+    uniqueUsers: number;
+    allowedUsers: number;
+    avgCorrectCount: number | null;
+    totalQuestions: number;
+    retirementRate: number;
+    byAgeGroup: { ageGroup: string; total: number; retired: number; depletionPct: number }[];
+  };
+  daily_challenge: {
+    totalDays: number;
+    uniqueChildren: number;
+    totalAnswers: number;
+    correctAnswers: number;
+    accuracy: number | null;
+    maxCurrentStreak: number;
+    longestStreak: number;
+    totalStars: number;
+    totalBadges: number;
+    activeStreakers: number;
+    recentChildren: number;
+  };
+  session_limit: {
+    sessionsToday: number;
+    uniqueUsersToday: number;
+    maxSessionsByOneUser: number;
+    usersHittingLimit: number;
+    avgSessionsPerUser: number;
+  };
+  adaptive_path: {
+    totalSessions: number;
+    completedSessions: number;
+    completionRate: number;
+    uniqueChildren: number;
+    avgAccuracy: number | null;
+    maxSessionNumber: number;
+  };
+  weekly_digest: {
+    totalSent: number;
+    uniqueParents: number;
+    lastSentAt: string | null;
+    sentThisWeek: number;
+    unsubscribed: number;
+    totalParents: number;
+    subscribedParents: number;
+  };
+  parent_dashboard_pro: {
+    totalGoals: number;
+    activeGoals: number;
+    achievedGoals: number;
+    abandonedGoals: number;
+    achievementRate: number;
+    uniqueChildren: number;
+  };
+  gat_extended_bank: {
+    totalQuestions: number;
+    freeQuestions: number;
+    premiumQuestions: number;
+    sources: Record<string, number>;
+  };
+  mock_tests: {
+    totalTests: number;
+    activeTests: number;
+    totalAttempts: number;
+    completed: number;
+    timedOut: number;
+    completionRate: number;
+    uniqueChildren: number;
+    avgAccuracy: number | null;
+    avgTimeMinutes: number | null;
+  };
+  mascot_bunaa: { note: string };
+  answer_explanations: { note: string };
+  _premium: {
+    activeSubscriptions: number;
+    activeCodeActivations: number;
+    totalParents: number;
+  };
 }
 
 // ─── Metric types ────────────────────────────────────────────────────────────
@@ -65,13 +121,7 @@ interface Metric {
   value: string | number;
   sub?: string;
   accent: AccentColor;
-  progress?: number; // 0-100 for progress bar
-}
-
-interface Readiness {
-  level: 'ready' | 'caution' | 'not_ready';
-  label: string;
-  detail: string;
+  progress?: number;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -80,12 +130,22 @@ const FLAG_META: Record<string, { icon: string; color: string }> = {
   child_pdf_report: { icon: '📄', color: 'blue' },
   review_mode: { icon: '📝', color: 'purple' },
   question_retirement: { icon: '🎯', color: 'amber' },
+  daily_challenge: { icon: '⭐', color: 'amber' },
+  session_limit: { icon: '🔒', color: 'red' },
+  answer_explanations: { icon: '💡', color: 'blue' },
+  adaptive_path: { icon: '🧠', color: 'purple' },
+  weekly_digest: { icon: '📧', color: 'blue' },
+  parent_dashboard_pro: { icon: '📊', color: 'purple' },
+  gat_extended_bank: { icon: '📚', color: 'amber' },
+  mock_tests: { icon: '📋', color: 'red' },
+  mascot_bunaa: { icon: '🐝', color: 'amber' },
 };
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string }> = {
   blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600' },
   purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600' },
   amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600' },
+  red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600' },
   gray: { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-500' },
 };
 
@@ -107,12 +167,6 @@ const ACCENT_BG: Record<AccentColor, string> = {
   gray: 'bg-gray-400',
 };
 
-const READINESS_STYLES: Record<string, { bg: string; border: string; text: string; icon: string; dot: string }> = {
-  ready: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: '✓', dot: 'bg-emerald-500' },
-  caution: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: '!', dot: 'bg-amber-500' },
-  not_ready: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '✕', dot: 'bg-red-500' },
-};
-
 const AGE_GROUP_LABELS: Record<string, string> = {
   '4-5': '٤-٥ سنوات',
   '6-9': '٦-٩ سنوات',
@@ -126,26 +180,22 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'child_pdf_report') {
     const s = stats.child_pdf_report;
-    const coverage = s.totalChildren > 0
-      ? Math.round((s.childrenWithSessions / s.totalChildren) * 100) : 0;
-    const acc = s.avgAccuracy;
-    const rAcc = s.recentAccuracy;
+    const coverage = s.totalChildren > 0 ? Math.round((s.childrenWithSessions / s.totalChildren) * 100) : 0;
     return [
       { label: 'أطفال مسجّلين', value: s.totalChildren, accent: 'blue' },
       { label: 'لديهم جلسات', value: s.childrenWithSessions, sub: `${coverage}%`, accent: 'emerald', progress: coverage },
       { label: 'جلسات مكتملة', value: s.totalCompletedSessions, accent: 'purple' },
-      { label: 'متوسط الدقة', value: acc != null ? `${acc}%` : '—', accent: acc != null ? (acc >= 70 ? 'emerald' : acc >= 50 ? 'amber' : 'red') : 'gray', progress: acc ?? undefined },
+      { label: 'متوسط الدقة', value: s.avgAccuracy != null ? `${s.avgAccuracy}%` : '—', accent: s.avgAccuracy != null ? (s.avgAccuracy >= 70 ? 'emerald' : s.avgAccuracy >= 50 ? 'amber' : 'red') : 'gray', progress: s.avgAccuracy ?? undefined },
       { label: 'جلسات آخر ٧ أيام', value: s.recentSessions, accent: s.recentSessions > 0 ? 'blue' : 'gray' },
-      { label: 'دقة آخر ٧ أيام', value: rAcc != null ? `${rAcc}%` : '—', accent: rAcc != null ? (rAcc >= 70 ? 'emerald' : rAcc >= 50 ? 'amber' : 'red') : 'gray' },
+      { label: 'دقة آخر ٧ أيام', value: s.recentAccuracy != null ? `${s.recentAccuracy}%` : '—', accent: s.recentAccuracy != null ? (s.recentAccuracy >= 70 ? 'emerald' : 'amber') : 'gray' },
     ];
   }
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
-    const accessLabel = s.allowedUsers === -1 ? 'الجميع' : String(s.allowedUsers);
     return [
-      { label: 'وصول مفعّل لـ', value: accessLabel, accent: s.allowedUsers === -1 ? 'emerald' : 'purple' },
-      { label: 'لديهم بيانات مراجعة', value: s.uniqueUsers, accent: 'blue' },
+      { label: 'مستخدمين فعليين', value: s.uniqueUsers, accent: 'blue' },
+      { label: 'إجمالي المراجعات', value: s.totalItems, accent: 'purple' },
       { label: 'تم إتقانها', value: s.masteredItems, sub: `${s.masteryRate}%`, accent: s.masteryRate >= 50 ? 'emerald' : 'amber', progress: s.masteryRate },
       { label: 'معلّقة الآن', value: s.pendingItems, accent: s.pendingItems > 50 ? 'red' : s.pendingItems > 0 ? 'amber' : 'gray' },
       { label: 'متوسط الأخطاء', value: s.avgTimesWrong ?? '—', accent: 'amber' },
@@ -156,10 +206,8 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
     const depletionPct = s.totalQuestions > 0 ? Math.round((s.totalRetired / s.totalQuestions) * 100) : 0;
-    const accessLabel = s.allowedUsers === -1 ? 'الجميع' : String(s.allowedUsers);
     return [
-      { label: 'وصول مفعّل لـ', value: accessLabel, accent: s.allowedUsers === -1 ? 'emerald' : 'amber' },
-      { label: 'لديهم بيانات تتبع', value: s.uniqueUsers, accent: 'blue' },
+      { label: 'مستخدمين بتتبع', value: s.uniqueUsers, accent: 'blue' },
       { label: 'أسئلة مُقصاة', value: s.totalRetired, sub: `${s.retirementRate}%`, accent: 'emerald', progress: s.retirementRate },
       { label: 'متوسط الإجابات', value: s.avgCorrectCount ?? '—', accent: 'purple' },
       { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'gray' },
@@ -167,49 +215,96 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     ];
   }
 
-  return null;
-}
-
-function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | null {
-  if (!stats) return null;
-
-  if (flagKey === 'child_pdf_report') {
-    const s = stats.child_pdf_report;
-    if (s.childrenWithSessions >= 5 && s.avgAccuracy != null && s.recentSessions >= 3) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `بيانات كافية: ${s.childrenWithSessions} طفل بجلسات، نشاط حديث مستمر` };
-    }
-    if (s.childrenWithSessions >= 1) {
-      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.childrenWithSessions} أطفال فقط جرّبوا النظام — يُفضّل ≥ ٥ قبل الإطلاق` };
-    }
-    return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد بيانات كافية — فعّل لمختبرين أولاً' };
+  if (flagKey === 'daily_challenge') {
+    const s = stats.daily_challenge;
+    return [
+      { label: 'أيام تحدي', value: s.totalDays, accent: 'amber' },
+      { label: 'أطفال مشاركين', value: s.uniqueChildren, accent: 'blue' },
+      { label: 'إجابات صحيحة', value: s.correctAnswers, sub: s.accuracy != null ? `${s.accuracy}%` : undefined, accent: s.accuracy != null ? (s.accuracy >= 70 ? 'emerald' : 'amber') : 'gray', progress: s.accuracy ?? undefined },
+      { label: 'أعلى سلسلة حالية', value: s.maxCurrentStreak, accent: s.maxCurrentStreak > 0 ? 'emerald' : 'gray' },
+      { label: 'أطول سلسلة', value: s.longestStreak, accent: 'purple' },
+      { label: 'نشطين آخر ٧ أيام', value: s.recentChildren, accent: s.recentChildren > 0 ? 'blue' : 'gray' },
+    ];
   }
 
-  if (flagKey === 'review_mode') {
-    const s = stats.review_mode;
-    const testers = s.allowedUsers === -1 ? s.uniqueUsers : s.allowedUsers;
-    if (testers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${testers} مختبرين مفعّلين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
-    }
-    if (testers >= 1 && s.totalItems >= 5) {
-      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${testers} مختبر مفعّل فقط — نسبة الإتقان ${s.masteryRate}%` };
-    }
-    return { level: 'not_ready', label: 'غير جاهزة', detail: 'بيانات غير كافية — أضف مختبرين لجمع بيانات المراجعة' };
+  if (flagKey === 'session_limit') {
+    const s = stats.session_limit;
+    return [
+      { label: 'جلسات اليوم', value: s.sessionsToday, accent: 'blue' },
+      { label: 'مستخدمين اليوم', value: s.uniqueUsersToday, accent: 'purple' },
+      { label: 'أكثر مستخدم', value: `${s.maxSessionsByOneUser} جلسة`, accent: s.maxSessionsByOneUser >= 3 ? 'red' : 'gray' },
+      { label: 'وصلوا الحد (≥٣)', value: s.usersHittingLimit, accent: s.usersHittingLimit > 0 ? 'amber' : 'gray' },
+      { label: 'متوسط لكل مستخدم', value: s.avgSessionsPerUser || '—', accent: 'gray' },
+    ];
   }
 
-  if (flagKey === 'question_retirement') {
-    const s = stats.question_retirement;
-    const testers = s.allowedUsers === -1 ? s.uniqueUsers : s.allowedUsers;
-    if (testers === 0) {
-      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا توجد مختبرين مفعّلين — أضف إيميلات في allowedEmails أولاً' };
-    }
-    const maxDepletion = Math.max(...s.byAgeGroup.map((a) => a.depletionPct), 0);
-    if (testers >= 3 && maxDepletion <= 15) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `استنزاف منخفض (أعلى فئة ${maxDepletion}%) — بنك الأسئلة يتحمّل` };
-    }
-    if (maxDepletion <= 30) {
-      return { level: 'caution', label: 'تحتاج مراقبة', detail: `استنزاف ${maxDepletion}% في بعض الفئات — راقب بنك الأسئلة` };
-    }
-    return { level: 'not_ready', label: 'خطر استنزاف', detail: `استنزاف ${maxDepletion}% — أضف أسئلة جديدة قبل الإطلاق` };
+  if (flagKey === 'adaptive_path') {
+    const s = stats.adaptive_path;
+    return [
+      { label: 'جلسات ذكية', value: s.totalSessions, accent: 'purple' },
+      { label: 'مكتملة', value: s.completedSessions, sub: `${s.completionRate}%`, accent: s.completionRate >= 60 ? 'emerald' : 'amber', progress: s.completionRate },
+      { label: 'أطفال مشاركين', value: s.uniqueChildren, accent: 'blue' },
+      { label: 'متوسط الدقة', value: s.avgAccuracy != null ? `${s.avgAccuracy}%` : '—', accent: s.avgAccuracy != null ? (s.avgAccuracy >= 70 ? 'emerald' : 'amber') : 'gray', progress: s.avgAccuracy ?? undefined },
+      { label: 'أعلى تسلسل', value: `جلسة #${s.maxSessionNumber}`, accent: 'gray' },
+    ];
+  }
+
+  if (flagKey === 'weekly_digest') {
+    const s = stats.weekly_digest;
+    const subRate = s.totalParents > 0 ? Math.round((s.subscribedParents / s.totalParents) * 100) : 0;
+    return [
+      { label: 'إجمالي المرسل', value: s.totalSent, accent: 'blue' },
+      { label: 'هذا الأسبوع', value: s.sentThisWeek, accent: s.sentThisWeek > 0 ? 'emerald' : 'gray' },
+      { label: 'أولياء مشتركين', value: s.subscribedParents, sub: `${subRate}%`, accent: 'purple', progress: subRate },
+      { label: 'ألغوا الاشتراك', value: s.unsubscribed, accent: s.unsubscribed > 0 ? 'amber' : 'gray' },
+      { label: 'إجمالي الأولياء', value: s.totalParents, accent: 'gray' },
+    ];
+  }
+
+  if (flagKey === 'parent_dashboard_pro') {
+    const s = stats.parent_dashboard_pro;
+    return [
+      { label: 'أهداف نشطة', value: s.activeGoals, accent: 'blue' },
+      { label: 'تم تحقيقها', value: s.achievedGoals, sub: s.totalGoals > 0 ? `${s.achievementRate}%` : undefined, accent: s.achievedGoals > 0 ? 'emerald' : 'gray', progress: s.achievementRate || undefined },
+      { label: 'تم التخلي عنها', value: s.abandonedGoals, accent: s.abandonedGoals > 0 ? 'amber' : 'gray' },
+      { label: 'إجمالي الأهداف', value: s.totalGoals, accent: 'purple' },
+      { label: 'أطفال بأهداف', value: s.uniqueChildren, accent: 'blue' },
+    ];
+  }
+
+  if (flagKey === 'gat_extended_bank') {
+    const s = stats.gat_extended_bank;
+    const premPct = s.totalQuestions > 0 ? Math.round((s.premiumQuestions / s.totalQuestions) * 100) : 0;
+    return [
+      { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'blue' },
+      { label: 'مجانية', value: s.freeQuestions, accent: 'emerald' },
+      { label: 'مدفوعة', value: s.premiumQuestions, sub: `${premPct}%`, accent: s.premiumQuestions > 0 ? 'purple' : 'gray', progress: premPct },
+      ...Object.entries(s.sources).map(([src, cnt]) => ({
+        label: src === 'original' ? 'أصلية' : src,
+        value: cnt,
+        accent: 'gray' as AccentColor,
+      })),
+    ];
+  }
+
+  if (flagKey === 'mock_tests') {
+    const s = stats.mock_tests;
+    return [
+      { label: 'اختبارات متاحة', value: s.activeTests, sub: `من ${s.totalTests}`, accent: 'blue' },
+      { label: 'محاولات', value: s.totalAttempts, accent: 'purple' },
+      { label: 'مكتملة', value: s.completed, sub: `${s.completionRate}%`, accent: s.completionRate >= 60 ? 'emerald' : 'amber', progress: s.completionRate },
+      { label: 'انتهى الوقت', value: s.timedOut, accent: s.timedOut > 0 ? 'red' : 'gray' },
+      { label: 'أطفال مشاركين', value: s.uniqueChildren, accent: 'blue' },
+      { label: 'متوسط الدقة', value: s.avgAccuracy != null ? `${s.avgAccuracy}%` : '—', accent: s.avgAccuracy != null ? (s.avgAccuracy >= 70 ? 'emerald' : 'amber') : 'gray', progress: s.avgAccuracy ?? undefined },
+      { label: 'متوسط الوقت', value: s.avgTimeMinutes != null ? `${s.avgTimeMinutes} دقيقة` : '—', accent: 'gray' },
+    ];
+  }
+
+  if (flagKey === 'mascot_bunaa' || flagKey === 'answer_explanations') {
+    const data = flagKey === 'mascot_bunaa' ? stats.mascot_bunaa : stats.answer_explanations;
+    return [
+      { label: 'ملاحظة', value: data?.note ?? '—', accent: 'gray' },
+    ];
   }
 
   return null;
@@ -243,22 +338,7 @@ function MetricCard({ m }: { m: Metric }) {
   );
 }
 
-function ReadinessBar({ readiness }: { readiness: Readiness }) {
-  const style = READINESS_STYLES[readiness.level];
-  return (
-    <div className={`mx-5 mb-3 ${style.bg} border ${style.border} rounded-xl px-4 py-3 flex items-center gap-3`}>
-      <span className={`w-6 h-6 ${style.dot} rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-        {style.icon}
-      </span>
-      <div className="min-w-0">
-        <span className={`text-sm font-bold ${style.text}`}>{readiness.label}</span>
-        <p className={`text-xs ${style.text} opacity-80 mt-0.5 leading-relaxed`}>{readiness.detail}</p>
-      </div>
-    </div>
-  );
-}
-
-function AgeGroupTable({ data }: { data: AgeGroupDepletion[] }) {
+function AgeGroupTable({ data }: { data: { ageGroup: string; total: number; retired: number; depletionPct: number }[] }) {
   if (data.length === 0) return null;
   return (
     <div className="mx-5 mb-3">
@@ -279,10 +359,7 @@ function AgeGroupTable({ data }: { data: AgeGroupDepletion[] }) {
                 </div>
               </div>
               <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                  style={{ width: `${Math.min(ag.depletionPct, 100)}%` }}
-                />
+                <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${Math.min(ag.depletionPct, 100)}%` }} />
               </div>
             </div>
           );
@@ -326,7 +403,6 @@ export default function FeaturesPage() {
   );
 
   useEffect(() => {
-    // Fetch flags first (critical), stats in parallel (non-blocking)
     const flagsPromise = fetch('/api/admin/features')
       .then((r) => {
         if (!r.ok) throw new Error('Failed to fetch');
@@ -435,7 +511,7 @@ export default function FeaturesPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold text-gray-900">إدارة الخصائص</h1>
-        <p className="text-sm text-gray-500 mt-1">تحكم في الخصائص وقيّم جاهزيتها قبل الإطلاق</p>
+        <p className="text-sm text-gray-500 mt-1">تحكم في الخصائص واطّلع على إحصائيات كل واحدة</p>
       </div>
 
       {/* Summary bar */}
@@ -454,9 +530,22 @@ export default function FeaturesPage() {
         </div>
       </div>
 
+      {/* Premium info banner */}
+      {stats?._premium && (
+        <div className="mb-6 bg-gradient-to-l from-purple-50 to-blue-50 border border-purple-200 rounded-xl px-4 py-3">
+          <div className="text-xs font-semibold text-purple-700 mb-1">نظام الاشتراكات</div>
+          <div className="flex gap-4 text-sm">
+            <span className="text-purple-600"><strong>{stats._premium.activeSubscriptions}</strong> اشتراك نشط</span>
+            <span className="text-blue-600"><strong>{stats._premium.activeCodeActivations}</strong> كود مفعّل</span>
+            <span className="text-gray-500">من <strong>{stats._premium.totalParents}</strong> ولي أمر</span>
+          </div>
+          <p className="text-[11px] text-purple-500 mt-1">الخصائص المفعّلة تعمل فقط للمشتركين + الإيميلات المسموحة</p>
+        </div>
+      )}
+
       {/* Error toast */}
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-center justify-between animate-[fadeIn_0.2s_ease-out]">
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs shrink-0">!</span>
             <span>{error}</span>
@@ -464,6 +553,32 @@ export default function FeaturesPage() {
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-lg leading-none">
             &times;
           </button>
+        </div>
+      )}
+
+      {/* Confirm dialog */}
+      {confirmGlobal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full" dir="rtl">
+            <h3 className="font-bold text-gray-900 mb-2">تفعيل للمشتركين؟</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              هذه الخاصية ستكون متاحة فقط للمشتركين (مدفوع/كود/منحة) والإيميلات المسموحة.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => confirmEnableGlobal(confirmGlobal)}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl px-4 py-2.5 text-sm transition-colors"
+              >
+                تفعيل
+              </button>
+              <button
+                onClick={() => setConfirmGlobal(null)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl px-4 py-2.5 text-sm transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -485,7 +600,6 @@ export default function FeaturesPage() {
             const isExpanded = expandedCard === flag.flagKey;
             const emails = parseEmails(state.allowedEmails);
             const metrics = buildMetrics(flag.flagKey, stats);
-            const readiness = getReadiness(flag.flagKey, stats);
             const ageGroupData = flag.flagKey === 'question_retirement'
               ? (stats?.question_retirement?.byAgeGroup ?? [])
               : [];
@@ -499,7 +613,7 @@ export default function FeaturesPage() {
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                {/* ── Header ── */}
+                {/* Header */}
                 <div className="flex items-start justify-between gap-4 p-5 pb-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center text-xl shrink-0`}>
@@ -545,187 +659,80 @@ export default function FeaturesPage() {
                   </div>
                 </div>
 
-                {/* ── Readiness indicator ── */}
-                {readiness && !statsLoading && <ReadinessBar readiness={readiness} />}
-
-                {/* ── Metrics grid ── */}
-                {metrics && metrics.length > 0 && !statsLoading && (
-                  <div className="mx-5 mb-3">
-                    <div className="text-[11px] font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      مقاييس الجودة
-                    </div>
-                    <div className={`grid gap-2 ${metrics.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
-                      {metrics.map((m, i) => <MetricCard key={i} m={m} />)}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Stats skeleton while loading ── */}
-                {statsLoading && (
-                  <div className="mx-5 mb-3">
+                {/* Stats metrics */}
+                {metrics && metrics.length > 0 && (
+                  <div className="px-5 pb-2">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-gray-50 rounded-xl px-3 py-3 border border-gray-100 animate-pulse">
-                          <div className="h-5 w-12 bg-gray-200 rounded mb-1.5" />
-                          <div className="h-3 w-20 bg-gray-200 rounded" />
-                        </div>
+                      {metrics.map((m, i) => (
+                        <MetricCard key={i} m={m} />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* ── Age group depletion table ── */}
-                {ageGroupData.length > 0 && !statsLoading && (
-                  <AgeGroupTable data={ageGroupData} />
-                )}
+                {/* Age group table for question_retirement */}
+                {ageGroupData.length > 0 && <AgeGroupTable data={ageGroupData} />}
 
-                {/* ── Confirm global enable ── */}
-                {confirmGlobal === flag.flagKey && (
-                  <div className="mx-5 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-4 animate-[fadeIn_0.15s_ease-out]">
-                    <div className="flex items-start gap-3">
-                      <span className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 text-lg shrink-0">⚠</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-amber-800">تفعيل للجميع؟</p>
-                        <p className="text-sm text-amber-600 mt-0.5">هذا سيُظهر الخاصية لكل المستخدمين بدون استثناء</p>
-                        {readiness && readiness.level !== 'ready' && (
-                          <p className="text-xs text-red-600 font-semibold mt-1">
-                            تنبيه: هذه الخاصية {readiness.level === 'not_ready' ? 'غير جاهزة' : 'تحتاج مراقبة'} حسب المقاييس
-                          </p>
-                        )}
-                        <div className="flex gap-2 mt-3">
-                          <button
-                            onClick={() => confirmEnableGlobal(flag.flagKey)}
-                            className="text-sm bg-amber-500 text-white px-4 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-medium"
-                          >
-                            نعم، فعّل للجميع
-                          </button>
-                          <button
-                            onClick={() => setConfirmGlobal(null)}
-                            className="text-sm text-gray-500 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            إلغاء
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                {/* Stats loading */}
+                {statsLoading && !metrics && (
+                  <div className="px-5 pb-3">
+                    <div className="text-xs text-gray-400 animate-pulse">جاري تحميل الإحصائيات...</div>
                   </div>
                 )}
 
-                {/* ── Allowed emails section ── */}
-                <div className="px-5 pb-4 pt-2 border-t border-gray-100">
+                {/* Expand/collapse */}
+                <div className="px-5 pb-1">
                   <button
                     onClick={() => setExpandedCard(isExpanded ? null : flag.flagKey)}
-                    className="w-full flex items-center justify-between text-sm text-gray-600 hover:text-gray-900 transition-colors py-1"
+                    className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">المستخدمون المسموحون</span>
-                      {emails.length > 0 && (
-                        <span className="bg-gray-100 text-gray-500 text-[11px] font-semibold px-1.5 py-0.5 rounded-md">
-                          {emails.length}
-                        </span>
-                      )}
-                      {!isExpanded && emails.length > 0 && (
-                        <span className="text-xs text-gray-400 font-normal truncate max-w-[200px]" dir="ltr">
-                          {emails.slice(0, 2).join(', ')}
-                          {emails.length > 2 && ` +${emails.length - 2}`}
-                        </span>
-                      )}
-                    </div>
-                    <svg
-                      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    {isExpanded ? 'إخفاء الإعدادات ▲' : 'إعدادات ▼'}
                   </button>
+                </div>
 
-                  {isExpanded && (
-                    <div className="mt-3 animate-[fadeIn_0.15s_ease-out]">
+                {/* Expanded settings */}
+                {isExpanded && (
+                  <div className="px-5 pb-4 pt-2 border-t border-gray-100 mt-2 space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                        إيميلات مسموحة {emails.length > 0 && <span className="text-gray-400 font-normal">({emails.length})</span>}
+                      </label>
+                      <textarea
+                        value={state.allowedEmails}
+                        onChange={(e) => updateEmails(flag.flagKey, e.target.value)}
+                        placeholder="email1@example.com, email2@example.com"
+                        className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-none text-left"
+                        dir="ltr"
+                        rows={2}
+                      />
                       {emails.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3" dir="ltr">
-                          {emails.map((email, i) => (
-                            <span key={i} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-lg border border-gray-200">
-                              <span className="w-4 h-4 bg-gray-300 rounded-full flex items-center justify-center text-[9px] text-white font-bold shrink-0">
-                                {email[0]?.toUpperCase()}
-                              </span>
-                              {email}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {emails.map((e) => (
+                            <span key={e} className="bg-gray-100 text-gray-600 text-[11px] px-2 py-0.5 rounded-md border border-gray-200" dir="ltr">
+                              {e}
                             </span>
                           ))}
                         </div>
                       )}
-                      <label className="block text-xs text-gray-400 mb-1.5">
-                        أضف الإيميلات مفصولة بفاصلة — يشوفون الخاصية حتى لو معطّلة
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          dir="ltr"
-                          value={state.allowedEmails}
-                          onChange={(e) => updateEmails(flag.flagKey, e.target.value)}
-                          placeholder="email1@example.com, email2@example.com"
-                          className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow placeholder:text-gray-300"
-                        />
-                        <button
-                          onClick={() => saveFlag(flag.flagKey)}
-                          disabled={saving[flag.flagKey] || !isDirty}
-                          className={`shrink-0 text-sm font-semibold px-5 py-2 rounded-xl transition-all duration-200 ${
-                            success[flag.flagKey]
-                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                              : isDirty
-                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          {saving[flag.flagKey] ? (
-                            <span className="flex items-center gap-2">
-                              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              جاري الحفظ
-                            </span>
-                          ) : success[flag.flagKey] ? (
-                            <span className="flex items-center gap-1.5">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                              </svg>
-                              تم الحفظ
-                            </span>
-                          ) : (
-                            'حفظ'
-                          )}
-                        </button>
-                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* ── Quick-save when dirty and collapsed ── */}
-                {isDirty && !isExpanded && (
-                  <div className="px-5 pb-4 -mt-1">
-                    <button
-                      onClick={() => saveFlag(flag.flagKey)}
-                      disabled={saving[flag.flagKey]}
-                      className="w-full text-sm font-semibold py-2 rounded-xl transition-all duration-200 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
-                    >
-                      {saving[flag.flagKey] ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          جاري الحفظ
-                        </span>
-                      ) : success[flag.flagKey] ? (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                          تم الحفظ
-                        </span>
-                      ) : (
-                        'حفظ التغييرات'
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => saveFlag(flag.flagKey)}
+                        disabled={saving[flag.flagKey] || !isDirty}
+                        className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                      >
+                        {saving[flag.flagKey] ? 'جاري الحفظ...' : 'حفظ'}
+                      </button>
+                      {success[flag.flagKey] && (
+                        <span className="text-emerald-600 text-sm font-medium">تم الحفظ</span>
                       )}
-                    </button>
+                    </div>
                   </div>
                 )}
+
+                {/* Bottom padding */}
+                <div className="h-2" />
               </div>
             );
           })}
