@@ -2,6 +2,7 @@ import { getDb } from './db';
 import { sessions } from './db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
+import { isChildPremium } from './premium';
 
 const FREE_DAILY_LIMIT = 3;
 
@@ -28,8 +29,11 @@ export async function checkSessionLimit(childId: string): Promise<SessionLimitRe
     return { allowed: true, remaining: 999, total: 0, limit: 999 };
   }
 
-  // TODO: check isPremium when premium system is built
-  // For now, all authenticated children are subject to the limit
+  // Premium children bypass the session limit
+  const premium = await isChildPremium(childId);
+  if (premium) {
+    return { allowed: true, remaining: 999, total: 0, limit: 999 };
+  }
 
   const total = await getSessionCountToday(childId);
   const remaining = Math.max(0, FREE_DAILY_LIMIT - total);

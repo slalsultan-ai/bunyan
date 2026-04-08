@@ -96,8 +96,8 @@ const SKILL_MAP: Record<string, string> = {
 
 // ─── Feature guard ──────────────────────────────────────────────────────────
 
-export async function isMockTestsEnabled(parentEmail?: string | null): Promise<boolean> {
-  return hasFeatureAccess('mock_tests', parentEmail);
+export async function isMockTestsEnabled(parentEmail?: string | null, parentId?: string | null): Promise<boolean> {
+  return hasFeatureAccess('mock_tests', parentEmail, parentId);
 }
 
 // ─── Get available mock tests ───────────────────────────────────────────────

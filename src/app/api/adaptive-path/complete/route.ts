@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     const email = parent?.email ?? null;
 
-    const enabled = await hasFeatureAccess('adaptive_path', email);
+    const enabled = await hasFeatureAccess('adaptive_path', email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ error: 'Feature disabled' }, { status: 403 });
     }

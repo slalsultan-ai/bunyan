@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     if (!parent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const enabled = await hasFeatureAccess('parent_dashboard_pro', parent.email);
+    const enabled = await hasFeatureAccess('parent_dashboard_pro', parent.email, parent.id);
     if (!enabled) return NextResponse.json({ enabled: false });
 
     const childId = req.nextUrl.searchParams.get('childId');
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     if (!parent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const enabled = await hasFeatureAccess('parent_dashboard_pro', parent.email);
+    const enabled = await hasFeatureAccess('parent_dashboard_pro', parent.email, parent.id);
     if (!enabled) return NextResponse.json({ error: 'Feature disabled' }, { status: 403 });
 
     const body = await req.json();

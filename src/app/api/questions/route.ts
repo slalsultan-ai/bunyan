@@ -85,17 +85,18 @@ export async function GET(req: NextRequest) {
     const parent = childIdParam ? await getAuthenticatedParent() : null;
     const parentEmail = parent?.email ?? null;
 
+    const parentId = parent?.id ?? null;
+
     // Tier filtering: hide premium questions when gat_extended_bank flag is enabled
-    const tierEnabled = await hasFeatureAccess('gat_extended_bank', parentEmail);
+    const tierEnabled = await hasFeatureAccess('gat_extended_bank', parentEmail, parentId);
     if (tierEnabled) {
-      // TODO: check isPremium on child when premium system is built
       baseConditions.push(sql`(tier = 'free' OR tier IS NULL)` as ReturnType<typeof eq>);
     }
 
     // Sub-skill filter (gated by sub_skill_filter flag)
     let subSkillCondition: ReturnType<typeof eq> | null = null;
     if (subSkill) {
-      const subSkillAllowed = await hasFeatureAccess('sub_skill_filter', parentEmail);
+      const subSkillAllowed = await hasFeatureAccess('sub_skill_filter', parentEmail, parentId);
       if (subSkillAllowed) {
         subSkillCondition = eq(questions.subSkill, subSkill);
         baseConditions.push(subSkillCondition);
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     // Adaptive difficulty (gated by adaptive_difficulty flag)
     if (difficulty === 'adaptive') {
-      const adaptiveAllowed = await hasFeatureAccess('adaptive_difficulty', parentEmail);
+      const adaptiveAllowed = await hasFeatureAccess('adaptive_difficulty', parentEmail, parentId);
       if (adaptiveAllowed) {
         const rec = await recommendDifficulty({ childId: childIdParam, guestId });
         difficulty = rec.difficulty;
@@ -115,7 +116,7 @@ export async function GET(req: NextRequest) {
 
     // Question retirement: exclude questions answered correctly 5+ times
     if (guestId || childIdParam) {
-      const retirementEnabled = await hasFeatureAccess('question_retirement', parentEmail);
+      const retirementEnabled = await hasFeatureAccess('question_retirement', parentEmail, parentId);
 
       if (retirementEnabled) {
         const retiredIds = await getRetiredQuestionIds({

@@ -5,7 +5,7 @@ import { isMockTestsEnabled, getMockTestResult } from '@/lib/mock-tests';
 export async function GET(req: NextRequest) {
   try {
     const parent = await getAuthenticatedParent();
-    const enabled = await isMockTestsEnabled(parent?.email);
+    const enabled = await isMockTestsEnabled(parent?.email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ enabled: false });
     }

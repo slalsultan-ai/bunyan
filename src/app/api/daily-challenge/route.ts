@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     const email = parent?.email ?? null;
 
-    const enabled = await hasFeatureAccess('daily_challenge', email);
+    const enabled = await hasFeatureAccess('daily_challenge', email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ enabled: false });
     }

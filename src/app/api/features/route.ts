@@ -5,6 +5,7 @@ import { getUserFeatures } from '@/lib/feature-flags';
 export async function GET() {
   const session = await getParentSession();
   const email = session?.email ?? null;
-  const features = await getUserFeatures(email);
+  const parentId = session?.parentId ?? null;
+  const features = await getUserFeatures(email, parentId);
   return NextResponse.json(features);
 }

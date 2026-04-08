@@ -23,6 +23,10 @@ vi.mock('@/lib/feature-flags', () => ({
   hasFeatureAccess: vi.fn(async () => mockFeatureEnabled),
 }));
 
+vi.mock('@/lib/premium', () => ({
+  isChildPremium: vi.fn(async () => false),
+}));
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function makeSelectChain(result: unknown[]) {

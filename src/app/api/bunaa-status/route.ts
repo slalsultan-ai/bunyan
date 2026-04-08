@@ -6,7 +6,7 @@ import { checkComebackStatus, checkFirstVisit } from '@/lib/mascot/bunaa-trigger
 export async function GET(req: NextRequest) {
   try {
     const parent = await getAuthenticatedParent();
-    const enabled = await hasFeatureAccess('mascot_bunaa', parent?.email);
+    const enabled = await hasFeatureAccess('mascot_bunaa', parent?.email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ enabled: false });
     }

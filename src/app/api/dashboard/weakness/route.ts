@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const hasAccess = await hasFeatureAccess('quick_weakness', session.email);
+  const hasAccess = await hasFeatureAccess('quick_weakness', session.email, session.parentId);
   if (!hasAccess) {
     return Response.json({ weakness: null }, { status: 200 });
   }

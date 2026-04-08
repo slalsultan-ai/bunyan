@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     const email = parent?.email ?? null;
 
-    const enabled = await hasFeatureAccess('daily_challenge', email);
+    const enabled = await hasFeatureAccess('daily_challenge', email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ error: 'Feature disabled' }, { status: 403 });
     }

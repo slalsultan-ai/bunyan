@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const session = await getParentSession();
   const email = session?.email ?? null;
 
-  const hasAccess = await hasFeatureAccess('review_mode', email);
+  const hasAccess = await hasFeatureAccess('review_mode', email, session?.parentId);
   if (!hasAccess) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 403 });
   }

@@ -105,10 +105,6 @@ export async function hasPremiumFeature(
     sql`SELECT email FROM parents WHERE id = ${parentId} LIMIT 1`
   );
   const email = rows.length > 0 ? (rows[0].email as string) : undefined;
-  const flagEnabled = await hasFeatureAccess(featureName, email);
-
-  if (!flagEnabled) return false;
-
-  const status = await checkPremiumStatus(parentId);
-  return status.isPremium;
+  // hasFeatureAccess now checks premium internally, so just delegate
+  return hasFeatureAccess(featureName, email, parentId);
 }

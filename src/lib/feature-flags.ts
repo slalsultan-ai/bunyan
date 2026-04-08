@@ -13,6 +13,10 @@ export interface FeatureFlag {
   updatedAt: string;
 }
 
+// Feature flags that are enforcement/restriction (not premium benefits)
+// These follow the old behavior: enabled = everyone
+const ENFORCEMENT_FLAGS = new Set(['session_limit']);
+
 function toBoolean(val: number | null | undefined): boolean {
   return val === 1;
 }
@@ -41,13 +45,25 @@ function emailInList(email: string, allowedEmails: string | null): boolean {
 
 /**
  * Check if a user has access to a feature flag.
- * - enabled = true -> everyone
- * - enabled = false + email in allowed_emails -> yes
- * - enabled = false + email not in allowed_emails -> no
- * - no email (visitor) -> only if enabled globally
- * - flag not found -> false (safe default)
+ *
+ * For premium features (enabled = true):
+ *   - email in allowed_emails → yes (testing/admin access)
+ *   - parentId provided + premium subscriber → yes
+ *   - otherwise → no
+ *
+ * For enforcement flags (session_limit): enabled = everyone
+ *
+ * When disabled:
+ *   - email in allowed_emails → yes
+ *   - otherwise → no
+ *
+ * flag not found → false (safe default)
  */
-export async function hasFeatureAccess(flagKey: string, userEmail?: string | null): Promise<boolean> {
+export async function hasFeatureAccess(
+  flagKey: string,
+  userEmail?: string | null,
+  parentId?: string | null
+): Promise<boolean> {
   try {
     const db = getDb();
     const [row] = await db
@@ -57,9 +73,26 @@ export async function hasFeatureAccess(flagKey: string, userEmail?: string | nul
       .limit(1);
 
     if (!row) return false;
-    if (toBoolean(row.enabled)) return true;
-    if (!userEmail) return false;
-    return emailInList(userEmail, row.allowedEmails);
+
+    // Email in allowlist always grants access (for testing)
+    if (userEmail && emailInList(userEmail, row.allowedEmails)) return true;
+
+    if (toBoolean(row.enabled)) {
+      // Enforcement flags: enabled means everyone
+      if (ENFORCEMENT_FLAGS.has(flagKey)) return true;
+
+      // Premium features: must be a premium subscriber
+      if (parentId) {
+        const { checkPremiumStatus } = await import('./premium');
+        const status = await checkPremiumStatus(parentId);
+        return status.isPremium;
+      }
+      // No parentId = guest/free → no access to premium features
+      return false;
+    }
+
+    // Flag disabled and not in allowlist → no access
+    return false;
   } catch (e) {
     console.error(`[feature-flags] hasFeatureAccess error for "${flagKey}":`, e instanceof Error ? e.message : e);
     return false;
@@ -68,18 +101,38 @@ export async function hasFeatureAccess(flagKey: string, userEmail?: string | nul
 
 /**
  * Get all feature flags with their access state for a specific user.
+ * Premium features require active subscription when enabled globally.
  */
-export async function getUserFeatures(userEmail?: string | null): Promise<Record<string, boolean>> {
+export async function getUserFeatures(
+  userEmail?: string | null,
+  parentId?: string | null
+): Promise<Record<string, boolean>> {
   try {
     const db = getDb();
     const rows = await db.select().from(featureFlags);
     const result: Record<string, boolean> = {};
 
+    // Check premium once for all flags
+    let isPremium = false;
+    if (parentId) {
+      const { checkPremiumStatus } = await import('./premium');
+      const status = await checkPremiumStatus(parentId);
+      isPremium = status.isPremium;
+    }
+
     for (const row of rows) {
-      if (toBoolean(row.enabled)) {
+      // Email in allowlist always grants access
+      if (userEmail && emailInList(userEmail, row.allowedEmails)) {
         result[row.flagKey] = true;
-      } else if (userEmail) {
-        result[row.flagKey] = emailInList(userEmail, row.allowedEmails);
+        continue;
+      }
+
+      if (toBoolean(row.enabled)) {
+        if (ENFORCEMENT_FLAGS.has(row.flagKey)) {
+          result[row.flagKey] = true;
+        } else {
+          result[row.flagKey] = isPremium;
+        }
       } else {
         result[row.flagKey] = false;
       }

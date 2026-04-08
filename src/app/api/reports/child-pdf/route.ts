@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Feature flag check
-  const hasAccess = await hasFeatureAccess('child_pdf_report', session.email);
+  const hasAccess = await hasFeatureAccess('child_pdf_report', session.email, session.parentId);
   if (!hasAccess) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 403 });
   }

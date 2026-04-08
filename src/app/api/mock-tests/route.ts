@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     }
 
     const parent = await getAuthenticatedParent();
-    const enabled = await isMockTestsEnabled(parent?.email);
+    const enabled = await isMockTestsEnabled(parent?.email, parent?.id);
     if (!enabled) {
       return NextResponse.json({ enabled: false });
     }

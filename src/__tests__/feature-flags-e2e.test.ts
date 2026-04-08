@@ -27,6 +27,11 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
+const mockCheckPremiumStatus = vi.fn();
+vi.mock('@/lib/premium', () => ({
+  checkPremiumStatus: (...args: unknown[]) => mockCheckPremiumStatus(...args),
+}));
+
 const { hasFeatureAccess, getUserFeatures, getAllFlags, updateFlag } = await import('@/lib/feature-flags');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -117,20 +122,21 @@ describe('Feature Flags — Email Matching (Critical Path)', () => {
     expect(await hasFeatureAccess('test_flag', 'user@example.com')).toBe(false);
   });
 
-  it('grants access when globally enabled regardless of email', async () => {
+  it('grants access when globally enabled + premium parent', async () => {
     mockSelect.mockReturnValue(makeSelectChain([
       makeFlagRow({ enabled: 1, allowedEmails: '' }),
     ]));
-    expect(await hasFeatureAccess('test_flag', 'anyone@test.com')).toBe(true);
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: true, source: 'subscription' });
+    expect(await hasFeatureAccess('test_flag', 'anyone@test.com', 'parent-1')).toBe(true);
   });
 
-  it('grants access when globally enabled with no email (visitor)', async () => {
+  it('denies access when globally enabled but no parentId (guest)', async () => {
     mockSelect.mockReturnValue(makeSelectChain([
       makeFlagRow({ enabled: 1 }),
     ]));
-    expect(await hasFeatureAccess('test_flag')).toBe(true);
-    expect(await hasFeatureAccess('test_flag', null)).toBe(true);
-    expect(await hasFeatureAccess('test_flag', undefined)).toBe(true);
+    expect(await hasFeatureAccess('test_flag')).toBe(false);
+    expect(await hasFeatureAccess('test_flag', null)).toBe(false);
+    expect(await hasFeatureAccess('test_flag', undefined)).toBe(false);
   });
 
   it('denies access to visitor when flag disabled even with emails in list', async () => {
@@ -157,7 +163,7 @@ describe('Feature Flags — Email Matching (Critical Path)', () => {
 describe('getUserFeatures — Full Flag Map', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns correct map for authenticated user with mixed flags', async () => {
+  it('returns correct map for authenticated premium user with mixed flags', async () => {
     const chain = {
       from: vi.fn().mockResolvedValue([
         makeFlagRow({ flagKey: 'daily_challenge', enabled: 1 }),
@@ -167,10 +173,11 @@ describe('getUserFeatures — Full Flag Map', () => {
       ]),
     };
     mockSelect.mockReturnValue(chain);
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: true, source: 'subscription' });
 
-    const result = await getUserFeatures('user@test.com');
+    const result = await getUserFeatures('user@test.com', 'parent-1');
     expect(result).toEqual({
-      daily_challenge: true,    // globally enabled
+      daily_challenge: true,    // globally enabled + premium
       review_mode: true,        // email in allowed list
       mock_tests: false,        // email NOT in allowed list
       mascot_bunaa: false,      // no allowed emails
@@ -287,13 +294,23 @@ describe('Real-World Scenarios', () => {
     expect(features.session_limit).toBe(true);     // globally enabled → granted
   });
 
-  it('Scenario: Flag enabled globally → all users see it', async () => {
+  it('Scenario: Enforcement flag enabled globally → all users see it', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([
+      makeFlagRow({ flagKey: 'session_limit', enabled: 1, allowedEmails: '' }),
+    ]));
+
+    expect(await hasFeatureAccess('session_limit')).toBe(true);
+    expect(await hasFeatureAccess('session_limit', null)).toBe(true);
+    expect(await hasFeatureAccess('session_limit', 'anyone@test.com')).toBe(true);
+  });
+
+  it('Scenario: Premium flag enabled globally → only premium users see it', async () => {
     mockSelect.mockReturnValue(makeSelectChain([
       makeFlagRow({ flagKey: 'daily_challenge', enabled: 1, allowedEmails: '' }),
     ]));
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: true, source: 'code' });
 
-    expect(await hasFeatureAccess('daily_challenge')).toBe(true);
-    expect(await hasFeatureAccess('daily_challenge', null)).toBe(true);
-    expect(await hasFeatureAccess('daily_challenge', 'anyone@test.com')).toBe(true);
+    expect(await hasFeatureAccess('daily_challenge', 'user@test.com', 'parent-1')).toBe(true);
+    expect(await hasFeatureAccess('daily_challenge')).toBe(false); // guest
   });
 });

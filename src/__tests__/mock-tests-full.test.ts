@@ -118,8 +118,8 @@ beforeEach(() => {
 describe('isMockTestsEnabled', () => {
   it('returns true when feature is enabled', async () => {
     mockHasFeatureAccess.mockResolvedValueOnce(true);
-    expect(await isMockTestsEnabled('test@email.com')).toBe(true);
-    expect(mockHasFeatureAccess).toHaveBeenCalledWith('mock_tests', 'test@email.com');
+    expect(await isMockTestsEnabled('test@email.com', 'parent-1')).toBe(true);
+    expect(mockHasFeatureAccess).toHaveBeenCalledWith('mock_tests', 'test@email.com', 'parent-1');
   });
 
   it('returns false when feature is disabled', async () => {

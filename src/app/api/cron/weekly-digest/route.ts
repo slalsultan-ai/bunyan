@@ -20,9 +20,11 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check feature flag
-  const enabled = await hasFeatureAccess('weekly_digest');
-  if (!enabled) {
+  // Check feature flag (globally disabled = skip entirely)
+  const { getAllFlags } = await import('@/lib/feature-flags');
+  const allFlags = await getAllFlags();
+  const digestFlag = allFlags.find(f => f.flagKey === 'weekly_digest');
+  if (!digestFlag || !digestFlag.enabled) {
     return Response.json({ message: 'weekly_digest flag is disabled', sent: 0 });
   }
 
@@ -50,6 +52,10 @@ export async function GET(req: NextRequest) {
 
     for (const parent of parentRows) {
       try {
+        // Check if parent has premium access to weekly_digest
+        const parentAccess = await hasFeatureAccess('weekly_digest', parent.email, parent.id);
+        if (!parentAccess) { skipped++; continue; }
+
         // Check if already sent this week
         const [existing] = await db
           .select()

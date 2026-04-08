@@ -18,6 +18,11 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
+const mockCheckPremiumStatus = vi.fn();
+vi.mock('@/lib/premium', () => ({
+  checkPremiumStatus: (...args: unknown[]) => mockCheckPremiumStatus(...args),
+}));
+
 const { hasFeatureAccess, getUserFeatures } = await import('@/lib/feature-flags');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -65,16 +70,39 @@ describe('hasFeatureAccess', () => {
     expect(result).toBe(false);
   });
 
-  it('returns true when flag is globally enabled', async () => {
+  it('returns false when flag is globally enabled but no parentId (guest)', async () => {
     mockSelect.mockReturnValue(makeSelectChain([makeFlagRow({ enabled: 1 })]));
     const result = await hasFeatureAccess('test_flag');
+    expect(result).toBe(false);
+  });
+
+  it('returns true when flag is enabled + premium parent', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([makeFlagRow({ enabled: 1 })]));
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: true, source: 'subscription' });
+    const result = await hasFeatureAccess('test_flag', 'user@test.com', 'parent-123');
     expect(result).toBe(true);
   });
 
-  it('returns true when flag is globally enabled + visitor (no email)', async () => {
+  it('returns false when flag is enabled + non-premium parent', async () => {
     mockSelect.mockReturnValue(makeSelectChain([makeFlagRow({ enabled: 1 })]));
-    const result = await hasFeatureAccess('test_flag', null);
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: false, source: 'none' });
+    const result = await hasFeatureAccess('test_flag', 'user@test.com', 'parent-123');
+    expect(result).toBe(false);
+  });
+
+  it('returns true for enforcement flags (session_limit) when enabled, even without parentId', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([makeFlagRow({ flagKey: 'session_limit', enabled: 1 })]));
+    const result = await hasFeatureAccess('session_limit');
     expect(result).toBe(true);
+  });
+
+  it('returns true when email is in allowlist regardless of premium status', async () => {
+    mockSelect.mockReturnValue(makeSelectChain([
+      makeFlagRow({ enabled: 1, allowedEmails: 'test@example.com' }),
+    ]));
+    const result = await hasFeatureAccess('test_flag', 'test@example.com');
+    expect(result).toBe(true);
+    expect(mockCheckPremiumStatus).not.toHaveBeenCalled();
   });
 
   it('returns false when flag disabled + visitor (no email)', async () => {
@@ -120,9 +148,6 @@ describe('getUserFeatures', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns empty object when no flags exist', async () => {
-    mockSelect.mockReturnValue(makeSelectChain([]));
-    // getUserFeatures calls .from().orderBy() not .from().where().limit()
-    // Actually it calls .from() with no where/limit
     const chain = {
       from: vi.fn().mockResolvedValue([]),
     };
@@ -131,7 +156,7 @@ describe('getUserFeatures', () => {
     expect(result).toEqual({});
   });
 
-  it('returns enabled flags for visitor', async () => {
+  it('returns false for enabled premium flags when visitor (no parentId)', async () => {
     const chain = {
       from: vi.fn().mockResolvedValue([
         makeFlagRow({ flagKey: 'enabled_flag', enabled: 1 }),
@@ -141,12 +166,12 @@ describe('getUserFeatures', () => {
     mockSelect.mockReturnValue(chain);
     const result = await getUserFeatures(null);
     expect(result).toEqual({
-      enabled_flag: true,
+      enabled_flag: false,
       disabled_flag: false,
     });
   });
 
-  it('returns correct access for authenticated user', async () => {
+  it('returns true for enabled flags when premium parent', async () => {
     const chain = {
       from: vi.fn().mockResolvedValue([
         makeFlagRow({ flagKey: 'enabled_flag', enabled: 1 }),
@@ -155,9 +180,28 @@ describe('getUserFeatures', () => {
       ]),
     };
     mockSelect.mockReturnValue(chain);
-    const result = await getUserFeatures('me@test.com');
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: true, source: 'subscription' });
+    const result = await getUserFeatures('me@test.com', 'parent-123');
     expect(result).toEqual({
       enabled_flag: true,
+      allowed_flag: true,
+      denied_flag: false,
+    });
+  });
+
+  it('returns correct access for authenticated non-premium user', async () => {
+    const chain = {
+      from: vi.fn().mockResolvedValue([
+        makeFlagRow({ flagKey: 'enabled_flag', enabled: 1 }),
+        makeFlagRow({ flagKey: 'allowed_flag', enabled: 0, allowedEmails: 'me@test.com' }),
+        makeFlagRow({ flagKey: 'denied_flag', enabled: 0, allowedEmails: 'other@test.com' }),
+      ]),
+    };
+    mockSelect.mockReturnValue(chain);
+    mockCheckPremiumStatus.mockResolvedValue({ isPremium: false, source: 'none' });
+    const result = await getUserFeatures('me@test.com', 'parent-123');
+    expect(result).toEqual({
+      enabled_flag: false,
       allowed_flag: true,
       denied_flag: false,
     });
