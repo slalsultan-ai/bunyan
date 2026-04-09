@@ -42,6 +42,7 @@ export async function GET() {
     extendedBankStats,
     mockTestsStats,
     premiumStats,
+    mascotStats,
   ] = await Promise.all([
     safe(() => getChildPdfStats(db)),
     safe(() => getReviewModeStats(db)),
@@ -55,6 +56,7 @@ export async function GET() {
     safe(() => getExtendedBankStats(db)),
     safe(() => getMockTestsStats(db)),
     safe(() => getPremiumStats(db)),
+    safe(() => getMascotStats(db)),
   ]);
 
   const ac = accessCounts ?? {};
@@ -70,7 +72,7 @@ export async function GET() {
     parent_dashboard_pro: dashboardProStats,
     gat_extended_bank: extendedBankStats,
     mock_tests: mockTestsStats,
-    mascot_bunaa: { note: 'شخصية تفاعلية — لا بيانات قابلة للقياس' },
+    mascot_bunaa: mascotStats,
     answer_explanations: { note: 'تُعرض مع كل سؤال — لا بيانات منفصلة' },
     _premium: premiumStats,
   });
@@ -517,6 +519,84 @@ async function getPremiumStats(db: DB) {
     activeSubscriptions: Number(r.activeSubscriptions ?? 0),
     activeCodeActivations: Number(r.activeCodeActivations ?? 0),
     totalParents: Number(r.totalParents ?? 0),
+  };
+}
+
+// ─── mascot_bunaa (compare enabled vs disabled children) ─────────────────────
+
+async function getMascotStats(db: DB) {
+  const [flag] = await db
+    .select({ enabled: featureFlags.enabled, allowedEmails: featureFlags.allowedEmails })
+    .from(featureFlags)
+    .where(eq(featureFlags.flagKey, 'mascot_bunaa'));
+
+  const emails = (flag?.allowedEmails ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
+  const emailsJson = JSON.stringify(emails);
+  const isEnabled = flag?.enabled === 1 ? 1 : 0;
+
+  const [rows] = await Promise.all([
+    db.all<Row>(sql`
+      WITH enabled_children AS (
+        SELECT DISTINCT c.id as child_id
+        FROM children c
+        JOIN parents p ON c.parent_id = p.id
+        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
+          OR (${isEnabled} = 1 AND (
+            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
+            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
+          ))
+      ),
+      with_mascot AS (
+        SELECT
+          COUNT(*) as sessions,
+          COUNT(DISTINCT s.child_id) as children,
+          ROUND(AVG(CASE WHEN s.total_questions > 0 THEN s.score * 100.0 / s.total_questions END), 1) as avgAccuracy,
+          COUNT(CASE WHEN s.completed_at >= datetime('now', '-7 days') THEN 1 END) as recentSessions
+        FROM sessions s
+        WHERE s.child_id IN (SELECT child_id FROM enabled_children)
+          AND s.completed_at IS NOT NULL
+      ),
+      without_mascot AS (
+        SELECT
+          COUNT(*) as sessions,
+          COUNT(DISTINCT s.child_id) as children,
+          ROUND(AVG(CASE WHEN s.total_questions > 0 THEN s.score * 100.0 / s.total_questions END), 1) as avgAccuracy,
+          COUNT(CASE WHEN s.completed_at >= datetime('now', '-7 days') THEN 1 END) as recentSessions
+        FROM sessions s
+        WHERE s.child_id IS NOT NULL
+          AND s.child_id NOT IN (SELECT child_id FROM enabled_children)
+          AND s.completed_at IS NOT NULL
+      )
+      SELECT
+        (SELECT children FROM with_mascot) as enabledChildren,
+        (SELECT sessions FROM with_mascot) as enabledSessions,
+        (SELECT avgAccuracy FROM with_mascot) as enabledAccuracy,
+        (SELECT recentSessions FROM with_mascot) as enabledRecent,
+        CASE WHEN (SELECT children FROM with_mascot) > 0
+          THEN ROUND(1.0 * (SELECT sessions FROM with_mascot) / (SELECT children FROM with_mascot), 1)
+          ELSE 0 END as enabledAvgSessions,
+        (SELECT children FROM without_mascot) as otherChildren,
+        (SELECT sessions FROM without_mascot) as otherSessions,
+        (SELECT avgAccuracy FROM without_mascot) as otherAccuracy,
+        (SELECT recentSessions FROM without_mascot) as otherRecent,
+        CASE WHEN (SELECT children FROM without_mascot) > 0
+          THEN ROUND(1.0 * (SELECT sessions FROM without_mascot) / (SELECT children FROM without_mascot), 1)
+          ELSE 0 END as otherAvgSessions
+    `),
+  ]);
+
+  const r = rows?.[0] ?? {};
+  return {
+    enabledChildren: Number(r.enabledChildren ?? 0),
+    enabledSessions: Number(r.enabledSessions ?? 0),
+    enabledAccuracy: r.enabledAccuracy != null ? Number(r.enabledAccuracy) : null,
+    enabledRecent: Number(r.enabledRecent ?? 0),
+    enabledAvgSessions: Number(r.enabledAvgSessions ?? 0),
+    otherChildren: Number(r.otherChildren ?? 0),
+    otherSessions: Number(r.otherSessions ?? 0),
+    otherAccuracy: r.otherAccuracy != null ? Number(r.otherAccuracy) : null,
+    otherRecent: Number(r.otherRecent ?? 0),
+    otherAvgSessions: Number(r.otherAvgSessions ?? 0),
   };
 }
 

@@ -102,7 +102,18 @@ interface FeatureStats {
     avgAccuracy: number | null;
     avgTimeMinutes: number | null;
   } | null;
-  mascot_bunaa: { note: string } | null;
+  mascot_bunaa: {
+    enabledChildren: number;
+    enabledSessions: number;
+    enabledAccuracy: number | null;
+    enabledRecent: number;
+    enabledAvgSessions: number;
+    otherChildren: number;
+    otherSessions: number;
+    otherAccuracy: number | null;
+    otherRecent: number;
+    otherAvgSessions: number;
+  } | null;
   answer_explanations: { note: string } | null;
   _premium: {
     activeSubscriptions: number;
@@ -321,8 +332,24 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     ];
   }
 
-  if (flagKey === 'mascot_bunaa' || flagKey === 'answer_explanations') {
-    const data = flagKey === 'mascot_bunaa' ? stats.mascot_bunaa : stats.answer_explanations;
+  if (flagKey === 'mascot_bunaa') {
+    const s = stats.mascot_bunaa;
+    if (!s) return null;
+    const accDiff = (s.enabledAccuracy != null && s.otherAccuracy != null)
+      ? Math.round(s.enabledAccuracy - s.otherAccuracy)
+      : null;
+    return [
+      { label: 'طلاب مع بنّاء', value: s.enabledChildren, accent: 'blue' },
+      { label: 'جلسات لكل طالب', value: s.enabledAvgSessions || '—', sub: s.otherAvgSessions > 0 ? `vs ${s.otherAvgSessions}` : undefined, accent: s.enabledAvgSessions > s.otherAvgSessions ? 'emerald' : 'gray' },
+      { label: 'دقة مع بنّاء', value: s.enabledAccuracy != null ? `${s.enabledAccuracy}%` : '—', accent: s.enabledAccuracy != null ? (s.enabledAccuracy >= 70 ? 'emerald' : 'amber') : 'gray', progress: s.enabledAccuracy ?? undefined },
+      { label: 'دقة بدون بنّاء', value: s.otherAccuracy != null ? `${s.otherAccuracy}%` : '—', accent: 'gray', progress: s.otherAccuracy ?? undefined },
+      { label: 'فرق الدقة', value: accDiff != null ? `${accDiff > 0 ? '+' : ''}${accDiff}%` : '—', accent: accDiff != null ? (accDiff > 0 ? 'emerald' : accDiff < 0 ? 'red' : 'gray') : 'gray' },
+      { label: 'نشاط آخر ٧ أيام', value: s.enabledRecent, sub: s.otherRecent > 0 ? `vs ${s.otherRecent}` : undefined, accent: s.enabledRecent > 0 ? 'blue' : 'gray' },
+    ];
+  }
+
+  if (flagKey === 'answer_explanations') {
+    const data = stats.answer_explanations;
     return [
       { label: 'ملاحظة', value: data?.note ?? '—', accent: 'gray' },
     ];
@@ -464,7 +491,19 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
   }
 
   if (flagKey === 'mascot_bunaa') {
-    return { level: 'caution', label: 'خاصية تفاعلية', detail: 'شخصية بُنّاء — لا تحتاج بيانات، اختبرها يدوياً' };
+    const s = stats.mascot_bunaa;
+    if (!s) return null;
+    if (s.enabledChildren === 0) {
+      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا يوجد طلاب مفعّلة لهم — أضف مختبرين لقياس التأثير' };
+    }
+    const accDiff = (s.enabledAccuracy != null && s.otherAccuracy != null) ? s.enabledAccuracy - s.otherAccuracy : null;
+    if (s.enabledChildren >= 3 && s.enabledSessions >= 10) {
+      if (accDiff != null && accDiff >= 0) {
+        return { level: 'ready', label: 'تأثير إيجابي', detail: `${s.enabledChildren} طلاب، الدقة ${accDiff > 0 ? 'أعلى' : 'مساوية'} (${accDiff > 0 ? '+' : ''}${Math.round(accDiff)}%)` };
+      }
+      return { level: 'caution', label: 'تحتاج مراقبة', detail: `${s.enabledChildren} طلاب، الدقة أقل بـ ${Math.round(Math.abs(accDiff ?? 0))}% — راقب التأثير` };
+    }
+    return { level: 'caution', label: 'بيانات قليلة', detail: `${s.enabledChildren} طلاب، ${s.enabledSessions} جلسة — يُفضّل ≥ ٣ طلاب و ≥ ١٠ جلسات للمقارنة` };
   }
 
   if (flagKey === 'answer_explanations') {
