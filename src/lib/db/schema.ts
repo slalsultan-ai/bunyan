@@ -201,6 +201,7 @@ export const featureFlags = sqliteTable('feature_flags', {
   title: text('title').notNull(),
   description: text('description'),
   enabled: integer('enabled').default(0),
+  activationMode: text('activation_mode').default('allowed_only'),
   allowedEmails: text('allowed_emails').default(''),
   createdAt: text('created_at').default(sql`(datetime('now'))`),
   updatedAt: text('updated_at').default(sql`(datetime('now'))`),

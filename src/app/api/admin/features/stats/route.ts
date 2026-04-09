@@ -82,6 +82,27 @@ type DB = ReturnType<typeof getDb>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
 
+/** Build a CTE for children who have access to a given feature flag */
+function buildEnabledChildrenCTE(mode: string, emailsJson: string) {
+  if (mode === 'everyone') {
+    return sql`SELECT DISTINCT id as child_id FROM children`;
+  }
+  const premiumCondition = mode === 'premium'
+    ? sql`OR (
+      EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
+      OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
+    )`
+    : sql``;
+
+  return sql`
+    SELECT DISTINCT c.id as child_id
+    FROM children c
+    JOIN parents p ON c.parent_id = p.id
+    WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
+      ${premiumCondition}
+  `;
+}
+
 // ─── child_pdf_report ─────────────────────────────────────────────────────────
 
 async function getChildPdfStats(db: DB) {
@@ -146,28 +167,19 @@ async function getReviewModeStats(db: DB) {
 // ─── question_retirement ──────────────────────────────────────────────────────
 
 async function getQuestionRetirementStats(db: DB) {
-  // Get feature flag to determine who actually has access
   const [flag] = await db
-    .select({ enabled: featureFlags.enabled, allowedEmails: featureFlags.allowedEmails })
+    .select({ activationMode: featureFlags.activationMode, allowedEmails: featureFlags.allowedEmails })
     .from(featureFlags)
     .where(eq(featureFlags.flagKey, 'question_retirement'));
 
   const emails = (flag?.allowedEmails ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
   const emailsJson = JSON.stringify(emails);
-  const isEnabled = flag?.enabled === 1 ? 1 : 0;
+  const mode = flag?.activationMode ?? 'allowed_only';
+  const cte = buildEnabledChildrenCTE(mode, emailsJson);
 
   const [[stats], [pool], ageGroups] = await Promise.all([
     db.all<Row>(sql`
-      WITH enabled_children AS (
-        SELECT DISTINCT c.id as child_id
-        FROM children c
-        JOIN parents p ON c.parent_id = p.id
-        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
-          OR (${isEnabled} = 1 AND (
-            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
-            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
-          ))
-      )
+      WITH enabled_children AS (${cte})
       SELECT
         (SELECT COUNT(*) FROM enabled_children) as enabledChildren,
         (SELECT COUNT(DISTINCT qm.child_id) FROM question_mastery qm
@@ -184,16 +196,7 @@ async function getQuestionRetirementStats(db: DB) {
       .from(questions)
       .where(eq(questions.isActive, true)),
     db.all<Row>(sql`
-      WITH enabled_children AS (
-        SELECT DISTINCT c.id as child_id
-        FROM children c
-        JOIN parents p ON c.parent_id = p.id
-        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
-          OR (${isEnabled} = 1 AND (
-            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
-            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
-          ))
-      )
+      WITH enabled_children AS (${cte})
       SELECT
         q.age_group as ageGroup,
         COUNT(*) as total,
@@ -526,26 +529,18 @@ async function getPremiumStats(db: DB) {
 
 async function getMascotStats(db: DB) {
   const [flag] = await db
-    .select({ enabled: featureFlags.enabled, allowedEmails: featureFlags.allowedEmails })
+    .select({ activationMode: featureFlags.activationMode, allowedEmails: featureFlags.allowedEmails })
     .from(featureFlags)
     .where(eq(featureFlags.flagKey, 'mascot_bunaa'));
 
   const emails = (flag?.allowedEmails ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
   const emailsJson = JSON.stringify(emails);
-  const isEnabled = flag?.enabled === 1 ? 1 : 0;
+  const mode = flag?.activationMode ?? 'allowed_only';
+  const cte = buildEnabledChildrenCTE(mode, emailsJson);
 
   const [rows] = await Promise.all([
     db.all<Row>(sql`
-      WITH enabled_children AS (
-        SELECT DISTINCT c.id as child_id
-        FROM children c
-        JOIN parents p ON c.parent_id = p.id
-        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
-          OR (${isEnabled} = 1 AND (
-            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
-            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
-          ))
-      ),
+      WITH enabled_children AS (${cte}),
       with_mascot AS (
         SELECT
           COUNT(*) as sessions,
@@ -606,14 +601,14 @@ async function getFeatureAccessCounts(db: DB): Promise<Record<string, number>> {
   const rows = await db
     .select({
       flagKey: featureFlags.flagKey,
-      enabled: featureFlags.enabled,
+      activationMode: featureFlags.activationMode,
       allowedEmails: featureFlags.allowedEmails,
     })
     .from(featureFlags);
 
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    if (row.enabled === 1) {
+    if (row.activationMode === 'everyone' || row.activationMode === 'premium') {
       counts[row.flagKey] = -1;
     } else {
       const emails = (row.allowedEmails ?? '')

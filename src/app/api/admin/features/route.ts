@@ -18,14 +18,15 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { flagKey, enabled, allowed_emails } = body;
+  const { flagKey, activation_mode, allowed_emails } = body;
 
   if (!flagKey || typeof flagKey !== 'string') {
     return NextResponse.json({ error: 'flagKey is required' }, { status: 400 });
   }
 
+  const validModes = ['allowed_only', 'premium', 'everyone'];
   await updateFlag(flagKey, {
-    enabled: typeof enabled === 'boolean' ? enabled : undefined,
+    activation_mode: validModes.includes(activation_mode) ? activation_mode : undefined,
     allowed_emails: typeof allowed_emails === 'string' ? allowed_emails : undefined,
   });
 

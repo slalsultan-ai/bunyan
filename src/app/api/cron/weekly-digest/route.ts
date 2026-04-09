@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
   const { getAllFlags } = await import('@/lib/feature-flags');
   const allFlags = await getAllFlags();
   const digestFlag = allFlags.find(f => f.flagKey === 'weekly_digest');
-  if (!digestFlag || !digestFlag.enabled) {
-    return Response.json({ message: 'weekly_digest flag is disabled', sent: 0 });
+  if (!digestFlag || digestFlag.activationMode === 'allowed_only') {
+    return Response.json({ message: 'weekly_digest flag is not active', sent: 0 });
   }
 
   const db = getDb();

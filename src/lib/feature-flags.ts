@@ -2,23 +2,17 @@ import { getDb } from './db';
 import { featureFlags } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
 
+export type ActivationMode = 'allowed_only' | 'premium' | 'everyone';
+
 export interface FeatureFlag {
   id: number;
   flagKey: string;
   title: string;
   description: string | null;
-  enabled: boolean;
+  activationMode: ActivationMode;
   allowedEmails: string;
   createdAt: string;
   updatedAt: string;
-}
-
-// Feature flags that are enforcement/restriction (not premium benefits)
-// These follow the old behavior: enabled = everyone
-const ENFORCEMENT_FLAGS = new Set(['session_limit']);
-
-function toBoolean(val: number | null | undefined): boolean {
-  return val === 1;
 }
 
 function mapRow(row: typeof featureFlags.$inferSelect): FeatureFlag {
@@ -27,7 +21,7 @@ function mapRow(row: typeof featureFlags.$inferSelect): FeatureFlag {
     flagKey: row.flagKey,
     title: row.title,
     description: row.description,
-    enabled: toBoolean(row.enabled),
+    activationMode: (row.activationMode as ActivationMode) ?? 'allowed_only',
     allowedEmails: row.allowedEmails ?? '',
     createdAt: row.createdAt ?? '',
     updatedAt: row.updatedAt ?? '',
@@ -46,17 +40,11 @@ function emailInList(email: string, allowedEmails: string | null): boolean {
 /**
  * Check if a user has access to a feature flag.
  *
- * For premium features (enabled = true):
- *   - email in allowed_emails → yes (testing/admin access)
- *   - parentId provided + premium subscriber → yes
- *   - otherwise → no
+ * activation_mode = 'everyone'      → all users (guests + authenticated)
+ * activation_mode = 'premium'       → premium subscribers + allowed emails
+ * activation_mode = 'allowed_only'  → only allowed emails
  *
- * For enforcement flags (session_limit): enabled = everyone
- *
- * When disabled:
- *   - email in allowed_emails → yes
- *   - otherwise → no
- *
+ * Allowed emails always have access regardless of mode.
  * flag not found → false (safe default)
  */
 export async function hasFeatureAccess(
@@ -74,24 +62,23 @@ export async function hasFeatureAccess(
 
     if (!row) return false;
 
-    // Email in allowlist always grants access (for testing)
+    const mode = (row.activationMode as ActivationMode) ?? 'allowed_only';
+
+    // Email in allowlist always grants access
     if (userEmail && emailInList(userEmail, row.allowedEmails)) return true;
 
-    if (toBoolean(row.enabled)) {
-      // Enforcement flags: enabled means everyone
-      if (ENFORCEMENT_FLAGS.has(flagKey)) return true;
+    if (mode === 'everyone') return true;
 
-      // Premium features: must be a premium subscriber
+    if (mode === 'premium') {
       if (parentId) {
         const { checkPremiumStatus } = await import('./premium');
         const status = await checkPremiumStatus(parentId);
         return status.isPremium;
       }
-      // No parentId = guest/free → no access to premium features
       return false;
     }
 
-    // Flag disabled and not in allowlist → no access
+    // mode === 'allowed_only' and not in allowlist → no access
     return false;
   } catch (e) {
     console.error(`[feature-flags] hasFeatureAccess error for "${flagKey}":`, e instanceof Error ? e.message : e);
@@ -101,7 +88,6 @@ export async function hasFeatureAccess(
 
 /**
  * Get all feature flags with their access state for a specific user.
- * Premium features require active subscription when enabled globally.
  */
 export async function getUserFeatures(
   userEmail?: string | null,
@@ -127,12 +113,12 @@ export async function getUserFeatures(
         continue;
       }
 
-      if (toBoolean(row.enabled)) {
-        if (ENFORCEMENT_FLAGS.has(row.flagKey)) {
-          result[row.flagKey] = true;
-        } else {
-          result[row.flagKey] = isPremium;
-        }
+      const mode = (row.activationMode as ActivationMode) ?? 'allowed_only';
+
+      if (mode === 'everyone') {
+        result[row.flagKey] = true;
+      } else if (mode === 'premium') {
+        result[row.flagKey] = isPremium;
       } else {
         result[row.flagKey] = false;
       }
@@ -159,13 +145,13 @@ export async function getAllFlags(): Promise<FeatureFlag[]> {
  */
 export async function updateFlag(
   flagKey: string,
-  updates: { enabled?: boolean; allowed_emails?: string }
+  updates: { activation_mode?: ActivationMode; allowed_emails?: string }
 ): Promise<void> {
   const db = getDb();
   const set: Record<string, unknown> = { updatedAt: sql`datetime('now')` };
 
-  if (updates.enabled !== undefined) {
-    set.enabled = updates.enabled ? 1 : 0;
+  if (updates.activation_mode !== undefined) {
+    set.activationMode = updates.activation_mode;
   }
   if (updates.allowed_emails !== undefined) {
     set.allowedEmails = updates.allowed_emails;

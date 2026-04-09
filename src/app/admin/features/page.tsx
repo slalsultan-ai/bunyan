@@ -3,12 +3,14 @@ import { useState, useEffect, useMemo } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+type ActivationMode = 'allowed_only' | 'premium' | 'everyone';
+
 interface FeatureFlag {
   id: number;
   flagKey: string;
   title: string;
   description: string | null;
-  enabled: boolean;
+  activationMode: ActivationMode;
   allowedEmails: string;
 }
 
@@ -187,6 +189,12 @@ const READINESS_STYLES: Record<string, { bg: string; border: string; text: strin
   ready: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: '✓', dot: 'bg-emerald-500' },
   caution: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: '!', dot: 'bg-amber-500' },
   not_ready: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '✕', dot: 'bg-red-500' },
+};
+
+const MODE_CONFIG: Record<ActivationMode, { label: string; badge: string; badgeBg: string; badgeText: string }> = {
+  allowed_only: { label: 'مستخدمين محددين', badge: 'محددة', badgeBg: 'bg-gray-100', badgeText: 'text-gray-500' },
+  premium: { label: 'مشتركي بنيان', badge: 'مشتركين', badgeBg: 'bg-purple-100', badgeText: 'text-purple-700' },
+  everyone: { label: 'الجميع', badge: 'للجميع', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-700' },
 };
 
 const AGE_GROUP_LABELS: Record<string, string> = {
@@ -596,9 +604,8 @@ export default function FeaturesPage() {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [success, setSuccess] = useState<Record<string, boolean>>({});
   const [localState, setLocalState] = useState<
-    Record<string, { enabled: boolean; allowedEmails: string }>
+    Record<string, { activationMode: ActivationMode; allowedEmails: string }>
   >({});
-  const [confirmGlobal, setConfirmGlobal] = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [stats, setStats] = useState<FeatureStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -609,14 +616,18 @@ export default function FeaturesPage() {
       const local = localState[flag.flagKey];
       if (!local) continue;
       dirty[flag.flagKey] =
-        local.enabled !== flag.enabled ||
+        local.activationMode !== flag.activationMode ||
         local.allowedEmails !== flag.allowedEmails;
     }
     return dirty;
   }, [flags, localState]);
 
-  const activeCount = useMemo(
-    () => Object.values(localState).filter((s) => s.enabled).length,
+  const premiumCount = useMemo(
+    () => Object.values(localState).filter((s) => s.activationMode === 'premium').length,
+    [localState]
+  );
+  const everyoneCount = useMemo(
+    () => Object.values(localState).filter((s) => s.activationMode === 'everyone').length,
     [localState]
   );
 
@@ -628,9 +639,9 @@ export default function FeaturesPage() {
       })
       .then((data) => {
         setFlags(data.flags);
-        const state: Record<string, { enabled: boolean; allowedEmails: string }> = {};
+        const state: Record<string, { activationMode: ActivationMode; allowedEmails: string }> = {};
         for (const f of data.flags) {
-          state[f.flagKey] = { enabled: f.enabled, allowedEmails: f.allowedEmails };
+          state[f.flagKey] = { activationMode: f.activationMode, allowedEmails: f.allowedEmails };
         }
         setLocalState(state);
       });
@@ -648,25 +659,12 @@ export default function FeaturesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  function toggleFlag(flagKey: string) {
+  function setMode(flagKey: string, mode: ActivationMode) {
     setLocalState((prev) => {
       const current = prev[flagKey];
       if (!current) return prev;
-      if (!current.enabled) {
-        setConfirmGlobal(flagKey);
-        return prev;
-      }
-      return { ...prev, [flagKey]: { ...current, enabled: false } };
+      return { ...prev, [flagKey]: { ...current, activationMode: mode } };
     });
-  }
-
-  function confirmEnableGlobal(flagKey: string) {
-    setLocalState((prev) => {
-      const current = prev[flagKey];
-      if (!current) return prev;
-      return { ...prev, [flagKey]: { ...current, enabled: true } };
-    });
-    setConfirmGlobal(null);
   }
 
   function updateEmails(flagKey: string, value: string) {
@@ -690,7 +688,7 @@ export default function FeaturesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           flagKey,
-          enabled: state.enabled,
+          activation_mode: state.activationMode,
           allowed_emails: state.allowedEmails,
         }),
       });
@@ -698,7 +696,7 @@ export default function FeaturesPage() {
       setFlags((prev) =>
         prev.map((f) =>
           f.flagKey === flagKey
-            ? { ...f, enabled: state.enabled, allowedEmails: state.allowedEmails }
+            ? { ...f, activationMode: state.activationMode, allowedEmails: state.allowedEmails }
             : f
         )
       );
@@ -738,16 +736,16 @@ export default function FeaturesPage() {
       {/* Summary bar */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
-          <div className="text-2xl font-bold text-gray-900">{flags.length}</div>
-          <div className="text-xs text-gray-500 mt-0.5">إجمالي</div>
+          <div className="text-2xl font-bold text-emerald-600">{everyoneCount}</div>
+          <div className="text-xs text-gray-500 mt-0.5">للجميع</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
-          <div className="text-2xl font-bold text-emerald-600">{activeCount}</div>
-          <div className="text-xs text-gray-500 mt-0.5">مفعّلة</div>
+          <div className="text-2xl font-bold text-purple-600">{premiumCount}</div>
+          <div className="text-xs text-gray-500 mt-0.5">مشتركين</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 text-center">
-          <div className="text-2xl font-bold text-gray-400">{flags.length - activeCount}</div>
-          <div className="text-xs text-gray-500 mt-0.5">معطّلة</div>
+          <div className="text-2xl font-bold text-gray-400">{flags.length - everyoneCount - premiumCount}</div>
+          <div className="text-xs text-gray-500 mt-0.5">محددة</div>
         </div>
       </div>
 
@@ -760,7 +758,7 @@ export default function FeaturesPage() {
             <span className="text-blue-600"><strong>{stats._premium.activeCodeActivations}</strong> كود مفعّل</span>
             <span className="text-gray-500">من <strong>{stats._premium.totalParents}</strong> ولي أمر</span>
           </div>
-          <p className="text-[11px] text-purple-500 mt-1">الخصائص المفعّلة تعمل فقط للمشتركين + الإيميلات المسموحة</p>
+          <p className="text-[11px] text-purple-500 mt-1">خصائص «مشتركين» تعمل للمشتركين + الإيميلات المسموحة</p>
         </div>
       )}
 
@@ -774,32 +772,6 @@ export default function FeaturesPage() {
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-lg leading-none">
             &times;
           </button>
-        </div>
-      )}
-
-      {/* Confirm dialog */}
-      {confirmGlobal && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full" dir="rtl">
-            <h3 className="font-bold text-gray-900 mb-2">تفعيل للمشتركين؟</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              هذه الخاصية ستكون متاحة فقط للمشتركين (مدفوع/كود/منحة) والإيميلات المسموحة.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => confirmEnableGlobal(confirmGlobal)}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl px-4 py-2.5 text-sm transition-colors"
-              >
-                تفعيل
-              </button>
-              <button
-                onClick={() => setConfirmGlobal(null)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl px-4 py-2.5 text-sm transition-colors"
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -820,6 +792,7 @@ export default function FeaturesPage() {
             const isDirty = dirtyFlags[flag.flagKey];
             const isExpanded = expandedCard === flag.flagKey;
             const emails = parseEmails(state.allowedEmails);
+            const modeConf = MODE_CONFIG[state.activationMode];
             const metrics = buildMetrics(flag.flagKey, stats);
             const readiness = getReadiness(flag.flagKey, stats);
             const ageGroupData = flag.flagKey === 'question_retirement'
@@ -844,10 +817,8 @@ export default function FeaturesPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h2 className="font-bold text-gray-900 text-base leading-tight">{flag.title}</h2>
-                        <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                          state.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {state.enabled ? 'مفعّلة' : 'معطّلة'}
+                        <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${modeConf.badgeBg} ${modeConf.badgeText}`}>
+                          {modeConf.badge}
                         </span>
                         {isDirty && (
                           <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
@@ -864,20 +835,26 @@ export default function FeaturesPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
-                    <button
-                      onClick={() => toggleFlag(flag.flagKey)}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                        state.enabled ? 'bg-emerald-500' : 'bg-gray-300'
-                      }`}
-                      role="switch"
-                      aria-checked={state.enabled}
-                      aria-label={`تفعيل ${flag.title}`}
-                    >
-                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                        state.enabled ? 'translate-x-1.5' : 'translate-x-5.5'
-                      }`} />
-                    </button>
+                  <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0 mt-1">
+                    {(['allowed_only', 'premium', 'everyone'] as const).map((mode) => {
+                      const active = state.activationMode === mode;
+                      const cfg = MODE_CONFIG[mode];
+                      return (
+                        <button
+                          key={mode}
+                          onClick={() => setMode(flag.flagKey, mode)}
+                          className={`text-[10px] font-semibold px-2 py-1.5 rounded-md transition-all ${
+                            active
+                              ? mode === 'everyone' ? 'bg-emerald-500 text-white shadow-sm'
+                                : mode === 'premium' ? 'bg-purple-500 text-white shadow-sm'
+                                : 'bg-white text-gray-700 shadow-sm'
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                        >
+                          {cfg.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

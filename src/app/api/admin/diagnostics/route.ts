@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         id: sql<number>`id`,
         flagKey: sql<string>`flag_key`,
         title: sql<string>`title`,
-        enabled: sql<number>`enabled`,
+        activationMode: sql<string>`activation_mode`,
         allowedEmails: sql<string>`allowed_emails`,
       })
       .from(sql`feature_flags`)
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       id: f.id,
       flagKey: f.flagKey,
       title: f.title,
-      enabled: f.enabled,
+      activationMode: f.activationMode,
       allowedEmails: f.allowedEmails || '(empty)',
       allowedEmailsList: f.allowedEmails
         ? f.allowedEmails.split(',').map((e: string) => e.trim()).filter(Boolean)
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     const flags = await getAllFlags();
     results.getAllFlagsResult = flags.map((f) => ({
       flagKey: f.flagKey,
-      enabled: f.enabled,
+      activationMode: f.activationMode,
       allowedEmails: f.allowedEmails,
     }));
   } catch (e) {
@@ -91,10 +91,12 @@ export async function GET(req: NextRequest) {
       for (const flag of flags) {
         const access = await hasFeatureAccess(flag.flagKey, testEmail);
         let reason: string;
-        if (flag.enabled) {
-          reason = 'globally enabled → access granted to everyone';
+        if (flag.activationMode === 'everyone') {
+          reason = 'mode=everyone → access granted to all';
+        } else if (flag.activationMode === 'premium') {
+          reason = 'mode=premium → access for subscribers + allowed emails';
         } else if (!testEmail) {
-          reason = 'flag disabled + no email → denied';
+          reason = 'mode=allowed_only + no email → denied';
         } else {
           const emails = flag.allowedEmails
             .split(',')
@@ -102,9 +104,9 @@ export async function GET(req: NextRequest) {
             .filter(Boolean);
           const emailLower = testEmail.toLowerCase();
           if (emails.includes(emailLower)) {
-            reason = `flag disabled but email "${testEmail}" found in allowed list → granted`;
+            reason = `mode=allowed_only, email "${testEmail}" in allowed list → granted`;
           } else {
-            reason = `flag disabled and email "${testEmail}" NOT in allowed list [${emails.join(', ')}] → denied`;
+            reason = `mode=allowed_only, email "${testEmail}" NOT in allowed list → denied`;
           }
         }
         accessResults[flag.flagKey] = { access, reason };
