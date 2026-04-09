@@ -25,20 +25,19 @@ interface FeatureStats {
     totalItems: number;
     masteredItems: number;
     pendingItems: number;
-    uniqueUsers: number;
+    uniqueChildren: number;
     allowedUsers: number;
     masteryRate: number;
     avgTimesWrong: number | null;
     avgReviewsToMastery: number | null;
   } | null;
   question_retirement: {
-    totalRetired: number;
-    totalTracked: number;
-    uniqueUsers: number;
-    allowedUsers: number;
+    enabledChildren: number;
+    benefitingChildren: number;
+    retiredQuestions: number;
     avgCorrectCount: number | null;
     totalQuestions: number;
-    retirementRate: number;
+    depletionPct: number;
     byAgeGroup: { ageGroup: string; total: number; retired: number; depletionPct: number }[];
   } | null;
   daily_challenge: {
@@ -208,7 +207,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     const s = stats.review_mode;
     if (!s) return null;
     return [
-      { label: 'مستخدمين فعليين', value: s.uniqueUsers, accent: 'blue' },
+      { label: 'طلاب بمراجعات', value: s.uniqueChildren, accent: 'blue' },
       { label: 'إجمالي المراجعات', value: s.totalItems, accent: 'purple' },
       { label: 'تم إتقانها', value: s.masteredItems, sub: `${s.masteryRate}%`, accent: s.masteryRate >= 50 ? 'emerald' : 'amber', progress: s.masteryRate },
       { label: 'معلّقة الآن', value: s.pendingItems, accent: s.pendingItems > 50 ? 'red' : s.pendingItems > 0 ? 'amber' : 'gray' },
@@ -220,13 +219,13 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
     if (!s) return null;
-    const depletionPct = s.totalQuestions > 0 ? Math.round((s.totalRetired / s.totalQuestions) * 100) : 0;
     return [
-      { label: 'مستخدمين بتتبع', value: s.uniqueUsers, accent: 'blue' },
-      { label: 'أسئلة مُقصاة', value: s.totalRetired, sub: `${s.retirementRate}%`, accent: 'emerald', progress: s.retirementRate },
-      { label: 'متوسط الإجابات', value: s.avgCorrectCount ?? '—', accent: 'purple' },
-      { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'gray' },
-      { label: 'نسبة الاستنزاف', value: `${depletionPct}%`, accent: depletionPct > 30 ? 'red' : depletionPct > 15 ? 'amber' : 'emerald', progress: depletionPct },
+      { label: 'طلاب مفعّلة لهم', value: s.enabledChildren, accent: 'blue' },
+      { label: 'طلاب مستفيدين', value: s.benefitingChildren, accent: s.benefitingChildren > 0 ? 'emerald' : 'gray' },
+      { label: 'أسئلة أُقصيت فعلياً', value: s.retiredQuestions, accent: s.retiredQuestions > 0 ? 'purple' : 'gray' },
+      { label: 'متوسط الإجابات الصحيحة', value: s.avgCorrectCount ?? '—', accent: 'amber' },
+      { label: 'إجمالي بنك الأسئلة', value: s.totalQuestions, accent: 'gray' },
+      { label: 'نسبة الاستنزاف', value: `${s.depletionPct}%`, accent: s.depletionPct > 30 ? 'red' : s.depletionPct > 15 ? 'amber' : 'emerald', progress: s.depletionPct },
     ];
   }
 
@@ -274,8 +273,8 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     return [
       { label: 'إجمالي المرسل', value: s.totalSent, accent: 'blue' },
       { label: 'هذا الأسبوع', value: s.sentThisWeek, accent: s.sentThisWeek > 0 ? 'emerald' : 'gray' },
-      { label: 'أولياء مشتركين', value: s.subscribedParents, sub: `${subRate}%`, accent: 'purple', progress: subRate },
-      { label: 'ألغوا الاشتراك', value: s.unsubscribed, accent: s.unsubscribed > 0 ? 'amber' : 'gray' },
+      { label: 'لم يلغوا التقرير', value: s.subscribedParents, sub: `${subRate}%`, accent: 'purple', progress: subRate },
+      { label: 'ألغوا التقرير', value: s.unsubscribed, accent: s.unsubscribed > 0 ? 'amber' : 'gray' },
       { label: 'إجمالي الأولياء', value: s.totalParents, accent: 'gray' },
     ];
   }
@@ -352,11 +351,11 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
     if (!s) return null;
-    if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsers} مستخدمين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
+    if (s.uniqueChildren >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} طلاب بمراجعات، نسبة إتقان ${s.masteryRate}%` };
     }
-    if (s.uniqueUsers >= 1 && s.totalItems >= 5) {
-      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.uniqueUsers} مستخدم فقط — نسبة الإتقان ${s.masteryRate}%` };
+    if (s.uniqueChildren >= 1 && s.totalItems >= 5) {
+      return { level: 'caution', label: 'تحتاج مزيد من الاختبار', detail: `${s.uniqueChildren} طالب فقط — نسبة الإتقان ${s.masteryRate}%` };
     }
     return { level: 'not_ready', label: 'غير جاهزة', detail: 'بيانات غير كافية — أضف مختبرين لجمع بيانات المراجعة' };
   }
@@ -364,12 +363,12 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
     if (!s) return null;
-    if (s.uniqueUsers === 0) {
-      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا يوجد مختبرين — أضف إيميلات في allowedEmails أولاً' };
+    if (s.enabledChildren === 0) {
+      return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا يوجد طلاب مفعّلة لهم — أضف إيميلات أو فعّل للمشتركين' };
     }
     const maxDepletion = Math.max(...s.byAgeGroup.map((a) => a.depletionPct), 0);
-    if (s.uniqueUsers >= 3 && maxDepletion <= 15) {
-      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `استنزاف منخفض (أعلى فئة ${maxDepletion}%) — بنك الأسئلة يتحمّل` };
+    if (s.benefitingChildren >= 1 && maxDepletion <= 15) {
+      return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.benefitingChildren} طلاب مستفيدين، استنزاف منخفض (${maxDepletion}%)` };
     }
     if (maxDepletion <= 30) {
       return { level: 'caution', label: 'تحتاج مراقبة', detail: `استنزاف ${maxDepletion}% في بعض الفئات — راقب بنك الأسئلة` };

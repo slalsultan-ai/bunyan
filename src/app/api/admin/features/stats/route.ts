@@ -62,7 +62,7 @@ export async function GET() {
   return NextResponse.json({
     child_pdf_report: pdfStats,
     review_mode: reviewStats ? { ...reviewStats, allowedUsers: ac['review_mode'] ?? 0 } : null,
-    question_retirement: retirementStats ? { ...retirementStats, allowedUsers: ac['question_retirement'] ?? 0 } : null,
+    question_retirement: retirementStats,
     daily_challenge: dailyChallengeStats,
     session_limit: sessionLimitStats,
     adaptive_path: adaptivePathStats,
@@ -120,7 +120,7 @@ async function getReviewModeStats(db: DB) {
       totalItems: sql<number>`COUNT(*)`,
       masteredItems: sql<number>`SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END)`,
       pendingItems: sql<number>`SUM(CASE WHEN mastered = 0 AND next_review_at <= datetime('now') THEN 1 ELSE 0 END)`,
-      uniqueUsers: sql<number>`COUNT(DISTINCT COALESCE(child_id, guest_id))`,
+      uniqueChildren: sql<number>`COUNT(DISTINCT child_id)`,
       avgTimesWrong: sql<number>`ROUND(AVG(times_wrong), 1)`,
       avgReviewsToMastery: sql<number>`ROUND(AVG(CASE WHEN mastered = 1 THEN times_reviewed ELSE NULL END), 1)`,
     })
@@ -134,7 +134,7 @@ async function getReviewModeStats(db: DB) {
     totalItems: total,
     masteredItems: mastered,
     pendingItems: r?.pendingItems ?? 0,
-    uniqueUsers: r?.uniqueUsers ?? 0,
+    uniqueChildren: r?.uniqueChildren ?? 0,
     masteryRate,
     avgTimesWrong: total > 0 ? (r?.avgTimesWrong ?? null) : null,
     avgReviewsToMastery: mastered > 0 ? (r?.avgReviewsToMastery ?? null) : null,
@@ -144,55 +144,90 @@ async function getReviewModeStats(db: DB) {
 // ─── question_retirement ──────────────────────────────────────────────────────
 
 async function getQuestionRetirementStats(db: DB) {
-  const [[r], [pool], ageGroups] = await Promise.all([
-    db
-      .select({
-        totalRetired: sql<number>`SUM(CASE WHEN correct_count >= 5 THEN 1 ELSE 0 END)`,
-        totalTracked: sql<number>`COUNT(*)`,
-        uniqueUsers: sql<number>`COUNT(DISTINCT COALESCE(child_id, guest_id))`,
-        avgCorrectCount: sql<number>`ROUND(AVG(correct_count), 1)`,
-      })
-      .from(questionMastery),
+  // Get feature flag to determine who actually has access
+  const [flag] = await db
+    .select({ enabled: featureFlags.enabled, allowedEmails: featureFlags.allowedEmails })
+    .from(featureFlags)
+    .where(eq(featureFlags.flagKey, 'question_retirement'));
+
+  const emails = (flag?.allowedEmails ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
+  const emailsJson = JSON.stringify(emails);
+  const isEnabled = flag?.enabled === 1 ? 1 : 0;
+
+  const [[stats], [pool], ageGroups] = await Promise.all([
+    db.all<Row>(sql`
+      WITH enabled_children AS (
+        SELECT DISTINCT c.id as child_id
+        FROM children c
+        JOIN parents p ON c.parent_id = p.id
+        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
+          OR (${isEnabled} = 1 AND (
+            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
+            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
+          ))
+      )
+      SELECT
+        (SELECT COUNT(*) FROM enabled_children) as enabledChildren,
+        (SELECT COUNT(DISTINCT qm.child_id) FROM question_mastery qm
+         WHERE qm.child_id IN (SELECT child_id FROM enabled_children)
+           AND qm.correct_count >= 5) as benefitingChildren,
+        (SELECT COUNT(DISTINCT qm.question_id) FROM question_mastery qm
+         WHERE qm.child_id IN (SELECT child_id FROM enabled_children)
+           AND qm.correct_count >= 5) as retiredQuestions,
+        (SELECT ROUND(AVG(qm.correct_count), 1) FROM question_mastery qm
+         WHERE qm.child_id IN (SELECT child_id FROM enabled_children)) as avgCorrectCount
+    `),
     db
       .select({ totalQuestions: sql<number>`COUNT(*)` })
       .from(questions)
       .where(eq(questions.isActive, true)),
-    db
-      .select({
-        ageGroup: questions.ageGroup,
-        total: sql<number>`COUNT(*)`,
-        retired: sql<number>`(
-          SELECT COUNT(DISTINCT qm.question_id)
-          FROM question_mastery qm
-          WHERE qm.correct_count >= 5
-            AND qm.question_id IN (
-              SELECT q2.id FROM questions q2
-              WHERE q2.age_group = questions.age_group AND q2.is_active = 1
-            )
-        )`,
-      })
-      .from(questions)
-      .where(eq(questions.isActive, true))
-      .groupBy(questions.ageGroup),
+    db.all<Row>(sql`
+      WITH enabled_children AS (
+        SELECT DISTINCT c.id as child_id
+        FROM children c
+        JOIN parents p ON c.parent_id = p.id
+        WHERE p.email IN (SELECT value FROM json_each(${emailsJson}))
+          OR (${isEnabled} = 1 AND (
+            EXISTS (SELECT 1 FROM premium_subscriptions ps WHERE ps.parent_id = p.id AND ps.status = 'active' AND ps.expires_at > datetime('now'))
+            OR EXISTS (SELECT 1 FROM code_activations ca WHERE ca.parent_id = p.id AND ca.status = 'active' AND ca.expires_at > datetime('now'))
+          ))
+      )
+      SELECT
+        q.age_group as ageGroup,
+        COUNT(*) as total,
+        (SELECT COUNT(DISTINCT qm.question_id)
+         FROM question_mastery qm
+         WHERE qm.correct_count >= 5
+           AND qm.child_id IN (SELECT child_id FROM enabled_children)
+           AND qm.question_id IN (
+             SELECT q2.id FROM questions q2
+             WHERE q2.age_group = q.age_group AND q2.is_active = 1
+           )
+        ) as retired
+      FROM questions q
+      WHERE q.is_active = 1
+      GROUP BY q.age_group
+    `),
   ]);
 
-  const tracked = r?.totalTracked ?? 0;
-  const retired = r?.totalRetired ?? 0;
+  const s = stats?.[0] ?? {};
+  const totalQuestions = pool?.totalQuestions ?? 0;
+  const retiredQuestions = Number(s.retiredQuestions ?? 0);
 
-  const byAgeGroup = ageGroups.map((ag) => ({
-    ageGroup: ag.ageGroup,
-    total: ag.total,
-    retired: ag.retired,
-    depletionPct: ag.total > 0 ? Math.round((ag.retired / ag.total) * 100) : 0,
+  const byAgeGroup = ageGroups.map((ag: Row) => ({
+    ageGroup: ag.ageGroup as string,
+    total: Number(ag.total ?? 0),
+    retired: Number(ag.retired ?? 0),
+    depletionPct: Number(ag.total) > 0 ? Math.round((Number(ag.retired) / Number(ag.total)) * 100) : 0,
   }));
 
   return {
-    totalRetired: retired,
-    totalTracked: tracked,
-    uniqueUsers: r?.uniqueUsers ?? 0,
-    avgCorrectCount: tracked > 0 ? (r?.avgCorrectCount ?? null) : null,
-    totalQuestions: pool?.totalQuestions ?? 0,
-    retirementRate: tracked > 0 ? Math.max(Math.round((retired / tracked) * 100), retired > 0 ? 1 : 0) : 0,
+    enabledChildren: Number(s.enabledChildren ?? 0),
+    benefitingChildren: Number(s.benefitingChildren ?? 0),
+    retiredQuestions,
+    avgCorrectCount: s.avgCorrectCount != null ? Number(s.avgCorrectCount) : null,
+    totalQuestions,
+    depletionPct: totalQuestions > 0 ? Math.round((retiredQuestions / totalQuestions) * 100) : 0,
     byAgeGroup,
   };
 }
