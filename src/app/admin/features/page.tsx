@@ -20,7 +20,7 @@ interface FeatureStats {
     avgAccuracy: number | null;
     recentSessions: number;
     recentAccuracy: number | null;
-  };
+  } | null;
   review_mode: {
     totalItems: number;
     masteredItems: number;
@@ -30,7 +30,7 @@ interface FeatureStats {
     masteryRate: number;
     avgTimesWrong: number | null;
     avgReviewsToMastery: number | null;
-  };
+  } | null;
   question_retirement: {
     totalRetired: number;
     totalTracked: number;
@@ -40,7 +40,7 @@ interface FeatureStats {
     totalQuestions: number;
     retirementRate: number;
     byAgeGroup: { ageGroup: string; total: number; retired: number; depletionPct: number }[];
-  };
+  } | null;
   daily_challenge: {
     totalDays: number;
     uniqueChildren: number;
@@ -53,14 +53,14 @@ interface FeatureStats {
     totalBadges: number;
     activeStreakers: number;
     recentChildren: number;
-  };
+  } | null;
   session_limit: {
     sessionsToday: number;
     uniqueUsersToday: number;
     maxSessionsByOneUser: number;
     usersHittingLimit: number;
     avgSessionsPerUser: number;
-  };
+  } | null;
   adaptive_path: {
     totalSessions: number;
     completedSessions: number;
@@ -68,7 +68,7 @@ interface FeatureStats {
     uniqueChildren: number;
     avgAccuracy: number | null;
     maxSessionNumber: number;
-  };
+  } | null;
   weekly_digest: {
     totalSent: number;
     uniqueParents: number;
@@ -77,7 +77,7 @@ interface FeatureStats {
     unsubscribed: number;
     totalParents: number;
     subscribedParents: number;
-  };
+  } | null;
   parent_dashboard_pro: {
     totalGoals: number;
     activeGoals: number;
@@ -85,13 +85,13 @@ interface FeatureStats {
     abandonedGoals: number;
     achievementRate: number;
     uniqueChildren: number;
-  };
+  } | null;
   gat_extended_bank: {
     totalQuestions: number;
     freeQuestions: number;
     premiumQuestions: number;
     sources: Record<string, number>;
-  };
+  } | null;
   mock_tests: {
     totalTests: number;
     activeTests: number;
@@ -102,14 +102,14 @@ interface FeatureStats {
     uniqueChildren: number;
     avgAccuracy: number | null;
     avgTimeMinutes: number | null;
-  };
-  mascot_bunaa: { note: string };
-  answer_explanations: { note: string };
+  } | null;
+  mascot_bunaa: { note: string } | null;
+  answer_explanations: { note: string } | null;
   _premium: {
     activeSubscriptions: number;
     activeCodeActivations: number;
     totalParents: number;
-  };
+  } | null;
 }
 
 // ─── Metric types ────────────────────────────────────────────────────────────
@@ -192,6 +192,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'child_pdf_report') {
     const s = stats.child_pdf_report;
+    if (!s) return null;
     const coverage = s.totalChildren > 0 ? Math.round((s.childrenWithSessions / s.totalChildren) * 100) : 0;
     return [
       { label: 'أطفال مسجّلين', value: s.totalChildren, accent: 'blue' },
@@ -205,6 +206,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
+    if (!s) return null;
     return [
       { label: 'مستخدمين فعليين', value: s.uniqueUsers, accent: 'blue' },
       { label: 'إجمالي المراجعات', value: s.totalItems, accent: 'purple' },
@@ -217,6 +219,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
+    if (!s) return null;
     const depletionPct = s.totalQuestions > 0 ? Math.round((s.totalRetired / s.totalQuestions) * 100) : 0;
     return [
       { label: 'مستخدمين بتتبع', value: s.uniqueUsers, accent: 'blue' },
@@ -229,6 +232,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'daily_challenge') {
     const s = stats.daily_challenge;
+    if (!s) return null;
     return [
       { label: 'أيام تحدي', value: s.totalDays, accent: 'amber' },
       { label: 'أطفال مشاركين', value: s.uniqueChildren, accent: 'blue' },
@@ -241,6 +245,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'session_limit') {
     const s = stats.session_limit;
+    if (!s) return null;
     return [
       { label: 'جلسات اليوم', value: s.sessionsToday, accent: 'blue' },
       { label: 'مستخدمين اليوم', value: s.uniqueUsersToday, accent: 'purple' },
@@ -252,6 +257,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'adaptive_path') {
     const s = stats.adaptive_path;
+    if (!s) return null;
     return [
       { label: 'جلسات ذكية', value: s.totalSessions, accent: 'purple' },
       { label: 'مكتملة', value: s.completedSessions, sub: `${s.completionRate}%`, accent: s.completionRate >= 60 ? 'emerald' : 'amber', progress: s.completionRate },
@@ -263,6 +269,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'weekly_digest') {
     const s = stats.weekly_digest;
+    if (!s) return null;
     const subRate = s.totalParents > 0 ? Math.round((s.subscribedParents / s.totalParents) * 100) : 0;
     return [
       { label: 'إجمالي المرسل', value: s.totalSent, accent: 'blue' },
@@ -275,6 +282,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'parent_dashboard_pro') {
     const s = stats.parent_dashboard_pro;
+    if (!s) return null;
     return [
       { label: 'أهداف نشطة', value: s.activeGoals, accent: 'blue' },
       { label: 'تم تحقيقها', value: s.achievedGoals, sub: s.totalGoals > 0 ? `${s.achievementRate}%` : undefined, accent: s.achievedGoals > 0 ? 'emerald' : 'gray', progress: s.achievementRate || undefined },
@@ -286,6 +294,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'gat_extended_bank') {
     const s = stats.gat_extended_bank;
+    if (!s) return null;
     const premPct = s.totalQuestions > 0 ? Math.round((s.premiumQuestions / s.totalQuestions) * 100) : 0;
     return [
       { label: 'إجمالي الأسئلة', value: s.totalQuestions, accent: 'blue' },
@@ -301,6 +310,7 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
 
   if (flagKey === 'mock_tests') {
     const s = stats.mock_tests;
+    if (!s) return null;
     return [
       { label: 'اختبارات متاحة', value: s.activeTests, sub: `من ${s.totalTests}`, accent: 'blue' },
       { label: 'محاولات', value: s.totalAttempts, accent: 'purple' },
@@ -329,6 +339,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'child_pdf_report') {
     const s = stats.child_pdf_report;
+    if (!s) return null;
     if (s.childrenWithSessions >= 5 && s.avgAccuracy != null && s.recentSessions >= 3) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `بيانات كافية: ${s.childrenWithSessions} طفل بجلسات، نشاط حديث مستمر` };
     }
@@ -340,6 +351,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'review_mode') {
     const s = stats.review_mode;
+    if (!s) return null;
     if (s.uniqueUsers >= 3 && s.masteryRate >= 30 && (s.avgReviewsToMastery ?? 0) > 0) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsers} مستخدمين، نسبة إتقان ${s.masteryRate}%، النظام يعمل بفعالية` };
     }
@@ -351,6 +363,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'question_retirement') {
     const s = stats.question_retirement;
+    if (!s) return null;
     if (s.uniqueUsers === 0) {
       return { level: 'not_ready', label: 'غير جاهزة', detail: 'لا يوجد مختبرين — أضف إيميلات في allowedEmails أولاً' };
     }
@@ -366,6 +379,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'daily_challenge') {
     const s = stats.daily_challenge;
+    if (!s) return null;
     if (s.uniqueChildren >= 5 && s.totalDays >= 7 && s.accuracy != null && s.accuracy >= 50) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} طفل جرّبوا خلال ${s.totalDays} يوم، دقة ${s.accuracy}%` };
     }
@@ -377,6 +391,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'session_limit') {
     const s = stats.session_limit;
+    if (!s) return null;
     if (s.uniqueUsersToday >= 3) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueUsersToday} مستخدم اليوم، النظام يعمل بشكل طبيعي` };
     }
@@ -388,6 +403,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'adaptive_path') {
     const s = stats.adaptive_path;
+    if (!s) return null;
     if (s.uniqueChildren >= 3 && s.completionRate >= 50 && s.avgAccuracy != null) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} أطفال، إكمال ${s.completionRate}%، دقة ${s.avgAccuracy}%` };
     }
@@ -399,6 +415,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'weekly_digest') {
     const s = stats.weekly_digest;
+    if (!s) return null;
     if (s.totalSent >= 5 && s.subscribedParents >= 3) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.totalSent} رسالة أُرسلت، ${s.subscribedParents} مشترك` };
     }
@@ -410,6 +427,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'parent_dashboard_pro') {
     const s = stats.parent_dashboard_pro;
+    if (!s) return null;
     if (s.uniqueChildren >= 3 && s.achievedGoals >= 1) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.uniqueChildren} أطفال بأهداف، ${s.achievedGoals} هدف تم تحقيقه` };
     }
@@ -421,6 +439,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'gat_extended_bank') {
     const s = stats.gat_extended_bank;
+    if (!s) return null;
     if (s.premiumQuestions >= 100) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.premiumQuestions} سؤال مدفوع، ${s.freeQuestions} مجاني — بنك كافي` };
     }
@@ -432,6 +451,7 @@ function getReadiness(flagKey: string, stats: FeatureStats | null): Readiness | 
 
   if (flagKey === 'mock_tests') {
     const s = stats.mock_tests;
+    if (!s) return null;
     if (s.activeTests >= 3 && s.uniqueChildren >= 3 && s.completionRate >= 50) {
       return { level: 'ready', label: 'جاهزة للإطلاق', detail: `${s.activeTests} اختبارات، ${s.uniqueChildren} أطفال، إكمال ${s.completionRate}%` };
     }
