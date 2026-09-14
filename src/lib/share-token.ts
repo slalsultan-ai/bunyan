@@ -14,12 +14,23 @@ export interface SharePayload {
 }
 
 function getSecret(): string {
-  return (
+  const secret =
     process.env.SHARE_TOKEN_SECRET ||
     process.env.PARENT_SESSION_SECRET ||
     process.env.ADMIN_SESSION_SECRET ||
-    'bunyan-share-dev-secret'
-  );
+    // Last resort: an already-deployed high-entropy secret, so share links keep
+    // working until a dedicated SHARE_TOKEN_SECRET is configured in the host.
+    process.env.ADMIN_SECRET_TOKEN;
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SHARE_TOKEN_SECRET must be configured in production');
+  }
+
+  return 'bunyan-share-dev-secret';
 }
 
 function b64urlEncode(buf: Buffer): string {

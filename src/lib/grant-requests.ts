@@ -43,6 +43,20 @@ function mapRow(row: any): GrantRequest {
 }
 
 /**
+ * Escapes values that originate from the public grant-request form before they
+ * are interpolated into HTML email bodies. Without this, an unauthenticated
+ * submitter can inject markup/phishing into the admin notification email.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+/**
  * يولّد رقم طلب فريد
  */
 async function generateRequestNumber(): Promise<string> {
@@ -107,13 +121,13 @@ export async function submitGrantRequest(data: {
             </div>
             <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
               <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151;">
-                <tr><td style="padding:8px 0;font-weight:600;">المؤسسة:</td><td style="padding:8px 0;">${data.institutionName}</td></tr>
-                <tr><td style="padding:8px 0;font-weight:600;">النوع:</td><td style="padding:8px 0;">${typeLabels[data.institutionType] || data.institutionType}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:600;">المؤسسة:</td><td style="padding:8px 0;">${escapeHtml(data.institutionName)}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:600;">النوع:</td><td style="padding:8px 0;">${escapeHtml(typeLabels[data.institutionType] || data.institutionType)}</td></tr>
                 <tr><td style="padding:8px 0;font-weight:600;">عدد الطلاب:</td><td style="padding:8px 0;">${data.studentCount}</td></tr>
-                <tr><td style="padding:8px 0;font-weight:600;">المسؤول:</td><td style="padding:8px 0;">${data.contactName}</td></tr>
-                <tr><td style="padding:8px 0;font-weight:600;">الجوال:</td><td style="padding:8px 0;">${data.contactPhone}</td></tr>
-                <tr><td style="padding:8px 0;font-weight:600;">البريد:</td><td style="padding:8px 0;">${data.contactEmail}</td></tr>
-                ${data.notes ? `<tr><td style="padding:8px 0;font-weight:600;">ملاحظات:</td><td style="padding:8px 0;">${data.notes}</td></tr>` : ''}
+                <tr><td style="padding:8px 0;font-weight:600;">المسؤول:</td><td style="padding:8px 0;">${escapeHtml(data.contactName)}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:600;">الجوال:</td><td style="padding:8px 0;">${escapeHtml(data.contactPhone)}</td></tr>
+                <tr><td style="padding:8px 0;font-weight:600;">البريد:</td><td style="padding:8px 0;">${escapeHtml(data.contactEmail)}</td></tr>
+                ${data.notes ? `<tr><td style="padding:8px 0;font-weight:600;">ملاحظات:</td><td style="padding:8px 0;">${escapeHtml(data.notes)}</td></tr>` : ''}
               </table>
             </div>
             <div style="text-align:center;margin-top:20px;">
@@ -202,8 +216,8 @@ export async function reviewGrantRequest(
               <h1 style="font-size:20px;color:#111827;margin:12px 0 4px;">تمت الموافقة على طلب المنحة</h1>
             </div>
             <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
-              <p style="color:#374151;font-size:15px;line-height:1.8;">أهلاً <strong>${request.contactName}</strong>،</p>
-              <p style="color:#374151;font-size:15px;line-height:1.8;">يسعدنا إبلاغكم بالموافقة على طلب المنحة لـ <strong>${request.institutionName}</strong>.</p>
+              <p style="color:#374151;font-size:15px;line-height:1.8;">أهلاً <strong>${escapeHtml(request.contactName)}</strong>،</p>
+              <p style="color:#374151;font-size:15px;line-height:1.8;">يسعدنا إبلاغكم بالموافقة على طلب المنحة لـ <strong>${escapeHtml(request.institutionName)}</strong>.</p>
               <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:20px;text-align:center;margin:20px 0;">
                 <p style="color:#6b7280;font-size:13px;margin:0 0 8px;">كود التفعيل</p>
                 <div style="font-size:28px;font-weight:900;letter-spacing:4px;color:#059669;">${codeUpper}</div>
@@ -247,9 +261,9 @@ export async function reviewGrantRequest(
               <h1 style="font-size:20px;color:#111827;margin:12px 0 4px;">بخصوص طلب المنحة</h1>
             </div>
             <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
-              <p style="color:#374151;font-size:15px;line-height:1.8;">أهلاً <strong>${request.contactName}</strong>،</p>
+              <p style="color:#374151;font-size:15px;line-height:1.8;">أهلاً <strong>${escapeHtml(request.contactName)}</strong>،</p>
               <p style="color:#374151;font-size:15px;line-height:1.8;">شكراً لاهتمامكم ببُنيان. للأسف لم نتمكن من الموافقة على الطلب حالياً.</p>
-              ${adminNotes ? `<p style="color:#374151;font-size:14px;line-height:1.8;background:#f9fafb;padding:12px;border-radius:8px;">${adminNotes}</p>` : ''}
+              ${adminNotes ? `<p style="color:#374151;font-size:14px;line-height:1.8;background:#f9fafb;padding:12px;border-radius:8px;">${escapeHtml(adminNotes)}</p>` : ''}
               <p style="color:#374151;font-size:15px;line-height:1.8;">يمكنكم التواصل معنا لمناقشة خيارات أخرى.</p>
             </div>
             <p style="text-align:center;color:#9ca3af;font-size:11px;margin-top:20px;">بُنيان — كل بُنيان يبدأ بلبنة</p>

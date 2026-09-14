@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       .where(and(
         eq(children.ageGroup, child.ageGroup),
         sql`sessions.completed_at IS NOT NULL`,
-        sql`sessions.started_at >= datetime('now', '-${totalWeeks * 7} days')`
+        sql`sessions.started_at >= datetime('now', '-' || ${totalWeeks * 7} || ' days')`
       ));
 
     const avgTotal = avgRow?.total ?? 0;

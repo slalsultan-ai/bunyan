@@ -86,7 +86,7 @@ export async function analyzeChildSkills(childId: string): Promise<SkillScore[]>
       and(
         eq(sessions.childId, childId),
         sql`sessions.completed_at IS NOT NULL`,
-        sql`sessions.started_at >= datetime('now', '-${RECENT_DAYS} days')`
+        sql`sessions.started_at >= datetime('now', '-' || ${RECENT_DAYS} || ' days')`
       )
     );
 
@@ -284,7 +284,7 @@ async function selectSmartQuestions(
     .where(
       and(
         eq(sessions.childId, childId),
-        sql`sessions.started_at >= datetime('now', '-${EXCLUDE_DAYS} days')`
+        sql`sessions.started_at >= datetime('now', '-' || ${EXCLUDE_DAYS} || ' days')`
       )
     );
   const recentIds = new Set(recentRows.map((r) => r.questionId));

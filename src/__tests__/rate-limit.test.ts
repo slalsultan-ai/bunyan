@@ -116,7 +116,21 @@ describe('getIp', () => {
   });
 
   it('trims whitespace from IP', () => {
-    const req = { headers: { get: () => '  9.9.9.9  , 8.8.8.8' } };
+    const req = { headers: { get: (k: string) => k === 'x-forwarded-for' ? '  9.9.9.9  , 8.8.8.8' : null } };
     expect(getIp(req)).toBe('9.9.9.9');
+  });
+
+  it('prefers the platform-set x-real-ip over client-appendable x-forwarded-for', () => {
+    const req = {
+      headers: {
+        get: (k: string) =>
+          k === 'x-real-ip' ? '203.0.113.7' : k === 'x-forwarded-for' ? '1.2.3.4, 5.6.7.8' : null,
+      },
+    };
+    expect(getIp(req)).toBe('203.0.113.7');
+  });
+
+  it('returns unknown when the request has no headers object', () => {
+    expect(getIp({})).toBe('unknown');
   });
 });

@@ -52,6 +52,21 @@ export async function checkRateLimit(
   return { allowed: true, remaining: Math.max(remaining, 0) };
 }
 
-export function getIp(req: { headers: { get(name: string): string | null } }): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+export function getIp(req: { headers?: { get(name: string): string | null } }): string {
+  const headers = req.headers;
+  if (!headers) return 'unknown';
+
+  // Prefer headers populated by the hosting platform over client-supplied ones.
+  // Vercel sets `x-real-ip`; `x-forwarded-for` is appendable by the client, so
+  // it is only a fallback. Requires the edge to overwrite these headers.
+  const realIp = headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = headers.get('x-forwarded-for');
+  if (forwarded) {
+    const first = forwarded.split(',')[0]?.trim();
+    if (first) return first;
+  }
+
+  return 'unknown';
 }
