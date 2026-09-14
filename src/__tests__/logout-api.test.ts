@@ -3,9 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockCookies = vi.fn();
 vi.mock('next/headers', () => ({ cookies: mockCookies }));
 
-const mockDelete = vi.fn();
-vi.mock('@/lib/db', () => ({ getDb: () => ({ delete: mockDelete }) }));
-vi.mock('@/lib/db/schema', () => ({ parentSessions: {} }));
+const mockInvalidate = vi.fn();
+vi.mock('@/lib/parent-auth', () => ({ invalidateParentSession: mockInvalidate }));
 
 const { POST } = await import('@/app/api/auth/logout/route');
 
@@ -17,7 +16,10 @@ function makeCookieStore(token?: string) {
 }
 
 describe('POST /api/auth/logout', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockInvalidate.mockResolvedValue(undefined);
+  });
 
   it('returns success even when no cookie is set', async () => {
     mockCookies.mockResolvedValue(makeCookieStore());
@@ -25,17 +27,20 @@ describe('POST /api/auth/logout', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(mockDelete).not.toHaveBeenCalled();
+    expect(mockInvalidate).not.toHaveBeenCalled();
   });
 
-  it('deletes session and clears cookie when token present', async () => {
+  it('revokes the server-side session and clears the cookie when a token is present', async () => {
     const store = makeCookieStore('my-session-token');
     mockCookies.mockResolvedValue(store);
-    mockDelete.mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
 
     const res = await POST();
+
     expect(res.status).toBe(200);
-    expect(mockDelete).toHaveBeenCalledOnce();
+    // Must delegate to the helper that hashes the token. Passing the raw cookie
+    // value straight to the DB was the bug that made logout a no-op.
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate).toHaveBeenCalledWith('my-session-token');
     expect(store.delete).toHaveBeenCalledWith('parent_token');
   });
 });
