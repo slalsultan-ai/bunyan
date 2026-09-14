@@ -82,14 +82,37 @@ export async function PUT(req: NextRequest) {
     const parent = await getAuthenticatedParent();
     if (!parent) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const enabled = await hasFeatureAccess('parent_dashboard_pro', parent.email, parent.id);
+    if (!enabled) return NextResponse.json({ error: 'Feature disabled' }, { status: 403 });
+
     const body = await req.json();
     const { goalId, status } = body;
 
-    if (!goalId || !status) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    if (!Number.isInteger(goalId) || !status) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     if (!['abandoned', 'achieved'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
 
     const db = getDb();
-    await db.run(sql`UPDATE child_goals SET status = ${status} WHERE id = ${goalId}`);
+
+    // Ownership: the goal must belong to a child of the authenticated parent.
+    // child_goals.id is sequential, so without this check any parent could
+    // mutate another family's goals by iterating ids (IDOR).
+    const owned = await db.all<Record<string, unknown>>(sql`
+      SELECT g.id
+      FROM child_goals g
+      JOIN children c ON c.id = g.child_id
+      WHERE g.id = ${goalId} AND c.parent_id = ${parent.id}
+      LIMIT 1
+    `);
+
+    if (owned.length === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    await db.run(sql`
+      UPDATE child_goals SET status = ${status}
+      WHERE id = ${goalId}
+        AND child_id IN (SELECT id FROM children WHERE parent_id = ${parent.id})
+    `);
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('[goals PUT]', e);
