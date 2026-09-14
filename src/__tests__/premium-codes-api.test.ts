@@ -37,6 +37,13 @@ vi.mock('@/lib/premium', () => ({
   checkPremiumStatus: (...args: unknown[]) => mockCheckPremiumStatus(...args),
 }));
 
+// The premium routes enforce per-IP/account rate limits. Mock them so these
+// unit tests stay deterministic and never touch a real database.
+vi.mock('@/lib/rate-limit-db', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 10 }),
+  getIp: () => '127.0.0.1',
+}));
+
 const mockSubmitGrantRequest = vi.fn();
 const mockGetAllGrantRequests = vi.fn();
 const mockGetGrantRequestById = vi.fn();

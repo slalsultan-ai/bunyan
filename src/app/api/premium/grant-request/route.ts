@@ -1,7 +1,18 @@
 import { NextRequest } from 'next/server';
 import { submitGrantRequest } from '@/lib/grant-requests';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
+  // Public endpoint that stores a row and sends an email to the admin on every
+  // call — rate limit it to prevent spam and Resend quota exhaustion.
+  const rl = await checkRateLimit(`grant-request:${getIp(req)}`, 5, 3600);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: 'تم إرسال طلبات كثيرة من هذا الجهاز. حاول لاحقاً' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    );
+  }
+
   let body: {
     institutionName?: string;
     institutionType?: string;

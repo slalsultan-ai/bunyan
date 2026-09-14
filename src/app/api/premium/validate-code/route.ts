@@ -1,8 +1,20 @@
 import { NextRequest } from 'next/server';
 import { validateCode } from '@/lib/institution-codes';
 import { getParentSession } from '@/lib/parent-auth';
+import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
+  // This endpoint is unauthenticated and acts as a code oracle (it reveals
+  // whether a code exists and how many slots remain), so it must be rate
+  // limited to make brute-forcing institution codes impractical.
+  const rl = await checkRateLimit(`premium-validate:${getIp(req)}`, 10, 60);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: 'محاولات كثيرة جداً. حاول بعد قليل' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    );
+  }
+
   let body: { code?: string };
   try { body = await req.json(); } catch { return Response.json({ error: 'طلب غير صحيح' }, { status: 400 }); }
 
