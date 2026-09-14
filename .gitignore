@@ -44,3 +44,6 @@ next-env.d.ts
 local.db
 local.db-shm
 local.db-wal
+
+# Local question-bank dump (not for redistribution)
+all_gat_questions.json
