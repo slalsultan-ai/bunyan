@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advance, chooseEvent, choosePrice, chooseStock, createJuiceStand, type JuiceStandState } from '@/lib/simulations/juice-stand';
+import { advance, chooseEvent, choosePrice, chooseStock, createJuiceStand, resolveSales, type JuiceStandState } from '@/lib/simulations/juice-stand';
 
 function runDay(stock: number, price: number, event: 'restock' | 'hold' | 'umbrella' | 'discount' | 'extra_stock') {
   let state = advance(createJuiceStand());
@@ -41,5 +41,17 @@ describe('juice stand simulation', () => {
     state = advance(state);
     state = { ...state, stage: 'summary' };
     expect(advance(state).stage).toBe('complete');
+  });
+
+  it('keeps cost, sales, cash, and remaining stock mathematically separate', () => {
+    let state = chooseStock(advance(createJuiceStand()), 6);
+    expect(state.cash).toBe(12);
+    expect(state.inventory).toBe(6);
+    state = choosePrice(state, 3);
+    state = resolveSales(state, 0.4, 'event');
+    expect(state.currentExpenses).toBe(12);
+    expect(state.currentSold).toBe(4);
+    expect(state.cash).toBe(24);
+    expect(state.inventory).toBe(2);
   });
 });
