@@ -43,6 +43,7 @@ export default function PracticePage() {
   const showAdaptivePath = useFeatureFlag('adaptive_path');
   const showExtendedBank = useFeatureFlag('gat_extended_bank');
   const showMockTests = useFeatureFlag('mock_tests');
+  const showSimulations = useFeatureFlag('ENABLE_SIMULATIONS');
   const [reviewStats, setReviewStats] = useState<{ pending: number } | null>(null);
   const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState<boolean | null>(null);
   const [dailyStreak, setDailyStreak] = useState<number>(0);
@@ -409,6 +410,18 @@ export default function PracticePage() {
                   className="bg-gradient-to-l from-blue-500 to-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
                 >
                   ابدأ اختبار
+                </Link>
+              </div>
+            )}
+
+            {showSimulations.enabled && (!selectedAge || selectedAge === '6-9') && (
+              <div className="mb-4 flex items-center justify-between rounded-2xl border border-emerald-200 bg-gradient-to-l from-emerald-50 to-amber-50 p-4">
+                <div>
+                  <p className="text-sm font-bold text-emerald-900">🍊 محاكاة عربة العصير</p>
+                  <p className="mt-1 text-xs text-emerald-700">أدر مشروعاً صغيراً لثلاثة أيام</p>
+                </div>
+                <Link href="/simulations" className="rounded-xl bg-[#117a58] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#174835]">
+                  جرّبها
                 </Link>
               </div>
             )}
