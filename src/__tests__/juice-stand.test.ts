@@ -5,7 +5,9 @@ function runDay(stock: number, price: number, event: 'restock' | 'hold' | 'umbre
   let state = advance(createJuiceStand());
   state = chooseStock(state, stock);
   state = choosePrice(state, price);
-  return chooseEvent(state, event);
+  state = advance(state);
+  state = chooseEvent(state, event);
+  return advance(state);
 }
 
 describe('juice stand simulation', () => {

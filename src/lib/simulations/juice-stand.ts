@@ -1,5 +1,5 @@
 export type Weather = 'sunny' | 'rain' | 'festival';
-export type Stage = 'intro' | 'stock' | 'price' | 'event' | 'summary' | 'complete';
+export type Stage = 'intro' | 'stock' | 'price' | 'selling_first' | 'event' | 'selling_second' | 'summary' | 'complete';
 export type EventChoice = 'restock' | 'hold' | 'umbrella' | 'discount' | 'extra_stock';
 
 export interface DayResult {
@@ -11,6 +11,8 @@ export interface DayResult {
   waste: number;
   revenue: number;
   expenses: number;
+  profit: number;
+  price: number;
   event: EventChoice | null;
 }
 
@@ -55,10 +57,10 @@ export function chooseStock(state: JuiceStandState, cups: number): JuiceStandSta
 
 export function choosePrice(state: JuiceStandState, price: number): JuiceStandState {
   if (state.stage !== 'price' || ![3, 4, 5].includes(price)) return state;
-  return sellPortion({ ...state, price }, 0.55, 'event');
+  return { ...state, price, stage: 'selling_first' };
 }
 
-function baseDemand(state: JuiceStandState): number {
+export function expectedDemand(state: JuiceStandState): number {
   const weather = weatherForDay(state.day);
   const weatherDemand = weather === 'sunny' ? 8 : weather === 'rain' ? (state.umbrella ? 7 : 4) : 12;
   const priceEffect = state.price === 3 ? 2 : state.price === 5 ? -2 : 0;
@@ -66,8 +68,8 @@ function baseDemand(state: JuiceStandState): number {
   return Math.max(1, weatherDemand + priceEffect + reputationEffect);
 }
 
-function sellPortion(state: JuiceStandState, portion: number, nextStage: Stage): JuiceStandState {
-  const demand = Math.max(0, Math.round(baseDemand(state) * portion));
+export function resolveSales(state: JuiceStandState, portion: number, nextStage: Stage): JuiceStandState {
+  const demand = Math.max(0, Math.round(expectedDemand(state) * portion));
   const sold = Math.min(state.inventory, demand);
   const missedSales = Math.max(0, demand - sold);
   return {
@@ -94,7 +96,7 @@ export function chooseEvent(state: JuiceStandState, choice: EventChoice): JuiceS
   if (choice === 'umbrella') next = { ...next, cash: next.cash - 3, umbrella: true, currentExpenses: next.currentExpenses + 3 };
   if (choice === 'discount') next = { ...next, price: Math.max(3, next.price - 1) };
   if (choice === 'extra_stock') next = { ...next, cash: next.cash - 4, inventory: next.inventory + 2, currentProduced: next.currentProduced + 2, currentExpenses: next.currentExpenses + 4 };
-  return finishDay(sellPortion(next, 0.45, 'summary'));
+  return { ...next, stage: 'selling_second' };
 }
 
 function finishDay(state: JuiceStandState): JuiceStandState {
@@ -103,13 +105,16 @@ function finishDay(state: JuiceStandState): JuiceStandState {
   const result: DayResult = {
     day: state.day, weather: weatherForDay(state.day), produced: state.currentProduced,
     sold: state.currentSold, missedSales: state.currentMissedSales, waste,
-    revenue: state.currentSold * state.price, expenses: state.currentExpenses, event: state.event,
+    revenue: state.currentSold * state.price, expenses: state.currentExpenses,
+    profit: state.currentSold * state.price - state.currentExpenses, price: state.price, event: state.event,
   };
   return { ...state, inventory: 0, waste: state.waste + waste, reputation: Math.max(-4, Math.min(5, state.reputation + reputationDelta)), history: [...state.history, result] };
 }
 
 export function advance(state: JuiceStandState): JuiceStandState {
   if (state.stage === 'intro') return { ...state, stage: 'stock' };
+  if (state.stage === 'selling_first') return resolveSales(state, 0.55, 'event');
+  if (state.stage === 'selling_second') return finishDay(resolveSales(state, 0.45, 'summary'));
   if (state.stage !== 'summary') return state;
   if (state.day === 3) return { ...state, stage: 'complete' };
   return { ...state, day: (state.day + 1) as 1 | 2 | 3, stage: 'stock', currentProduced: 0, currentExpenses: 0, currentSold: 0, currentMissedSales: 0, event: null };
