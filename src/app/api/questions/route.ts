@@ -8,6 +8,7 @@ import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
 import { recommendDifficulty } from '@/lib/adaptive-difficulty';
 import { getTierCondition } from '@/lib/question-access';
+import { isYoungQuestionSafe } from '@/lib/young-question-policy';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -30,8 +31,9 @@ async function fetchRandomQuestions(
 
   // For small sets (< 200), RANDOM() is fine and simpler
   if (total < 200) {
-    return db.select().from(questions).where(and(...conditions))
-      .orderBy(sql`RANDOM()`).limit(count);
+    const rows = await db.select().from(questions).where(and(...conditions))
+      .orderBy(sql`RANDOM()`).limit(count * 4);
+    return rows.filter(isYoungQuestionSafe).slice(0, count);
   }
 
   // For larger sets, use random offsets (avoids full table scan + sort)
@@ -47,7 +49,7 @@ async function fetchRandomQuestions(
     )
   );
 
-  return results.flat();
+  return results.flat().filter(isYoungQuestionSafe);
 }
 
 export async function GET(req: NextRequest) {

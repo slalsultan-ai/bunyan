@@ -2,6 +2,7 @@ import { getDb } from './db';
 import { sessions, sessionAnswers, questions } from './db/schema';
 import { sql, eq, and, desc } from 'drizzle-orm';
 import { getTierCondition } from './question-access';
+import { isYoungQuestionSafe } from './young-question-policy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -385,7 +386,10 @@ async function fetchQuestionsByIds(ids: string[]): Promise<AdaptiveSession['ques
     .from(questions)
     .where(sql`id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
 
-  const map = new Map(rows.map((r) => [r.id, r]));
+  // Smart-path currently renders written prompts, so 4-5 receives visual cards only.
+  const map = new Map(rows
+    .filter((row) => isYoungQuestionSafe(row) && (row.ageGroup !== '4-5' || row.questionType === 'image'))
+    .map((r) => [r.id, r]));
   return ids.map((id) => map.get(id)!).filter(Boolean);
 }
 

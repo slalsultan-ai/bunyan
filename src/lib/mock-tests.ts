@@ -2,6 +2,8 @@ import { getDb } from './db';
 import { questions } from './db/schema';
 import { sql, eq, and } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
+import { assertParentCanAccessChild } from './parent-child-access';
+import { isYoungQuestionSafe } from './young-question-policy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -18,6 +20,7 @@ export interface MockTestInfo {
 
 export interface MockTestQuestion {
   id: string;
+  ageGroup: string;
   skillArea: string;
   subSkill: string;
   difficulty: string;
@@ -80,6 +83,13 @@ export interface MockTestResult {
   recommendations: string[];
 }
 
+interface StoredMockAnswer {
+  questionId: string;
+  answer: string;
+  isCorrect: boolean;
+  timeSpent: number;
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const SECTIONS: MockTestSection[] = [
@@ -132,7 +142,7 @@ export async function getAvailableMockTests(childId: string): Promise<{
   }
 
   return {
-    tests: tests.map((t: any) => ({
+    tests: tests.filter((t: any) => t.age_group !== '4-5').map((t: any) => ({
       id: t.id,
       title: t.title,
       description: t.description,
@@ -215,7 +225,7 @@ export async function resumeMockTest(childId: string): Promise<{
   test: MockTestFull;
   startedAt: string;
   expiresAt: string;
-  answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }>;
+  answers: StoredMockAnswer[];
 } | null> {
   const db = getDb();
 
@@ -238,7 +248,8 @@ export async function resumeMockTest(childId: string): Promise<{
 
   const questionIds: string[] = JSON.parse(test.question_ids);
   const qs = await fetchMockTestQuestions(questionIds);
-  const answers = JSON.parse(existing.answers || '[]');
+  const questionMap = new Map(qs.map((q) => [q.id, q]));
+  const answers = normalizeAnswersForTest(parseStoredAnswers(existing.answers), questionIds, questionMap);
 
   const startedAt = existing.started_at;
   const expiresAt = new Date(new Date(startedAt).getTime() + test.duration_minutes * 60 * 1000).toISOString();
@@ -266,8 +277,9 @@ export async function submitMockAnswer(
   resultId: number,
   questionId: string,
   answer: string,
-  isCorrect: boolean,
-  timeSpentSeconds: number
+  _clientIsCorrect: boolean,
+  timeSpentSeconds: number,
+  parentId?: string
 ): Promise<{ saved: boolean; questionsRemaining: number }> {
   const db = getDb();
 
@@ -281,12 +293,31 @@ export async function submitMockAnswer(
     throw new Error('الاختبار غير موجود أو منتهي');
   }
 
-  const answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }> =
-    JSON.parse(result.answers || '[]');
+  if (parentId) {
+    await assertParentCanAccessChild(parentId, result.child_id as string);
+  }
+
+  const answers = parseStoredAnswers(result.answers);
+
+  const [test] = await db
+    .select()
+    .from(sql`mock_tests`)
+    .where(sql`id = ${result.mock_test_id}`)
+    .limit(1) as any[];
+
+  const questionIds: string[] = JSON.parse(test?.question_ids || '[]');
+  if (!questionIds.includes(questionId)) {
+    throw new Error('سؤال غير صالح لهذا الاختبار');
+  }
 
   // Update existing answer or add new one
   const existingIdx = answers.findIndex((a) => a.questionId === questionId);
-  const answerObj = { questionId, answer, isCorrect, timeSpent: timeSpentSeconds };
+  const answerObj: StoredMockAnswer = {
+    questionId,
+    answer: String(answer),
+    isCorrect: false,
+    timeSpent: sanitizeTimeSpent(timeSpentSeconds),
+  };
 
   if (existingIdx >= 0) {
     answers[existingIdx] = answerObj;
@@ -298,13 +329,6 @@ export async function submitMockAnswer(
     sql`UPDATE mock_test_results SET answers = ${JSON.stringify(answers)} WHERE id = ${resultId}`
   );
 
-  // Get total questions from the test
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
-    .where(sql`id = ${result.mock_test_id}`)
-    .limit(1) as any[];
-
   const totalQuestions = test?.total_questions ?? 30;
   const questionsRemaining = totalQuestions - answers.length;
 
@@ -313,7 +337,7 @@ export async function submitMockAnswer(
 
 // ─── Complete mock test ─────────────────────────────────────────────────────
 
-export async function completeMockTest(resultId: number): Promise<MockTestResult> {
+export async function completeMockTest(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
   const [result] = await db
@@ -326,6 +350,10 @@ export async function completeMockTest(resultId: number): Promise<MockTestResult
     throw new Error('الاختبار غير موجود');
   }
 
+  if (parentId) {
+    await assertParentCanAccessChild(parentId, result.child_id as string);
+  }
+
   const [test] = await db
     .select()
     .from(sql`mock_tests`)
@@ -336,19 +364,17 @@ export async function completeMockTest(resultId: number): Promise<MockTestResult
     throw new Error('بيانات الاختبار غير موجودة');
   }
 
-  const answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }> =
-    JSON.parse(result.answers || '[]');
-
   const questionIds: string[] = JSON.parse(test.question_ids);
   const allQuestions = await fetchMockTestQuestions(questionIds);
   const questionMap = new Map(allQuestions.map((q) => [q.id, q]));
+  const answers = normalizeAnswersForTest(parseStoredAnswers(result.answers), questionIds, questionMap);
 
   return await finalizeResult(db, resultId, result, test, answers, questionMap, 'completed');
 }
 
 // ─── Timeout mock test ──────────────────────────────────────────────────────
 
-export async function timeoutMockTest(resultId: number): Promise<MockTestResult> {
+export async function timeoutMockTest(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
   const [result] = await db
@@ -361,6 +387,10 @@ export async function timeoutMockTest(resultId: number): Promise<MockTestResult>
     throw new Error('الاختبار غير موجود');
   }
 
+  if (parentId) {
+    await assertParentCanAccessChild(parentId, result.child_id as string);
+  }
+
   const [test] = await db
     .select()
     .from(sql`mock_tests`)
@@ -371,12 +401,10 @@ export async function timeoutMockTest(resultId: number): Promise<MockTestResult>
     throw new Error('بيانات الاختبار غير موجودة');
   }
 
-  const answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }> =
-    JSON.parse(result.answers || '[]');
-
   const questionIds: string[] = JSON.parse(test.question_ids);
   const allQuestions = await fetchMockTestQuestions(questionIds);
   const questionMap = new Map(allQuestions.map((q) => [q.id, q]));
+  const answers = normalizeAnswersForTest(parseStoredAnswers(result.answers), questionIds, questionMap);
 
   // Mark unanswered questions as incorrect
   const answeredIds = new Set(answers.map((a) => a.questionId));
@@ -391,7 +419,7 @@ export async function timeoutMockTest(resultId: number): Promise<MockTestResult>
 
 // ─── Get a previous result ──────────────────────────────────────────────────
 
-export async function getMockTestResult(resultId: number): Promise<MockTestResult> {
+export async function getMockTestResult(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
   const [result] = await db
@@ -404,6 +432,10 @@ export async function getMockTestResult(resultId: number): Promise<MockTestResul
     throw new Error('النتيجة غير موجودة');
   }
 
+  if (parentId) {
+    await assertParentCanAccessChild(parentId, result.child_id as string);
+  }
+
   const [test] = await db
     .select()
     .from(sql`mock_tests`)
@@ -414,12 +446,10 @@ export async function getMockTestResult(resultId: number): Promise<MockTestResul
     throw new Error('بيانات الاختبار غير موجودة');
   }
 
-  const answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }> =
-    JSON.parse(result.answers || '[]');
-
   const questionIds: string[] = JSON.parse(test.question_ids);
   const allQuestions = await fetchMockTestQuestions(questionIds);
   const questionMap = new Map(allQuestions.map((q) => [q.id, q]));
+  const answers = normalizeAnswersForTest(parseStoredAnswers(result.answers), questionIds, questionMap);
 
   // Build result without re-saving
   return buildResult(result, test, answers, questionMap);
@@ -434,6 +464,7 @@ async function fetchMockTestQuestions(ids: string[]): Promise<MockTestQuestion[]
   const rows = await db
     .select({
       id: questions.id,
+      ageGroup: questions.ageGroup,
       skillArea: questions.skillArea,
       subSkill: questions.subSkill,
       difficulty: questions.difficulty,
@@ -448,8 +479,92 @@ async function fetchMockTestQuestions(ids: string[]): Promise<MockTestQuestion[]
     .where(sql`id IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})`);
 
   // Preserve order
-  const map = new Map(rows.map((r) => [r.id, r]));
+  const map = new Map(rows.filter(isYoungQuestionSafe).map((r) => [r.id, r]));
   return ids.map((id) => map.get(id)!).filter(Boolean);
+}
+
+function parseStoredAnswers(raw: unknown): StoredMockAnswer[] {
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((item): item is Partial<StoredMockAnswer> & { questionId: string } => (
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as { questionId?: unknown }).questionId === 'string'
+      ))
+      .map((item) => ({
+        questionId: item.questionId,
+        answer: typeof item.answer === 'string' ? item.answer : '',
+        isCorrect: Boolean(item.isCorrect),
+        timeSpent: sanitizeTimeSpent(item.timeSpent),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function sanitizeTimeSpent(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return 0;
+  }
+  return Math.round(numeric);
+}
+
+function normalizeAnswerValue(question: MockTestQuestion, submittedAnswer: string): string {
+  const trimmed = submittedAnswer.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const maybeIndex = Number(trimmed);
+  if (Number.isInteger(maybeIndex) && maybeIndex >= 0 && maybeIndex < question.options.length) {
+    return question.options[maybeIndex]?.text ?? trimmed;
+  }
+
+  return trimmed;
+}
+
+function normalizeAnswersForTest(
+  answers: StoredMockAnswer[],
+  questionIds: string[],
+  questionMap: Map<string, MockTestQuestion>
+): StoredMockAnswer[] {
+  const allowedQuestionIds = new Set(questionIds);
+  const latestAnswers = new Map<string, StoredMockAnswer>();
+
+  for (const answer of answers) {
+    if (!allowedQuestionIds.has(answer.questionId)) {
+      continue;
+    }
+
+    const question = questionMap.get(answer.questionId);
+    if (!question) {
+      continue;
+    }
+
+    const normalizedAnswer = normalizeAnswerValue(question, answer.answer);
+    const correctAnswer = question.options[question.correctOptionIndex]?.text ?? '';
+
+    latestAnswers.set(answer.questionId, {
+      questionId: answer.questionId,
+      answer: normalizedAnswer,
+      isCorrect: normalizedAnswer !== '' && normalizedAnswer === correctAnswer,
+      timeSpent: sanitizeTimeSpent(answer.timeSpent),
+    });
+  }
+
+  return questionIds
+    .map((questionId) => latestAnswers.get(questionId))
+    .filter((answer): answer is StoredMockAnswer => Boolean(answer));
 }
 
 async function finalizeResult(
@@ -457,7 +572,7 @@ async function finalizeResult(
   resultId: number,
   result: any,
   test: any,
-  answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }>,
+  answers: StoredMockAnswer[],
   questionMap: Map<string, MockTestQuestion>,
   status: string
 ): Promise<MockTestResult> {
@@ -589,7 +704,7 @@ export function generateRecommendations(result: {
 function buildResult(
   result: any,
   test: any,
-  answers: Array<{ questionId: string; answer: string; isCorrect: boolean; timeSpent: number }>,
+  answers: StoredMockAnswer[],
   questionMap: Map<string, MockTestQuestion>
 ): MockTestResult {
   const score = result.score ?? answers.filter((a) => a.isCorrect).length;

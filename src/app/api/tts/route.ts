@@ -4,18 +4,20 @@ import { getDb } from '@/lib/db';
 import { siteContent } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
+import { escapeSpeechXml, prepareArabicSpeech } from '@/lib/arabic-speech';
 
 // Cache key prefix for TTS audio
-const TTS_PREFIX = 'tts:';
+const TTS_PREFIX = 'tts:v2:';
+const LEGACY_TTS_PREFIX = 'tts:';
 const MAX_TEXT_LENGTH = 500;
 
 // Voice: ar-SA-HamedNeural (male) or ar-SA-ZariyahNeural (female)
 const VOICE = 'ar-SA-ZariyahNeural';
 
-async function getCachedAudio(textHash: string): Promise<string | null> {
+async function getCachedAudio(cacheKey: string): Promise<string | null> {
   try {
     const db = getDb();
-    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, TTS_PREFIX + textHash));
+    const [row] = await db.select().from(siteContent).where(eq(siteContent.key, cacheKey));
     if (!row) return null;
     return (row.value as { audio: string }).audio;
   } catch {
@@ -23,12 +25,12 @@ async function getCachedAudio(textHash: string): Promise<string | null> {
   }
 }
 
-async function cacheAudio(textHash: string, base64Audio: string): Promise<void> {
+async function cacheAudio(cacheKey: string, base64Audio: string): Promise<void> {
   try {
     const db = getDb();
     await db
       .insert(siteContent)
-      .values({ key: TTS_PREFIX + textHash, value: { audio: base64Audio } as never })
+      .values({ key: cacheKey, value: { audio: base64Audio } as never })
       .onConflictDoUpdate({
         target: siteContent.key,
         set: { value: { audio: base64Audio } as never, updatedAt: sql`CURRENT_TIMESTAMP` },
@@ -44,26 +46,35 @@ async function hashText(text: string): Promise<string> {
 }
 
 async function generateAudio(text: string): Promise<Buffer> {
-  const tts = new MsEdgeTTS();
-  await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+  let lastError: unknown;
 
-  const { audioStream } = tts.toStream(text, {
-    rate: '-5%',
-    pitch: '+0Hz',
-  });
+  // The consumer speech endpoint can occasionally drop a WebSocket connection.
+  // Retrying once prevents a transient failure from forcing a browser fallback.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const tts = new MsEdgeTTS();
+    try {
+      await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+      const { audioStream } = tts.toStream(escapeSpeechXml(text), {
+        // A deliberate, warm cadence is easier for pre-literate children to follow.
+        rate: '-12%',
+        pitch: '+2Hz',
+        volume: '+4%',
+      });
 
-  const chunks: Buffer[] = [];
-  return new Promise((resolve, reject) => {
-    audioStream.on('data', (chunk: Buffer) => chunks.push(chunk));
-    audioStream.on('end', () => {
+      const chunks: Buffer[] = [];
+      return await new Promise((resolve, reject) => {
+        audioStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        audioStream.on('end', () => resolve(Buffer.concat(chunks)));
+        audioStream.on('error', reject);
+      });
+    } catch (error) {
+      lastError = error;
+    } finally {
       tts.close();
-      resolve(Buffer.concat(chunks));
-    });
-    audioStream.on('error', (err: Error) => {
-      tts.close();
-      reject(err);
-    });
-  });
+    }
+  }
+
+  throw lastError;
 }
 
 export async function POST(req: NextRequest) {
@@ -85,11 +96,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Text too long' }, { status: 400 });
   }
 
-  const cleanText = text.trim();
-  const textHash = await hashText(cleanText);
+  const cleanText = prepareArabicSpeech(text);
+  const [textHash, legacyTextHash] = await Promise.all([
+    hashText(`${VOICE}:warm-v2:${cleanText}`),
+    hashText(text.trim()),
+  ]);
+  const cacheKey = TTS_PREFIX + textHash;
 
   // Check cache first
-  const cached = await getCachedAudio(textHash);
+  const cached = await getCachedAudio(cacheKey) ?? await getCachedAudio(LEGACY_TTS_PREFIX + legacyTextHash);
   if (cached) {
     const audioBuffer = Buffer.from(cached, 'base64');
     return new NextResponse(new Uint8Array(audioBuffer), {
@@ -106,7 +121,7 @@ export async function POST(req: NextRequest) {
     const base64Audio = audioBuffer.toString('base64');
 
     // Cache for future use (don't await - fire and forget)
-    cacheAudio(textHash, base64Audio).catch(() => {});
+    cacheAudio(cacheKey, base64Audio).catch(() => {});
 
     return new NextResponse(new Uint8Array(audioBuffer), {
       headers: {

@@ -3,20 +3,13 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { getYoungQuestionViolation } from '@/lib/young-question-policy';
+import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
 
 const VALID_AGE_GROUPS  = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES        = new Set(['text', 'image', 'audio', 'mixed']);
-
-function sanitizeImageUrl(url: unknown): string | null {
-  if (typeof url !== 'string' || url.trim().length === 0) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
-    return parsed.href;
-  } catch { return null; }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateRow(row: any, index: number): string | null {
@@ -43,6 +36,9 @@ function validateRow(row: any, index: number): string | null {
 
   if (!Number.isInteger(correctOptionIndex) || correctOptionIndex < 0 || correctOptionIndex > 3)
     return `صف ${index + 1}: correctOptionIndex يجب بين 0 و 3`;
+
+  const youngQuestionError = getYoungQuestionViolation({ ageGroup, questionType, questionImageUrl: sanitizeQuestionImageUrl(row.questionImageUrl), options });
+  if (youngQuestionError) return `صف ${index + 1}: ${youngQuestionError}`;
 
   return null;
 }
@@ -122,7 +118,7 @@ export async function POST(req: NextRequest) {
       difficulty:         String(row.difficulty),
       questionType:       String(row.questionType),
       questionTextAr:     String(row.questionTextAr).trim(),
-      questionImageUrl:   sanitizeImageUrl(row.questionImageUrl),
+      questionImageUrl:   sanitizeQuestionImageUrl(row.questionImageUrl),
       options:            row.options as Array<{ text: string; imageUrl?: string }>,
       correctOptionIndex: Number(row.correctOptionIndex),
       explanationAr:      String(row.explanationAr),

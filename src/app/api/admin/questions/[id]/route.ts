@@ -3,21 +3,14 @@ import { getDb } from '@/lib/db';
 import { questions, sessionAnswers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { getYoungQuestionViolation, isYoungQuestionSafe } from '@/lib/young-question-policy';
+import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function sanitizeImageUrl(url: unknown): string | null {
-  if (typeof url !== 'string' || url.trim().length === 0) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
-    return parsed.href;
-  } catch { return null; }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function validateQuestionBody(body: any): string | null {
@@ -31,6 +24,10 @@ function validateQuestionBody(body: any): string | null {
   if (options !== undefined && (!Array.isArray(options) || options.length !== 4)) return 'يجب تقديم 4 خيارات';
   if (correctOptionIndex !== undefined && (!Number.isInteger(correctOptionIndex) || correctOptionIndex < 0 || correctOptionIndex > 3)) return 'correctOptionIndex يجب أن يكون بين 0 و 3';
   if (tags !== undefined && (!Array.isArray(tags) || tags.some((t: unknown) => typeof t !== 'string'))) return 'tags غير صالح';
+  if (ageGroup && questionType && options) {
+    const youngQuestionError = getYoungQuestionViolation({ ageGroup, questionType, questionImageUrl: sanitizeQuestionImageUrl(body.questionImageUrl), options });
+    if (youngQuestionError) return youngQuestionError;
+  }
   return null;
 }
 
@@ -61,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     difficulty: body.difficulty,
     questionType: body.questionType,
     questionTextAr: typeof body.questionTextAr === 'string' ? body.questionTextAr.trim() : body.questionTextAr,
-    questionImageUrl: sanitizeImageUrl(body.questionImageUrl),
+    questionImageUrl: sanitizeQuestionImageUrl(body.questionImageUrl),
     options: body.options,
     correctOptionIndex: body.correctOptionIndex,
     explanationAr: body.explanationAr,
@@ -82,6 +79,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof isActive !== 'boolean') return NextResponse.json({ error: 'isActive يجب أن يكون boolean' }, { status: 400 });
 
   const db = getDb();
+  if (isActive) {
+    const [question] = await db.select().from(questions).where(eq(questions.id, id));
+    if (!question) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!isYoungQuestionSafe(question)) {
+      return NextResponse.json({ error: 'لا يمكن تفعيل سؤال عمر 4-5 غير مناسب للعرض الصوتي أو البصري.' }, { status: 400 });
+    }
+  }
   await db.update(questions).set({ isActive }).where(eq(questions.id, id));
   return NextResponse.json({ success: true });
 }

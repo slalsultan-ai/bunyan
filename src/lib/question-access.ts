@@ -2,6 +2,7 @@ import { getDb } from './db';
 import { questions } from './db/schema';
 import { eq, and, sql, notInArray } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
+import { isYoungQuestionSafe } from './young-question-policy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ export async function getAccessibleQuestions(
     .orderBy(sql`RANDOM()`)
     .limit(limit);
 
-  return rows;
+  return rows.filter(isYoungQuestionSafe);
 }
 
 /**

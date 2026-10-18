@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
+import { isYoungQuestionSafe } from '@/lib/young-question-policy';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -40,7 +41,9 @@ export async function GET(req: NextRequest) {
       .orderBy(sql`RANDOM()`)
       .limit(count);
 
-    const safeQuestions = rows.map(({ correctOptionIndex: _c, explanationAr: _e, ...question }) => question);
+    const safeQuestions = rows
+      .filter(isYoungQuestionSafe)
+      .map(({ correctOptionIndex: _c, explanationAr: _e, ...question }) => question);
     return NextResponse.json({ questions: safeQuestions });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

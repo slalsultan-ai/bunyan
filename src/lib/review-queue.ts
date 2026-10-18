@@ -2,6 +2,7 @@ import { getDb } from './db';
 import { reviewQueue, questions as questionsTable } from './db/schema';
 import { eq, and, sql, lte } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
+import { isYoungQuestionSafe } from './young-question-policy';
 
 interface UserIdentifier {
   guestId?: string;
@@ -168,7 +169,7 @@ export async function getReviewQuestions(params: {
     .where(sql`${questionsTable.id} IN (${sql.join(questionIds.map(id => sql`${id}`), sql`, `)})`);
 
   // Preserve review order
-  const questionMap = new Map(questionRows.map((q) => [q.id, q]));
+  const questionMap = new Map(questionRows.filter(isYoungQuestionSafe).map((q) => [q.id, q]));
   return questionIds
     .map((id) => questionMap.get(id))
     .filter((q): q is typeof questionsTable.$inferSelect => q !== undefined);

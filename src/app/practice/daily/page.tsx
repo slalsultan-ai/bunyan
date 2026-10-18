@@ -9,12 +9,16 @@ import BunaaBubble from '@/components/mascot/BunaaBubble';
 import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
+import { speakArabic } from '@/lib/speech';
+import { getEmojiPattern } from '@/lib/emoji-patterns';
+import EmojiPattern from '@/components/practice/EmojiPattern';
 
 interface ChallengeQuestion {
   id: string;
   skillArea: string;
   questionTextAr: string;
   questionImageUrl: string | null;
+  questionType: string;
   options: Array<{ text: string; imageUrl?: string }>;
 }
 
@@ -140,12 +144,16 @@ export default function DailyChallengePage() {
     bunaa.trigger('daily_challenge_start');
   };
 
+  const speakQuestion = (text: string) => {
+    speakArabic(text);
+  };
+
   const handleSelectAnswer = async (optionIndex: number) => {
     if (isReviewing || !questions[currentIndex]) return;
     setSelectedOption(optionIndex);
     setIsReviewing(true);
 
-    const q = questions[currentIndex];
+  const q = questions[currentIndex];
     try {
       const res = await fetch('/api/daily-challenge/submit', {
         method: 'POST',
@@ -321,6 +329,8 @@ export default function DailyChallengePage() {
   if (phase === 'playing') {
     const q = questions[currentIndex];
     if (!q) return null;
+    const isYoung = selectedChild ? computeAgeGroupClient(selectedChild.age) === '4-5' : false;
+    const emojiPattern = getEmojiPattern(q.questionImageUrl);
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50 flex flex-col">
@@ -355,16 +365,27 @@ export default function DailyChallengePage() {
 
             {/* Question text */}
             <div className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm mb-4">
-              {q.questionImageUrl && (
+              {emojiPattern && <EmojiPattern sequence={emojiPattern} />}
+              {q.questionImageUrl && !emojiPattern && (
                 <img
                   src={q.questionImageUrl}
                   alt="صورة السؤال"
                   className="w-full max-w-sm mx-auto rounded-xl mb-4"
                 />
               )}
-              <p className="text-gray-900 text-lg font-medium leading-relaxed text-right">
+              {isYoung && (
+                <button
+                  type="button"
+                  onClick={() => speakQuestion(q.questionTextAr)}
+                  className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-amber-100 text-6xl shadow-sm transition-transform active:scale-95"
+                  aria-label="استمع للسؤال"
+                >
+                  🔊
+                </button>
+              )}
+              {!isYoung && <p className="text-gray-900 text-lg font-medium leading-relaxed text-right">
                 {q.questionTextAr}
-              </p>
+              </p>}
             </div>
 
             {/* Options */}
@@ -409,7 +430,15 @@ export default function DailyChallengePage() {
                           : String.fromCharCode(1571 + idx) // أ ب ت ث
                         }
                       </span>
-                      <span className="text-gray-800 font-medium flex-1">{opt.text}</span>
+                      {opt.imageUrl ? (
+                        <img
+                          src={opt.imageUrl}
+                          alt="خيار الإجابة"
+                          className="h-16 w-16 rounded-lg object-contain"
+                        />
+                      ) : (
+                        <span className="text-gray-800 font-medium flex-1">{opt.text}</span>
+                      )}
                     </div>
                   </button>
                 );

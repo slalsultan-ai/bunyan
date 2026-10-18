@@ -243,6 +243,7 @@ function ReviewContent() {
                   key={idx}
                   index={idx}
                   text={opt.text}
+                  imageUrl={opt.imageUrl}
                   selected={isChosen}
                   correct={isCorrect}
                   wrong={isWrong}

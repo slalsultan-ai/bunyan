@@ -3,20 +3,13 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq, and, like, sql, desc } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { getYoungQuestionViolation } from '@/lib/young-question-policy';
+import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
-
-function sanitizeImageUrl(url: unknown): string | null {
-  if (typeof url !== 'string' || url.trim().length === 0) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
-    return parsed.href;
-  } catch { return null; }
-}
 
 function escapeLikePattern(s: string): string {
   return s.replace(/[%_\\]/g, '\\$&');
@@ -35,6 +28,8 @@ function validateQuestionBody(body: any): string | null {
   if (!Array.isArray(options) || options.length !== 4) return 'يجب تقديم 4 خيارات';
   if (!Number.isInteger(correctOptionIndex) || correctOptionIndex < 0 || correctOptionIndex > 3) return 'correctOptionIndex يجب أن يكون بين 0 و 3';
   if (tags !== undefined && (!Array.isArray(tags) || tags.some((t: unknown) => typeof t !== 'string'))) return 'tags غير صالح';
+  const youngQuestionError = getYoungQuestionViolation({ ageGroup, questionType, questionImageUrl: sanitizeQuestionImageUrl(body.questionImageUrl), options });
+  if (youngQuestionError) return youngQuestionError;
   return null;
 }
 
@@ -98,7 +93,7 @@ export async function POST(req: NextRequest) {
     id: crypto.randomUUID(),
     ageGroup, skillArea, subSkill, difficulty, questionType,
     questionTextAr: questionTextAr.trim(),
-    questionImageUrl: sanitizeImageUrl(questionImageUrl),
+    questionImageUrl: sanitizeQuestionImageUrl(questionImageUrl),
     options, correctOptionIndex, explanationAr,
     tags: Array.isArray(tags) ? tags : [],
     isActive: true,

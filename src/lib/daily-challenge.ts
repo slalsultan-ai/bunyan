@@ -2,6 +2,7 @@ import { getDb } from './db';
 import { questions } from './db/schema';
 import { eq, and, sql, notInArray } from 'drizzle-orm';
 import { getTierCondition } from './question-access';
+import { isYoungQuestionSafe } from './young-question-policy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -76,7 +77,8 @@ export async function getOrCreateDailyChallenge(ageGroup: string): Promise<Daily
   if (existing) {
     const questionIds: string[] = JSON.parse(existing.question_ids);
     const qs = await fetchQuestionsByIds(questionIds);
-    return { date: today, ageGroup, questions: qs };
+    if (qs.length === questionIds.length) return { date: today, ageGroup, questions: qs };
+    await db.run(sql`DELETE FROM daily_challenges WHERE challenge_date = ${today} AND age_group = ${ageGroup}`);
   }
 
   // Generate new challenge
@@ -168,15 +170,26 @@ async function findQuestion(
     ? sql` AND id NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`
     : sql``;
   const tierSql = tierClause ? sql.raw(tierClause) : sql``;
+  // Four-year-olds use visual cards or spoken prompts, never text questions.
+  const youngVisualOnly = ageGroup === '4-5'
+    ? sql` AND question_type IN ('audio', 'image')`
+    : sql``;
 
-  const [row] = await db
-    .select({ id: questions.id, difficulty: questions.difficulty })
+  const rows = await db
+    .select({
+      id: questions.id,
+      difficulty: questions.difficulty,
+      ageGroup: questions.ageGroup,
+      questionType: questions.questionType,
+      questionImageUrl: questions.questionImageUrl,
+      options: questions.options,
+    })
     .from(questions)
-    .where(sql`age_group = ${ageGroup} AND skill_area = ${skillArea} AND is_active = 1${diffClause}${excludeClause}${tierSql}`)
+    .where(sql`age_group = ${ageGroup} AND skill_area = ${skillArea} AND is_active = 1${youngVisualOnly}${diffClause}${excludeClause}${tierSql}`)
     .orderBy(sql`RANDOM()`)
-    .limit(1) as any[];
+    .limit(ageGroup === '4-5' ? 12 : 1) as any[];
 
-  return row || null;
+  return rows.find(isYoungQuestionSafe) || null;
 }
 
 async function fetchQuestionsByIds(ids: string[]): Promise<DailyChallenge['questions']> {
@@ -201,7 +214,7 @@ async function fetchQuestionsByIds(ids: string[]): Promise<DailyChallenge['quest
     .where(sql`id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
 
   // Preserve the order of IDs
-  const map = new Map(rows.map((r) => [r.id, r]));
+  const map = new Map(rows.filter(isYoungQuestionSafe).map((r) => [r.id, r]));
   return ids.map((id) => map.get(id)!).filter(Boolean);
 }
 

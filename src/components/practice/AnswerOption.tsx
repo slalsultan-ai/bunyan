@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 interface AnswerOptionProps {
   index: number;
   text: string;
+  imageUrl?: string;
   selected: boolean;
   correct: boolean;
   wrong: boolean;
@@ -14,7 +15,7 @@ interface AnswerOptionProps {
 
 const LETTERS = ['أ', 'ب', 'ج', 'د'];
 
-export default function AnswerOption({ index, text, selected, correct, wrong, disabled, onClick, large }: AnswerOptionProps) {
+export default function AnswerOption({ index, text, imageUrl, selected, correct, wrong, disabled, onClick, large }: AnswerOptionProps) {
   // Young kids (4-5): centered square card with big emoji
   if (large) {
     return (
@@ -32,7 +33,7 @@ export default function AnswerOption({ index, text, selected, correct, wrong, di
           disabled && !correct && !wrong && 'cursor-not-allowed opacity-50',
         )}
       >
-        <span className="leading-none">{text}</span>
+        {imageUrl ? <img src={imageUrl} alt="خيار" className="h-16 w-16 object-contain" /> : <span className="leading-none">{text}</span>}
         {correct && <span className="text-base mt-1 text-emerald-600 font-bold">✓</span>}
         {wrong && <span className="text-base mt-1 text-red-500 font-bold">✕</span>}
       </button>
