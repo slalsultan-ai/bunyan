@@ -20,8 +20,8 @@ const weatherLabel: Record<Weather, string> = { sunny: 'مشمس', rain: 'ممط
 const eventCopy: Record<EventChoice, { title: string; text: string }> = {
   restock: { title: 'جهّز كوبين إضافيين', text: 'تكلفة 4 ريالات. ستلحق بالزبائن القادمين.' },
   hold: { title: 'أكمل بما لديك', text: 'لا تكلفة إضافية. راقب ما يحدث.' },
-  umbrella: { title: 'ضع مظلة للعربة', text: 'تكلفة 3 ريالات. تحمي البيع من المطر.' },
-  discount: { title: 'خفّض السعر قطعة واحدة', text: 'قد يجذب مزيداً من الزبائن.' },
+  umbrella: { title: 'اشترِ مظلة للعربة', text: 'تكلفة 5 ريالات. تساعد الزبائن على الوصول في المطر.' },
+  discount: { title: 'خفّض سعر الكوب ريالاً واحداً', text: 'قد يجذب مزيداً من زبائن المهرجان.' },
   extra_stock: { title: 'جهّز كوبين للفعالية', text: 'تكلفة 4 ريالات. الحديقة مزدحمة اليوم.' },
 };
 

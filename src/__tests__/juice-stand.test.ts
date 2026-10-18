@@ -48,10 +48,23 @@ describe('juice stand simulation', () => {
     expect(state.cash).toBe(12);
     expect(state.inventory).toBe(6);
     state = choosePrice(state, 3);
-    state = resolveSales(state, 0.4, 'event');
+    state = resolveSales(state, 0.55, 'event');
     expect(state.currentExpenses).toBe(12);
     expect(state.currentSold).toBe(4);
     expect(state.cash).toBe(24);
     expect(state.inventory).toBe(2);
+  });
+
+  it('applies the rain umbrella only to the second sales segment', () => {
+    const base = { ...createJuiceStand(), day: 2 as const, stage: 'event' as const, cash: 5, inventory: 10, price: 4, reputation: 1 };
+    const withUmbrella = advance(chooseEvent(base, 'umbrella'));
+    const withoutUmbrella = advance(chooseEvent({ ...base, cash: 0 }, 'hold'));
+    expect(withUmbrella.currentSold - withoutUmbrella.currentSold).toBe(2);
+    expect(withUmbrella.cash).toBe(16);
+  });
+
+  it('applies the festival discount only to the second sales segment', () => {
+    const state = chooseEvent({ ...createJuiceStand(), day: 3, stage: 'event', inventory: 10, price: 3, reputation: 1 }, 'discount');
+    expect(state.price).toBe(2);
   });
 });
