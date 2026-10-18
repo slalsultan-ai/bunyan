@@ -43,6 +43,7 @@ export default function JuiceStandGame() {
   const [ready, setReady] = useState(false);
   const [muted, setMuted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [transaction, setTransaction] = useState<{ kind: 'expense' | 'income'; amount: number; id: number } | null>(null);
   const { playCorrect, playFanfare, playNext, playWrong } = useSound(muted);
 
   useEffect(() => { setState(loadState()); setReady(true); }, []);
@@ -52,6 +53,12 @@ export default function JuiceStandGame() {
     if (sound === 'positive') playCorrect();
     else if (sound === 'quiet') playWrong();
     else playNext();
+    const amount = next.cash - state.cash;
+    if (amount !== 0 && !reducedMotion) {
+      const effect = { kind: amount > 0 ? 'income' as const : 'expense' as const, amount: Math.abs(amount), id: Date.now() };
+      setTransaction(effect);
+      window.setTimeout(() => setTransaction((current) => current?.id === effect.id ? null : current), 1050);
+    }
     setState(next);
   };
   const weather = state.day === 1 ? 'sunny' : state.day === 2 ? 'rain' : 'festival';
@@ -77,6 +84,12 @@ export default function JuiceStandGame() {
             <Stat icon="😊" label="الرضا" value={state.reputation >= 2 ? 'عالٍ' : state.reputation < 0 ? 'يحتاج تحسن' : 'جيد'} />
             <Stat icon="🗑️" label="الهدر" value={state.waste} />
           </div>
+          <div className="absolute left-5 top-24 z-20 rounded-2xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-center shadow-lg sm:left-8 sm:top-28">
+            <div className="text-3xl">👛</div><div className="text-xs font-black text-amber-900">محفظة العربة</div>
+          </div>
+          {transaction && <div key={transaction.id} className={`pointer-events-none absolute left-10 top-24 z-30 ${transaction.kind === 'income' ? 'animate-[wallet-income_0.95s_ease-out_forwards]' : 'animate-[wallet-expense_0.95s_ease-in_forwards]'}`}>
+            <div className="rounded-full bg-amber-300 px-2 py-1 text-lg shadow-lg">🪙<span className="mr-1 text-xs font-black text-amber-950">{transaction.amount}</span></div>
+          </div>}
           {state.stage !== 'complete' && <>
             <img src={`/assets/simulations/juice-stand/sprites_png/${cart}`} alt="عربة العصير" className="absolute bottom-0 right-[10%] h-[52%] max-w-[55%] object-contain drop-shadow-xl sm:right-[18%]" />
             <img src="/assets/simulations/juice-stand/sprites_png/customer_boy_blue.png" alt="زبون ينتظر" className={`absolute bottom-0 left-[8%] h-[38%] object-contain sm:left-[17%] ${reducedMotion ? '' : 'animate-[pulse_2.5s_ease-in-out_infinite]'}`} />
@@ -97,6 +110,18 @@ export default function JuiceStandGame() {
           </div>
         </section>
       </div>
+      <style jsx>{`
+        @keyframes wallet-income {
+          0% { opacity: 0; transform: translate(220px, 110px) scale(.55) rotate(-20deg); }
+          30% { opacity: 1; }
+          100% { opacity: 0; transform: translate(0, 0) scale(1.25) rotate(12deg); }
+        }
+        @keyframes wallet-expense {
+          0% { opacity: 0; transform: translate(0, 0) scale(1.2) rotate(10deg); }
+          25% { opacity: 1; }
+          100% { opacity: 0; transform: translate(220px, 110px) scale(.55) rotate(-22deg); }
+        }
+      `}</style>
     </main>
   );
 }
