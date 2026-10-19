@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const questions = sqliteTable('questions', {
@@ -238,4 +238,69 @@ export const childParents = sqliteTable('child_parents', {
   role: text('role').default('follower'),
   inviteToken: text('invite_token'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ═══ Adaptive mastery (BKT + mastery gates) ═══
+
+export const masterySkillState = sqliteTable('mastery_skill_state', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  childId: text('child_id').notNull(),
+  skillKey: text('skill_key').notNull(),
+  pKnown: real('p_known').notNull(),
+  status: text('status').notNull().default('learning'),
+  observations: integer('observations').notNull().default(0),
+  attemptsInStatus: integer('attempts_in_status').notNull().default(0),
+  practiceSinceTest: integer('practice_since_test').notNull().default(0),
+  testQuestionIds: text('test_question_ids', { mode: 'json' }).$type<string[]>(),
+  testResults: text('test_results', { mode: 'json' }).$type<boolean[]>(),
+  reviewStage: integer('review_stage').notNull().default(0),
+  nextReviewAt: text('next_review_at'),
+  reviewWrongs: integer('review_wrongs').notNull().default(0),
+  deferredReason: text('deferred_reason'),
+  remediationFor: text('remediation_for'),
+  masteredAt: text('mastered_at'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const masterySessions = sqliteTable('mastery_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  childId: text('child_id').notNull(),
+  served: integer('served').notNull().default(0),
+  correct: integer('correct').notNull().default(0),
+  reviewsServed: integer('reviews_served').notNull().default(0),
+  diagnosticsServed: integer('diagnostics_served').notNull().default(0),
+  currentQuestionId: text('current_question_id'),
+  currentSkillKey: text('current_skill_key'),
+  currentPurpose: text('current_purpose'),
+  currentReason: text('current_reason', { mode: 'json' }).$type<Record<string, unknown>>(),
+  startedAt: text('started_at').default(sql`(datetime('now'))`),
+  completedAt: text('completed_at'),
+});
+
+export const masteryAttempts = sqliteTable('mastery_attempts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  childId: text('child_id').notNull(),
+  sessionId: integer('session_id'),
+  questionId: text('question_id').notNull(),
+  skillKey: text('skill_key').notNull(),
+  purpose: text('purpose').notNull(),
+  isCorrect: integer('is_correct', { mode: 'boolean' }).notNull(),
+  pBefore: real('p_before').notNull(),
+  pAfter: real('p_after').notNull(),
+  statusBefore: text('status_before').notNull(),
+  statusAfter: text('status_after').notNull(),
+  selectionReason: text('selection_reason', { mode: 'json' }).$type<Record<string, unknown>>(),
+  decisions: text('decisions', { mode: 'json' }).$type<Array<Record<string, unknown>>>(),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
+export const masteryBktParams = sqliteTable('mastery_bkt_params', {
+  skillKey: text('skill_key').primaryKey(),
+  pInit: real('p_init').notNull(),
+  pTransit: real('p_transit').notNull(),
+  pSlip: real('p_slip').notNull(),
+  pGuess: real('p_guess').notNull(),
+  sampleSize: integer('sample_size'),
+  fittedAt: text('fitted_at').default(sql`(datetime('now'))`),
 });
