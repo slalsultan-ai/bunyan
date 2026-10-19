@@ -63,6 +63,16 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/admin/login', () => {
+  it('sends the OTP to an additional admin listed in ADMIN_EMAILS', async () => {
+    vi.stubEnv('ADMIN_EMAILS', 'qa@example.com, other@example.com');
+    mockCreateOtpChallenge.mockResolvedValue('123456');
+    const res = await POST(makeReq({ email: 'QA@example.com' }));
+    expect(res.status).toBe(200);
+    expect(mockCreateOtpChallenge).toHaveBeenCalledWith('qa@example.com');
+    expect(mockSendAdminOtp).toHaveBeenCalledWith('qa@example.com', '123456');
+    vi.stubEnv('ADMIN_EMAILS', '');
+  });
+
   it('returns success even for wrong email (anti-enumeration)', async () => {
     const res = await POST(makeReq({ email: 'wrong@example.com' }));
     expect(res.status).toBe(200);

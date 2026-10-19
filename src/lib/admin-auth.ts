@@ -125,9 +125,9 @@ export async function createOtpChallenge(email?: string): Promise<string> {
 
 export type OtpVerifyResult = 'ok' | 'invalid' | 'expired' | 'max_attempts';
 
-export async function verifyOtpChallenge(code: string): Promise<OtpVerifyResult> {
+export async function verifyOtpChallenge(code: string, email?: string): Promise<OtpVerifyResult> {
   const db = getDb();
-  const adminEmail = process.env.ADMIN_EMAIL || '';
+  const adminEmail = email || process.env.ADMIN_EMAIL || '';
 
   // Find the latest unused OTP for this admin
   const [otp] = await db.select()

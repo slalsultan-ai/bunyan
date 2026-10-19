@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyOtpChallenge, createAdminSession } from '@/lib/admin-auth';
+import { isAdminEmail } from '@/lib/admin-emails';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
 
 export async function POST(req: NextRequest) {
@@ -21,7 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'الرمز مطلوب' }, { status: 400 });
   }
 
-  const result = await verifyOtpChallenge(code.trim());
+  // Set by /api/admin/login; falls back to the primary admin.
+  const requested = req.cookies?.get('admin_login_email')?.value;
+  const adminEmail = isAdminEmail(requested) ? requested!.toLowerCase() : (process.env.ADMIN_EMAIL || '');
+
+  const result = await verifyOtpChallenge(code.trim(), adminEmail);
 
   if (result === 'expired') {
     return NextResponse.json({ error: 'انتهت صلاحية الرمز، اطلب رمزاً جديداً' }, { status: 401 });
@@ -36,7 +41,6 @@ export async function POST(req: NextRequest) {
   // OTP valid — create session
   let token: string;
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || '';
     const deviceInfo = req.headers.get('user-agent')?.slice(0, 200) || undefined;
     token = await createAdminSession(adminEmail, deviceInfo, ip);
   } catch {

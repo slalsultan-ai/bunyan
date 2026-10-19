@@ -119,7 +119,31 @@ describe('POST /api/admin/verify', () => {
     mockVerifyOtpChallenge.mockResolvedValue('ok');
     mockCreateAdminSession.mockResolvedValue('token');
     await POST(makeReq({ code: '  123456  ' }));
-    expect(mockVerifyOtpChallenge).toHaveBeenCalledWith('123456');
+    expect(mockVerifyOtpChallenge).toHaveBeenCalledWith('123456', expect.any(String));
+  });
+
+  it('verifies the OTP of the additional admin who requested it', async () => {
+    vi.stubEnv('ADMIN_EMAIL', 'owner@bunyan.guru');
+    vi.stubEnv('ADMIN_EMAILS', 'qa@example.com');
+    mockVerifyOtpChallenge.mockResolvedValue('ok');
+    mockCreateAdminSession.mockResolvedValue('token');
+    const req = makeReq({ code: '123456' });
+    (req as unknown as { cookies: unknown }).cookies = { get: (k: string) => (k === 'admin_login_email' ? { value: 'QA@example.com' } : undefined) };
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockVerifyOtpChallenge).toHaveBeenCalledWith('123456', 'qa@example.com');
+    expect(mockCreateAdminSession).toHaveBeenCalledWith('qa@example.com', undefined, expect.any(String));
+    vi.unstubAllEnvs();
+  });
+
+  it('ignores a login-email cookie that is not an admin', async () => {
+    vi.stubEnv('ADMIN_EMAIL', 'owner@bunyan.guru');
+    mockVerifyOtpChallenge.mockResolvedValue('invalid');
+    const req = makeReq({ code: '123456' });
+    (req as unknown as { cookies: unknown }).cookies = { get: () => ({ value: 'attacker@example.com' }) };
+    await POST(req);
+    expect(mockVerifyOtpChallenge).toHaveBeenCalledWith('123456', 'owner@bunyan.guru');
+    vi.unstubAllEnvs();
   });
 
   it('rate limits after 5 attempts from same IP', async () => {
