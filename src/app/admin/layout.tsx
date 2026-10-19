@@ -14,6 +14,7 @@ const NAV = [
   { href: '/admin/grants', label: 'طلبات المنح', icon: '📩' },
   { href: '/admin/linkedin', label: 'محتوى لينكدإن', icon: '📝' },
   { href: '/admin/features', label: 'الخصائص', icon: '⚙️' },
+  { href: '/admin/mastery', label: 'محرك الإتقان', icon: '🎯' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

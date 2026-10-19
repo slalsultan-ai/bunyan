@@ -41,6 +41,7 @@ export default function PracticePage() {
   const showDailyChallenge = useFeatureFlag('daily_challenge');
   const showSessionLimit = useFeatureFlag('session_limit');
   const showAdaptivePath = useFeatureFlag('adaptive_path');
+  const showMastery = useFeatureFlag('adaptive_mastery');
   const showExtendedBank = useFeatureFlag('gat_extended_bank');
   const showMockTests = useFeatureFlag('mock_tests');
   const showSimulations = useFeatureFlag('ENABLE_SIMULATIONS');
@@ -50,6 +51,9 @@ export default function PracticePage() {
   const [sessionLimitInfo, setSessionLimitInfo] = useState<{ remaining: number; total: number; limit: number } | null>(null);
   const [adaptivePathReady, setAdaptivePathReady] = useState(false);
   const [adaptiveFocus, setAdaptiveFocus] = useState<string[]>([]);
+  const masteryApplies = showMastery.enabled
+    && Boolean(selectedChild)
+    && computeAgeGroupClient(selectedChild!.age) === '6-9';
   const [bankStats, setBankStats] = useState<{ totalFree: number; totalPremium: number } | null>(null);
   const [mockTestInfo, setMockTestInfo] = useState<{ total: number; completed: number } | null>(null);
   const [paywallShown, setPaywallShown] = useState(false);
@@ -232,8 +236,24 @@ export default function PracticePage() {
           </div>
         ) : (
           <>
+            {/* Adaptive mastery banner (replaces the smart-path banner for 6-9) */}
+            {masteryApplies && (
+              <div className="mb-4 bg-gradient-to-l from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-indigo-800 font-bold text-sm">🧠 المسار الذكي</p>
+                  <p className="text-indigo-600 text-xs">أسئلة تتكيّف مع مستواك خطوة بخطوة</p>
+                </div>
+                <Link
+                  href="/practice/smart"
+                  className="bg-gradient-to-l from-indigo-500 to-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
+                >
+                  ابدأ جلستك الذكية
+                </Link>
+              </div>
+            )}
+
             {/* Adaptive path banner */}
-            {showAdaptivePath.enabled && adaptivePathReady && (
+            {!masteryApplies && showAdaptivePath.enabled && adaptivePathReady && (
               <div className="mb-4 bg-gradient-to-l from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-indigo-800 font-bold text-sm">🧠 المسار الذكي جاهز</p>

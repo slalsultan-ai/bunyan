@@ -10,6 +10,7 @@ import BunaaBubble from '@/components/mascot/BunaaBubble';
 import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
+import MasteryPractice from '@/components/mastery/MasteryPractice';
 
 interface SkillFocus {
   name: string;
@@ -35,13 +36,36 @@ interface PathSummary {
 
 type Phase = 'loading' | 'intro' | 'ready' | 'playing' | 'completed' | 'recalculation';
 
+/**
+ * With `adaptive_mastery` on, 6-9 children get the BKT mastery engine; everyone
+ * else keeps the legacy smart path unchanged.
+ */
+export default function SmartPathPage() {
+  const mastery = useFeatureFlag('adaptive_mastery');
+  const { selectedChild, loading: childLoading } = useSelectedChild();
+
+  if (mastery.loading || childLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (mastery.enabled && selectedChild && computeAgeGroupClient(selectedChild.age) === '6-9') {
+    return <MasteryPractice key={selectedChild.id} childId={selectedChild.id} />;
+  }
+
+  return <LegacySmartPath />;
+}
+
 const TREND_ICONS: Record<string, string> = {
   improving: '↗',
   stable: '→',
   declining: '↘',
 };
 
-export default function SmartPathPage() {
+function LegacySmartPath() {
   const router = useRouter();
   const { enabled: flagEnabled, loading: flagLoading } = useFeatureFlag('adaptive_path');
   const { selectedChild, loading: childLoading } = useSelectedChild();
