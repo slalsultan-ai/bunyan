@@ -214,6 +214,15 @@ const TAXONOMY: Record<MasteryAgeGroup, MasterySkill[]> = {
   '6-9': SKILLS_6_9,
 };
 
+/** Display info for a skill key, from any supported age group. */
+export function skillLabel(skillKey: string): { key: string; nameAr: string; area: MasterySkill['area'] } | null {
+  for (const group of MASTERY_AGE_GROUPS) {
+    const sk = TAXONOMY[group].find((s) => s.key === skillKey);
+    if (sk) return { key: sk.key, nameAr: sk.nameAr, area: sk.area };
+  }
+  return null;
+}
+
 export function isMasteryAgeGroup(ageGroup: string): ageGroup is MasteryAgeGroup {
   return (MASTERY_AGE_GROUPS as readonly string[]).includes(ageGroup);
 }

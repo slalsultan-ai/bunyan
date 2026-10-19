@@ -18,7 +18,7 @@ import {
   type NextChoice, type Purpose, type SkillState, type SkillStatus,
 } from './engine';
 import {
-  buildSourceIndex, getTaxonomy, skillKeyForQuestion, type MasteryAgeGroup, type MasterySkill,
+  buildSourceIndex, getTaxonomy, skillKeyForQuestion, skillLabel, type MasteryAgeGroup, type MasterySkill,
 } from './taxonomy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -58,6 +58,10 @@ export interface SessionView {
   correct: number;
   sessionSize: number;
   question: ServedQuestion | null;
+  /** Skill the current question practises (shown to the child as context). */
+  skill: { key: string; nameAr: string; area: string } | null;
+  /** Correctness of each answer so far in this session, in order. */
+  results: boolean[];
   completed: boolean;
 }
 
@@ -481,11 +485,19 @@ async function setCurrent(
 
 async function toView(session: typeof masterySessions.$inferSelect, config: MasteryConfig): Promise<SessionView> {
   const completed = Boolean(session.completedAt);
+  const db = getDb();
+  const answered = await db
+    .select({ isCorrect: masteryAttempts.isCorrect })
+    .from(masteryAttempts)
+    .where(eq(masteryAttempts.sessionId, session.id))
+    .orderBy(masteryAttempts.id);
   return {
     sessionId: session.id,
     served: session.served,
     correct: session.correct,
     sessionSize: config.sessionSize,
+    skill: !completed && session.currentSkillKey ? skillLabel(session.currentSkillKey) : null,
+    results: answered.map((a) => Boolean(a.isCorrect)),
     completed,
     question: !completed && session.currentQuestionId
       ? await fetchServedQuestion(session.currentQuestionId)
