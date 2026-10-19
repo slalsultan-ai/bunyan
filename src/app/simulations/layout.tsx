@@ -1,13 +1,12 @@
-import { notFound } from 'next/navigation';
-import { getParentSession } from '@/lib/parent-auth';
-import { hasFeatureAccess } from '@/lib/feature-flags';
+import type { Metadata } from 'next';
 
-export default async function SimulationsLayout({ children }: { children: React.ReactNode }) {
-  const session = await getParentSession();
-  const enabled = await hasFeatureAccess('ENABLE_SIMULATIONS', session?.email, session?.parentId);
+// Simulations are unlisted: anyone with the direct link (/simulations) can
+// play, while the ENABLE_SIMULATIONS flag only controls the entry points
+// shown in the app (e.g. the banner on /practice).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
-  // The flag protects direct routes as well as navigation entry points.
-  if (!enabled) notFound();
-
+export default function SimulationsLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
