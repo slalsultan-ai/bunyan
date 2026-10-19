@@ -1,3 +1,4 @@
+import { isAdminEmail } from '@/lib/admin-emails';
 import { getParentSession } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { parents, children, childParents } from '@/lib/db/schema';
@@ -31,8 +32,7 @@ export async function GET() {
     ...followedChildren.map(c => ({ id: c.id, name: c.name, age: c.age, ageGroup: c.ageGroup, role: 'follower' as const })),
   ];
 
-  const adminEmail = process.env.ADMIN_EMAIL || '';
-  const isAdmin = adminEmail !== '' && parent.email.toLowerCase() === adminEmail.toLowerCase();
+  const isAdmin = isAdminEmail(parent.email);
 
   return Response.json({
     parent: {

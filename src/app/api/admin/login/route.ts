@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOtpChallenge } from '@/lib/admin-auth';
+import { getAdminEmails, isAdminEmail } from '@/lib/admin-emails';
 import { sendAdminOtp } from '@/lib/email';
 import { checkRateLimit, getIp } from '@/lib/rate-limit-db';
+
+const ADMIN_LOGIN_EMAIL_COOKIE = 'admin_login_email';
 
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
@@ -15,8 +18,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.trim();
-  if (!adminEmail) {
+  if (getAdminEmails().length === 0) {
     return NextResponse.json({ error: 'Admin not configured' }, { status: 500 });
   }
 
@@ -24,16 +26,26 @@ export async function POST(req: NextRequest) {
   const { email } = body;
 
   // Always respond with success to avoid email enumeration
-  if (!email || typeof email !== 'string' || email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
+  if (!email || typeof email !== 'string' || !isAdminEmail(email)) {
     return NextResponse.json({ success: true });
   }
 
+  const adminEmail = email.trim().toLowerCase();
   try {
-    const code = await createOtpChallenge();
+    const code = await createOtpChallenge(adminEmail);
     await sendAdminOtp(adminEmail, code);
   } catch (err) {
     console.error('[admin/login] Failed to send OTP:', err);
   }
 
-  return NextResponse.json({ success: true });
+  // Remember which admin asked for the code so /verify checks that admin's OTP.
+  const res = NextResponse.json({ success: true });
+  res.cookies.set(ADMIN_LOGIN_EMAIL_COOKIE, adminEmail, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/admin',
+    maxAge: 15 * 60,
+  });
+  return res;
 }
