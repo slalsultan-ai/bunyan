@@ -103,11 +103,11 @@ describe('Mawhiba L1 content fixes (expert review)', () => {
     expect(rows.filter((r) => !r.isActive)).toHaveLength(34);
   });
 
-  it('is limited to grades 3–5 (ages 8–11)', () => {
-    expect([MAWHIBA_L1_MIN_AGE, MAWHIBA_L1_MAX_AGE]).toEqual([8, 11]);
+  it('is offered to ages 6–11 (middle group + 10–11), never to 4–5', () => {
+    expect([MAWHIBA_L1_MIN_AGE, MAWHIBA_L1_MAX_AGE]).toEqual([6, 11]);
     expect(isMawhibaL1Age(5)).toBe(false);
-    expect(isMawhibaL1Age(7)).toBe(false);
-    expect(isMawhibaL1Age(8)).toBe(true);
+    expect(isMawhibaL1Age(6)).toBe(true);
+    expect(isMawhibaL1Age(7)).toBe(true);
     expect(isMawhibaL1Age(11)).toBe(true);
     expect(isMawhibaL1Age(12)).toBe(false);
     expect(isMawhibaL1Age(undefined)).toBe(false);

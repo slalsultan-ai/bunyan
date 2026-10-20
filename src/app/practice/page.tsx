@@ -243,7 +243,7 @@ export default function PracticePage() {
               <div className="mb-4 bg-gradient-to-l from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-amber-900 font-bold text-sm">🏆 مسار موهبة ١</p>
-                  <p className="text-amber-700 text-xs">تدريب تكيّفي بالإتقان على نمط مقياس موهبة (الصفوف 3–5)</p>
+                  <p className="text-amber-700 text-xs">تدريب تكيّفي بالإتقان على نمط مقياس موهبة (المستوى الأول)</p>
                 </div>
                 <Link
                   href="/practice/mawhiba"

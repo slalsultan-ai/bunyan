@@ -12,7 +12,7 @@ const MAWHIBA_COPY: MasteryTrackCopy = {
   track: 'mawhiba_l1',
   title: 'مسار موهبة ١',
   icon: '🏆',
-  subtitle: 'تدريب تكيّفي على نمط مقياس موهبة للصفوف 3–5',
+  subtitle: 'تدريب تكيّفي على نمط مقياس موهبة، المستوى الأول',
 };
 
 /** Mawhiba Level 1 adaptive-mastery track (behind the `mawhiba_l1` flag). */
