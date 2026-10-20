@@ -7,6 +7,7 @@ import { hasFeatureAccess } from '@/lib/feature-flags';
 import { collectAllChildrenDigest } from '@/lib/weekly-digest';
 import { renderWeeklyDigestEmail } from '@/lib/email-templates/weekly-digest';
 import { Resend } from 'resend';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -57,9 +58,7 @@ export async function GET(req: NextRequest) {
         if (!parentAccess) { skipped++; continue; }
 
         // Check if already sent this week
-        const [existing] = await db
-          .select()
-          .from(sql`digest_log`)
+        const [existing] = await selectAllFrom(db, 'digest_log')
           .where(sql`parent_id = ${parent.id} AND week_start = ${weekStartStr}`)
           .limit(1) as any[];
 

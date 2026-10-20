@@ -459,6 +459,8 @@ export interface ChooseNextInput {
   diagnosticsServed: number;
   /** Skills with no remaining servable question this session. */
   exhausted?: Set<string>;
+  /** Practice questions already served per skill in this session (rotation cap). */
+  practicedThisSession?: Map<string, number>;
   config: MasteryConfig;
   now: Date;
 }
@@ -537,8 +539,12 @@ export function chooseNext(input: ChooseNextInput): NextChoice | null {
   const learning = ordered
     .map((sk) => ({ sk, st: stateOf(sk.key) }))
     .filter((x): x is { sk: MasterySkill; st: SkillState } => x.st?.status === 'learning' && unlocked(x.sk.key));
-  const remediation = learning.find((x) => x.st.remediationFor);
-  const active = remediation ?? learning[0];
+  // Rotate: a skill that hit the per-session practice cap yields to the next open one.
+  const practiced = input.practicedThisSession ?? new Map<string, number>();
+  const underCap = learning.filter((x) => (practiced.get(x.sk.key) ?? 0) < config.maxPracticePerSkillPerSession);
+  const candidates = underCap.length > 0 ? underCap : learning;
+  const remediation = candidates.find((x) => x.st.remediationFor);
+  const active = remediation ?? candidates[0];
   if (active) {
     const difficulty = difficultyFor(active.st.pKnown, config);
     return {

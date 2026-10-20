@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickQuestion, questionContentKey, questionTextKey, type PoolQuestion } from '@/lib/mastery/service';
+import { pickQuestion, questionContentKey, questionTemplateKey, questionTextKey, type PoolQuestion } from '@/lib/mastery/service';
 
 /** Question whose text key defaults to its id (distinct texts). */
 const q = (id: string, difficulty = 'medium', text = id): PoolQuestion => ({
@@ -97,5 +97,29 @@ describe('pickQuestion', () => {
       })!;
       expect(r.question.id).toBe('b');
     }
+  });
+});
+
+describe('template variety', () => {
+  it('groups questions that differ only by numbers or names', () => {
+    expect(questionTemplateKey('في الصندوق 41 من الأزرار، فأضاف سلمان إليها 25 أخرى.'))
+      .toBe(questionTemplateKey('في الصندوق 21 من الأزرار، فأضاف ماجد إليها 7 أخرى.'));
+    expect(questionTemplateKey('في كل علبة 12 من الأكواب.')).not.toBe(questionTemplateKey('في الصندوق 41 من الأزرار.'));
+  });
+
+  it('prefers a template not used yet in the session', () => {
+    const used = questionTemplateKey('في الصندوق 41 من الأزرار، فأضاف سلمان');
+    const a: PoolQuestion = { ...q('a'), templateKey: used };
+    const b: PoolQuestion = { ...q('b'), templateKey: questionTemplateKey('في كل علبة 12 من الأكواب') };
+    for (let i = 0; i < 20; i++) {
+      const r = pickQuestion({ ...base, candidates: [a, b], purpose: 'practice', difficulty: 'medium', sessionTemplates: new Set([used]) })!;
+      expect(r.question.id).toBe('b');
+    }
+  });
+
+  it('still serves a used template when nothing else is left', () => {
+    const used = 'T';
+    const a: PoolQuestion = { ...q('a'), templateKey: used };
+    expect(pickQuestion({ ...base, candidates: [a], purpose: 'practice', difficulty: 'medium', sessionTemplates: new Set([used]) })!.question.id).toBe('a');
   });
 });

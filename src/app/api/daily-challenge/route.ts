@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getOrCreateDailyChallenge, getStreakInfo, getTodayRiyadh } from '@/lib/daily-challenge';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,9 +35,7 @@ export async function GET(req: NextRequest) {
       const { sql } = await import('drizzle-orm');
       const db = getDb();
       const today = getTodayRiyadh();
-      const answered = await db
-        .select()
-        .from(sql`daily_challenge_results`)
+      const answered = await selectAllFrom(db, 'daily_challenge_results')
         .where(sql`child_id = ${childId} AND challenge_date = ${today}`) as any[];
       answeredQuestions = answered.map((a: any) => a.question_id);
     }

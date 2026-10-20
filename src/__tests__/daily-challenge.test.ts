@@ -5,6 +5,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockRun = vi.fn();
 const mockSelect = vi.fn();
 
+// selectAllFrom issues SELECT * via db.all; these tests drive the older select().from() mock chain.
+vi.mock('@/lib/db/select-all', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  selectAllFrom: (db: any, table: string) => db.select().from(table),
+}));
+
 vi.mock('@/lib/db', () => ({
   getDb: () => ({ select: mockSelect, run: mockRun }),
 }));

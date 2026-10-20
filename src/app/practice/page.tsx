@@ -5,6 +5,7 @@ import { AgeGroup, SkillArea } from '@/types';
 import { getSkillAreaLabel, getSkillAreaIcon } from '@/lib/utils';
 import { useSelectedChild, ChildData } from '@/hooks/useSelectedChild';
 import { computeAgeGroupClient } from '@/lib/age-utils';
+import { isMawhibaL1Age } from '@/lib/mawhiba/eligibility';
 import Logo from '@/components/ui/Logo';
 import ChildSwitcher from '@/components/ui/ChildSwitcher';
 import Link from 'next/link';
@@ -238,7 +239,7 @@ export default function PracticePage() {
         ) : (
           <>
             {/* Mawhiba Level 1 track */}
-            {showMawhiba.enabled && selectedChild && (
+            {showMawhiba.enabled && selectedChild && isMawhibaL1Age(selectedChild.age) && (
               <div className="mb-4 bg-gradient-to-l from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-amber-900 font-bold text-sm">🏆 مسار موهبة ١</p>

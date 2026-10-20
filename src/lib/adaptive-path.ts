@@ -3,6 +3,7 @@ import { sessions, sessionAnswers, questions } from './db/schema';
 import { sql, eq, and, desc } from 'drizzle-orm';
 import { getTierCondition } from './question-access';
 import { isYoungQuestionSafe } from './young-question-policy';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -158,9 +159,7 @@ export async function generateAdaptiveSession(
   const db = getDb();
 
   // Check for incomplete adaptive session
-  const [existing] = await db
-    .select()
-    .from(sql`adaptive_sessions`)
+  const [existing] = await selectAllFrom(db, 'adaptive_sessions')
     .where(sql`child_id = ${childId} AND completed = 0`)
     .orderBy(sql`created_at DESC`)
     .limit(1) as any[];
@@ -411,9 +410,7 @@ export async function completeAdaptiveSession(
   );
 
   // Check if recalculation is needed
-  const [session] = await db
-    .select()
-    .from(sql`adaptive_sessions`)
+  const [session] = await selectAllFrom(db, 'adaptive_sessions')
     .where(sql`id = ${sessionId}`)
     .limit(1) as any[];
 

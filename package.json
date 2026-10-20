@@ -19,7 +19,7 @@
     "drizzle-orm": "^0.45.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
-    "msedge-tts": "^2.0.4",
+    "msedge-tts": "^2.1.0",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",

@@ -287,6 +287,7 @@ export const masteryAttempts = sqliteTable('mastery_attempts', {
   skillKey: text('skill_key').notNull(),
   purpose: text('purpose').notNull(),
   isCorrect: integer('is_correct', { mode: 'boolean' }).notNull(),
+  selectedOption: integer('selected_option'),
   pBefore: real('p_before').notNull(),
   pAfter: real('p_after').notNull(),
   statusBefore: text('status_before').notNull(),

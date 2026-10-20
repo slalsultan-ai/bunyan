@@ -27,6 +27,7 @@ interface SessionView {
   skill: { key: string; nameAr: string; area: string } | null;
   results: boolean[];
   completed: boolean;
+  resumed?: boolean;
 }
 
 interface MasteredSkill {
@@ -157,6 +158,10 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous lock: state updates are async, so two quick taps could both pass a state check.
+  const submittingRef = useRef(false);
+  const [speech, setSpeech] = useState<'idle' | 'loading' | 'playing' | 'error'>('idle');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [correctOptionIndex, setCorrectOptionIndex] = useState<number | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
@@ -192,7 +197,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
         return;
       }
       setSession(data.session);
-      setPhase(data.session.served > 0 ? 'playing' : 'ready');
+      setPhase(data.session.served > 0 || data.session.resumed ? 'playing' : 'ready');
     } catch {
       setError('تعذّر الاتصال بالخادم');
       setPhase('error');
@@ -202,11 +207,48 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
   useEffect(() => { loadSession(); }, [loadSession]);
 
   const resetAnswerState = () => {
+    stopAudio();
+    setSpeech('idle');
     setSelectedOption(null);
     setIsCorrect(null);
     setCorrectOptionIndex(null);
     setExplanation(null);
     setShowWhy(false);
+  };
+
+  const stopAudio = () => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
+  };
+
+  /** Server voice first (same as regular practice), device voice as fallback, visible state either way. */
+  const readAloud = async (text: string) => {
+    if (speech === 'playing') { stopAudio(); setSpeech('idle'); return; }
+    setSpeech('loading');
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.slice(0, 500) }),
+      });
+      if (!res.ok) throw new Error('tts');
+      const url = URL.createObjectURL(await res.blob());
+      const audio = new Audio(url);
+      audio.setAttribute('playsinline', '');
+      audioRef.current = audio;
+      audio.onended = () => { URL.revokeObjectURL(url); setSpeech('idle'); };
+      audio.onerror = () => { URL.revokeObjectURL(url); setSpeech('error'); };
+      await audio.play();
+      setSpeech('playing');
+    } catch {
+      if (speakArabic(text)) {
+        setSpeech('playing');
+        window.setTimeout(() => setSpeech((s) => (s === 'playing' ? 'idle' : s)), Math.min(30000, 600 + text.length * 90));
+      } else {
+        setSpeech('error');
+      }
+    }
   };
 
   const handleStart = () => {
@@ -218,7 +260,8 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
   const answered = isCorrect !== null;
 
   const handleSelect = useCallback(async (optionIndex: number) => {
-    if (!session || !question || submitting || answered) return;
+    if (!session || !question || submittingRef.current || submitting || answered) return;
+    submittingRef.current = true;
     setSelectedOption(optionIndex);
     setSubmitting(true);
     try {
@@ -231,6 +274,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
           sessionId: session.sessionId,
           questionId: question.id,
           selectedOption: optionIndex,
+          optionText: question.options[optionIndex]?.text ?? null,
         }),
       });
       const data = await res.json();
@@ -241,6 +285,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
         setPhase('error');
         return;
       }
+      setSelectedOption(Number.isInteger(data.selectedOption) ? data.selectedOption : optionIndex);
       setIsCorrect(data.isCorrect);
       setCorrectOptionIndex(data.correctOptionIndex);
       setExplanation(data.explanationAr ?? null);
@@ -256,6 +301,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
       setError('تعذّر الاتصال بالخادم');
       setPhase('error');
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }, [session, question, submitting, answered, childId, track, loadSession, playCorrect, playWrong, playFanfare, bunaa]);
@@ -501,11 +547,15 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
             </p>
             <button
               type="button"
-              onClick={() => speakArabic(question.questionTextAr)}
+              onClick={() => readAloud(question.questionTextAr)}
+              disabled={speech === 'loading'}
               className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700"
             >
-              🔈 اقرأ لي السؤال
+              {speech === 'loading' ? '⏳ جارٍ التحضير…' : speech === 'playing' ? '🔊 جارٍ القراءة… (اضغط للإيقاف)' : '🔈 اقرأ لي السؤال'}
             </button>
+            {speech === 'error' && (
+              <p className="mt-2 text-xs text-rose-600">تعذّرت القراءة الصوتية على هذا الجهاز. تأكد من رفع الصوت أو جرّب متصفحًا آخر.</p>
+            )}
           </div>
 
           <div className={cn(short ? 'grid grid-cols-2 gap-3' : 'space-y-3')}>

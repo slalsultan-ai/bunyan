@@ -327,6 +327,19 @@ describe('chooseNext', () => {
     expect(c.reason.rule).toBe('select_maintenance');
   });
 
+  it('rotates to the next open skill once the per-session practice cap is reached', () => {
+    const states = stateMap(st('A', { observations: 5 }), st('D', { observations: 5 }));
+    const capped = new Map([['A', CFG.maxPracticePerSkillPerSession]]);
+    expect(chooseNext({ ...base, states, practicedThisSession: capped })!.skillKey).toBe('D');
+    expect(chooseNext({ ...base, states, practicedThisSession: new Map([['A', 1]]) })!.skillKey).toBe('A');
+  });
+
+  it('keeps practising a capped skill when it is the only open one', () => {
+    const states = stateMap(st('A', { observations: 5 }));
+    const c = chooseNext({ ...base, eligible: new Set(['A']), states, practicedThisSession: new Map([['A', 99]]) })!;
+    expect(c.skillKey).toBe('A');
+  });
+
   it('skips exhausted skills', () => {
     const states = stateMap(st('A', { observations: 5 }), st('D', { observations: 5 }));
     const c = chooseNext({ ...base, states, exhausted: new Set(['A']) })!;

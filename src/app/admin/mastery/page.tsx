@@ -50,11 +50,17 @@ interface Attempt {
   selectionReason: (Decision & { difficulty?: string; pick?: string }) | null;
   decisions: Decision[] | null;
   createdAt: string;
+  selectedOption?: number | null;
+  selectedText?: string | null;
+  correctIndex?: number | null;
+  correctText?: string | null;
+  questionText?: string | null;
 }
 
 interface ChildReport {
   child: { id: string; name: string; age: number; ageGroup: string };
   supported: boolean;
+  trackAttempts?: Record<string, number>;
   skills?: SkillRow[];
   attempts?: Attempt[];
 }
@@ -107,6 +113,7 @@ const CONFIG_LABELS: Record<string, string> = {
   sessionSize: 'طول الجلسة',
   maxReviewsPerSession: 'أقصى مراجعات في الجلسة',
   maxDiagnosticsPerSession: 'أقصى أسئلة تشخيص في الجلسة',
+  maxPracticePerSkillPerSession: 'أقصى تمارين لمهارة واحدة في الجلسة',
   diagnosticPerSkill: 'أسئلة التشخيص لكل مهارة',
   minQuestionsPerSkill: 'أقل عدد أسئلة لدخول المهارة',
   recentExcludeDays: 'استبعاد الأسئلة المكررة خلال (أيام)',
@@ -117,6 +124,7 @@ const CONFIG_LABELS: Record<string, string> = {
 };
 
 const pct = (p: number) => `${Math.round(p * 100)}%`;
+const LETTERS_AR = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -129,6 +137,8 @@ type Track = (typeof TRACKS)[number]['key'];
 export default function AdminMasteryPage() {
   const [tab, setTab] = useState<'child' | 'gaps' | 'config'>('child');
   const [track, setTrack] = useState<Track>('6-9');
+  // Child to reopen after an automatic switch to the track that holds their data.
+  const [carryChild, setCarryChild] = useState<string | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,7 +182,15 @@ export default function AdminMasteryPage() {
       </div>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
-      {tab === 'child' && <ChildTab key={track} overview={overview} track={track} />}
+      {tab === 'child' && (
+        <ChildTab
+          key={track}
+          overview={overview}
+          track={track}
+          initialChildId={carryChild}
+          onSwitchTrack={(t, childId) => { setCarryChild(childId); setTrack(t); }}
+        />
+      )}
       {tab === 'gaps' && overview && <GapsTab gaps={overview.gaps} />}
       {tab === 'config' && overview && <ConfigTab overview={overview} onSaved={loadOverview} />}
     </div>
@@ -181,7 +199,12 @@ export default function AdminMasteryPage() {
 
 // ─── Child decisions ─────────────────────────────────────────────────────────
 
-function ChildTab({ overview, track }: { overview: Overview | null; track: Track }) {
+function ChildTab({ overview, track, initialChildId, onSwitchTrack }: {
+  overview: Overview | null;
+  track: Track;
+  initialChildId: string | null;
+  onSwitchTrack: (track: Track, childId: string) => void;
+}) {
   const [email, setEmail] = useState('');
   const [found, setFound] = useState<Array<{ id: string; name: string; age: number; ageGroup: string }> | null>(null);
   const [report, setReport] = useState<ChildReport | null>(null);
@@ -194,12 +217,25 @@ function ChildTab({ overview, track }: { overview: Overview | null; track: Track
     setFound(data.children ?? []);
   };
 
-  const openChild = async (childId: string) => {
+  const openChild = useCallback(async (childId: string) => {
     setLoading(true);
     const res = await fetch(`/api/admin/mastery?childId=${childId}&track=${track}`);
-    setReport(res.ok ? await res.json() : null);
+    const data: ChildReport | null = res.ok ? await res.json() : null;
     setLoading(false);
-  };
+    // Nothing here but data in the other track → jump there instead of showing an empty page.
+    const counts = data?.trackAttempts ?? {};
+    const hereCount = counts[track] ?? 0;
+    const other = TRACKS.find((t) => t.key !== track && (counts[t.key] ?? 0) > 0);
+    if (data && other && (!data.supported || hereCount === 0)) {
+      onSwitchTrack(other.key, childId);
+      return;
+    }
+    setReport(data);
+  }, [track, onSwitchTrack]);
+
+  useEffect(() => {
+    if (initialChildId) openChild(initialChildId);
+  }, [initialChildId, openChild]);
 
   return (
     <div className="space-y-6">
@@ -332,6 +368,12 @@ function AttemptsLog({ attempts, skills }: { attempts: Attempt[]; skills: SkillR
               <span className="font-medium">{name.get(a.skillKey) ?? a.skillKey}</span>
               <span className="text-xs bg-slate-100 rounded px-2 py-0.5">{PURPOSE_LABEL[a.purpose] ?? a.purpose}</span>
               <span className="tabular-nums text-slate-600" dir="ltr">{a.pBefore.toFixed(3)} → {a.pAfter.toFixed(3)}</span>
+              {a.selectedText != null && (
+                <span className="text-xs text-slate-500">
+                  اختار ({LETTERS_AR[a.selectedOption ?? 0]}) {a.selectedText}
+                  {!a.isCorrect && a.correctText != null && <> · الصحيح ({LETTERS_AR[a.correctIndex ?? 0]}) {a.correctText}</>}
+                </span>
+              )}
               {a.statusBefore !== a.statusAfter && (
                 <span className="text-xs text-amber-700">{STATUS_LABEL[a.statusBefore]?.label} ← {STATUS_LABEL[a.statusAfter]?.label}</span>
               )}
@@ -339,6 +381,9 @@ function AttemptsLog({ attempts, skills }: { attempts: Attempt[]; skills: SkillR
             </button>
             {open === a.id && (
               <div className="px-4 pb-4 space-y-2 text-sm">
+                {a.questionText && (
+                  <p className="whitespace-pre-line rounded-lg bg-white p-3 text-slate-700 ring-1 ring-slate-100">{a.questionText}</p>
+                )}
                 {a.selectionReason && (
                   <div className="bg-indigo-50 rounded-lg p-3">
                     <p className="font-bold text-indigo-800 mb-1">لماذا اختير هذا السؤال؟</p>

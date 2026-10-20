@@ -3,6 +3,7 @@ import { questions } from './db/schema';
 import { eq, and, sql, notInArray } from 'drizzle-orm';
 import { getTierCondition } from './question-access';
 import { isYoungQuestionSafe } from './young-question-policy';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -68,9 +69,7 @@ export async function getOrCreateDailyChallenge(ageGroup: string): Promise<Daily
   const today = getTodayRiyadh();
 
   // Check if challenge already exists for today + age group
-  const [existing] = await db
-    .select()
-    .from(sql`daily_challenges`)
+  const [existing] = await selectAllFrom(db, 'daily_challenges')
     .where(sql`challenge_date = ${today} AND age_group = ${ageGroup}`)
     .limit(1) as any[];
 
@@ -103,9 +102,7 @@ export async function selectChallengeQuestions(ageGroup: string, date?: string):
   const today = date || getTodayRiyadh();
 
   // Get question IDs used in the last 14 challenges for this age group
-  const recentChallenges = await db
-    .select()
-    .from(sql`daily_challenges`)
+  const recentChallenges = await selectAllFrom(db, 'daily_challenges')
     .where(sql`age_group = ${ageGroup} AND challenge_date >= date(${today}, '-14 days')`) as any[];
 
   const usedIds = new Set<string>();
@@ -245,9 +242,7 @@ export async function completeDailyChallenge(
   const db = getDb();
 
   // Count answers for this challenge
-  const results = await db
-    .select()
-    .from(sql`daily_challenge_results`)
+  const results = await selectAllFrom(db, 'daily_challenge_results')
     .where(sql`child_id = ${childId} AND challenge_date = ${challengeDate}`) as any[];
 
   if (results.length < 3) {
@@ -261,9 +256,7 @@ export async function completeDailyChallenge(
   const earnedStar = true;
 
   // Get or create streak record
-  const [streak] = await db
-    .select()
-    .from(sql`daily_streaks`)
+  const [streak] = await selectAllFrom(db, 'daily_streaks')
     .where(sql`child_id = ${childId}`)
     .limit(1) as any[];
 
@@ -330,9 +323,7 @@ export async function getStreakInfo(childId: string): Promise<StreakInfo> {
   const db = getDb();
   const today = getTodayRiyadh();
 
-  const [streak] = await db
-    .select()
-    .from(sql`daily_streaks`)
+  const [streak] = await selectAllFrom(db, 'daily_streaks')
     .where(sql`child_id = ${childId}`)
     .limit(1) as any[];
 
