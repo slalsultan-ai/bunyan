@@ -6,7 +6,7 @@ import { startOrResumeSession } from '@/lib/mastery/service';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const access = await resolveMasteryAccess(body?.childId);
+    const access = await resolveMasteryAccess(body?.childId, body?.track);
     const session = await startOrResumeSession(access.childId, access.ageGroup, access.email);
     return NextResponse.json({ session });
   } catch (e) {

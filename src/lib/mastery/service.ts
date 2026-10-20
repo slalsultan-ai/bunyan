@@ -29,7 +29,7 @@ export interface PoolQuestion {
   skillKey: string;
   difficulty: string;
   optionCount: number;
-  /** Normalized question text: copies of the same question share it. */
+  /** Content identity (text + options): copies of the same question share it. */
   textKey: string;
 }
 
@@ -88,6 +88,19 @@ export class MasteryError extends Error {
 /** Same question text → same key, regardless of spacing or tatweel. */
 export function questionTextKey(text: string | null | undefined): string {
   return (text ?? '').replace(/\u0640/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Identity of a question's content: normalized text plus its options. Two
+ * rows are copies only when both match — a shared stem such as «أي كلمة
+ * مختلفة عن البقية؟» with different options is a different question.
+ */
+export function questionContentKey(
+  text: string | null | undefined,
+  options: Array<{ text: string }> | null | undefined,
+): string {
+  const opts = (Array.isArray(options) ? options : []).map((o) => questionTextKey(o?.text)).sort();
+  return `${questionTextKey(text)}\u0000${opts.join('\u0001')}`;
 }
 
 export async function loadMasteryConfig(): Promise<MasteryConfig> {
@@ -157,7 +170,7 @@ export async function loadQuestionPool(
       skillKey,
       difficulty: r.difficulty,
       optionCount: Array.isArray(r.options) ? r.options.length : 4,
-      textKey: questionTextKey(r.questionTextAr),
+      textKey: questionContentKey(r.questionTextAr, r.options),
     };
     byId.set(q.id, q);
     const list = bySkill.get(skillKey) ?? [];
@@ -263,7 +276,10 @@ async function ensureStates(
   if (missing.length === 0) return existing;
 
   let fresh: Map<string, SkillState>;
-  if (existing.size === 0) {
+  // First contact with this track: replay the child's past answers in it.
+  const trackKeys = new Set(pool.bySkill.keys());
+  const hasTrackState = [...existing.keys()].some((k) => trackKeys.has(k));
+  if (!hasTrackState) {
     const db = getDb();
     const history = await db
       .select({ questionId: sessionAnswers.questionId, isCorrect: sessionAnswers.isCorrect })
@@ -298,11 +314,11 @@ async function loadSeen(childId: string, config: MasteryConfig): Promise<{ ever:
   const sinceSql = since.replace('T', ' ').slice(0, 19);
 
   const [mastery, practice] = await Promise.all([
-    db.select({ text: questions.questionTextAr, createdAt: masteryAttempts.createdAt })
+    db.select({ text: questions.questionTextAr, options: questions.options, createdAt: masteryAttempts.createdAt })
       .from(masteryAttempts)
       .innerJoin(questions, eq(masteryAttempts.questionId, questions.id))
       .where(eq(masteryAttempts.childId, childId)),
-    db.select({ text: questions.questionTextAr, startedAt: sessions.startedAt })
+    db.select({ text: questions.questionTextAr, options: questions.options, startedAt: sessions.startedAt })
       .from(sessionAnswers)
       .innerJoin(sessions, eq(sessionAnswers.sessionId, sessions.id))
       .innerJoin(questions, eq(sessionAnswers.questionId, questions.id))
@@ -312,12 +328,12 @@ async function loadSeen(childId: string, config: MasteryConfig): Promise<{ ever:
   const ever = new Set<string>();
   const recent = new Set<string>();
   for (const m of mastery) {
-    const key = questionTextKey(m.text);
+    const key = questionContentKey(m.text, m.options);
     ever.add(key);
     if ((m.createdAt ?? '') >= sinceSql) recent.add(key);
   }
   for (const p of practice) {
-    const key = questionTextKey(p.text);
+    const key = questionContentKey(p.text, p.options);
     ever.add(key);
     if ((p.startedAt ?? '') >= sinceSql) recent.add(key);
   }
@@ -413,11 +429,11 @@ async function buildCtx(childId: string, ageGroup: MasteryAgeGroup, parentEmail?
 async function sessionTextKeys(sessionId: number): Promise<Set<string>> {
   const db = getDb();
   const rows = await db
-    .select({ text: questions.questionTextAr })
+    .select({ text: questions.questionTextAr, options: questions.options })
     .from(masteryAttempts)
     .innerJoin(questions, eq(masteryAttempts.questionId, questions.id))
     .where(eq(masteryAttempts.sessionId, sessionId));
-  return new Set(rows.map((r) => questionTextKey(r.text)));
+  return new Set(rows.map((r) => questionContentKey(r.text, r.options)));
 }
 
 /** Choose the next question; skills with nothing left to serve are skipped. */
@@ -519,7 +535,7 @@ export async function startOrResumeSession(
   const [open] = await db
     .select()
     .from(masterySessions)
-    .where(and(eq(masterySessions.childId, childId), isNull(masterySessions.completedAt)))
+    .where(and(eq(masterySessions.childId, childId), eq(masterySessions.track, ageGroup), isNull(masterySessions.completedAt)))
     .orderBy(desc(masterySessions.id))
     .limit(1);
 
@@ -527,7 +543,7 @@ export async function startOrResumeSession(
 
   let session = open;
   if (!session) {
-    [session] = await db.insert(masterySessions).values({ childId }).returning();
+    [session] = await db.insert(masterySessions).values({ childId, track: ageGroup }).returning();
   }
 
   const picked = await chooseAndPick(ctx, session);
@@ -553,7 +569,7 @@ export async function submitAnswer(params: {
   const [session] = await db
     .select()
     .from(masterySessions)
-    .where(and(eq(masterySessions.id, sessionId), eq(masterySessions.childId, childId)))
+    .where(and(eq(masterySessions.id, sessionId), eq(masterySessions.childId, childId), eq(masterySessions.track, params.ageGroup)))
     .limit(1);
   if (!session) throw new MasteryError('الجلسة غير موجودة', 404);
   if (session.completedAt) throw new MasteryError('الجلسة منتهية', 409);

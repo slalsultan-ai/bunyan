@@ -13,12 +13,15 @@
  * skipped, so they never block a child.
  */
 
-export type MasteryAgeGroup = '6-9';
+/** A mastery track: an age group of the general bank, or a dedicated exam bank. */
+export type MasteryTrack = '6-9' | 'mawhiba_l1';
+/** @deprecated kept for existing imports; use MasteryTrack. */
+export type MasteryAgeGroup = MasteryTrack;
 
 export interface MasterySkill {
   key: string;
   nameAr: string;
-  area: 'quantitative' | 'verbal' | 'logical_patterns';
+  area: 'quantitative' | 'verbal' | 'logical_patterns' | 'spatial' | 'scientific';
   /** Teaching order: lower runs first when several skills are open. */
   order: number;
   prerequisites: string[];
@@ -26,7 +29,9 @@ export interface MasterySkill {
   sources: Array<[string, string]>;
 }
 
-export const MASTERY_AGE_GROUPS: readonly MasteryAgeGroup[] = ['6-9'];
+/** Tracks chosen by the child's age (the general smart path). */
+export const MASTERY_AGE_GROUPS: readonly MasteryTrack[] = ['6-9'];
+export const MASTERY_TRACKS: readonly MasteryTrack[] = ['6-9', 'mawhiba_l1'];
 
 export const SKILLS_6_9: MasterySkill[] = [
   // ─── Quantitative ────────────────────────────────────────────────────────
@@ -210,25 +215,55 @@ export const SKILLS_6_9: MasterySkill[] = [
   },
 ];
 
-const TAXONOMY: Record<MasteryAgeGroup, MasterySkill[]> = {
+// ─── Mawhiba Level 1 (grades 3–5): one skill per question type ─────────────
+// Teaching order interleaves the four sections so early sessions touch all of them.
+const m1 = (
+  key: string, nameAr: string, area: MasterySkill['area'], order: number, prerequisites: string[], subSkill: string,
+): MasterySkill => ({ key, nameAr, area, order, prerequisites, sources: [[area, subSkill]] });
+
+export const SKILLS_MAWHIBA_L1: MasterySkill[] = [
+  m1('m1_word_problems', 'المسائل الكلامية', 'quantitative', 10, [], 'مسائل كلامية'),
+  m1('m1_synonyms', 'المترادفات', 'verbal', 11, [], 'المترادفات'),
+  m1('m1_directions', 'الاتجاهات والحركة', 'spatial', 12, [], 'الاتجاهات والحركة'),
+  m1('m1_science_facts', 'المعلومات العلمية', 'scientific', 13, [], 'معلومات علمية'),
+  m1('m1_sequences', 'المتتاليات العددية', 'quantitative', 20, [], 'المتتاليات العددية'),
+  m1('m1_antonyms', 'الأضداد', 'verbal', 21, [], 'الأضداد'),
+  m1('m1_cubes', 'المكعبات والأحجام', 'spatial', 22, [], 'المكعبات والأحجام'),
+  m1('m1_mechanics', 'التروس والرافعات والآلات البسيطة', 'scientific', 23, [], 'التروس والرافعات والآلات البسيطة'),
+  m1('m1_unknowns', 'الأعداد المجهولة', 'quantitative', 30, ['m1_word_problems'], 'الأعداد المجهولة'),
+  m1('m1_analogy', 'التناظر اللفظي', 'verbal', 31, ['m1_synonyms', 'm1_antonyms'], 'التناظر اللفظي'),
+  m1('m1_patterns', 'الأنماط المتكررة', 'spatial', 32, ['m1_sequences'], 'الأنماط المتكررة'),
+  m1('m1_odd_one_out', 'الكلمة المختلفة', 'verbal', 33, [], 'الكلمة المختلفة'),
+  m1('m1_fractions', 'الكسور والنسب والتقريب', 'quantitative', 40, ['m1_word_problems'], 'الكسور والنسب والتقريب'),
+  m1('m1_sentence_completion', 'إكمال الجمل', 'verbal', 41, ['m1_synonyms'], 'إكمال الجمل'),
+  m1('m1_geometry', 'الهندسة والقياس والوقت', 'quantitative', 50, ['m1_word_problems'], 'الهندسة والقياس والوقت'),
+  m1('m1_reading', 'فهم المقروء', 'verbal', 51, ['m1_sentence_completion'], 'فهم المقروء'),
+];
+
+const TAXONOMY: Record<MasteryTrack, MasterySkill[]> = {
   '6-9': SKILLS_6_9,
+  mawhiba_l1: SKILLS_MAWHIBA_L1,
 };
 
 /** Display info for a skill key, from any supported age group. */
 export function skillLabel(skillKey: string): { key: string; nameAr: string; area: MasterySkill['area'] } | null {
-  for (const group of MASTERY_AGE_GROUPS) {
+  for (const group of MASTERY_TRACKS) {
     const sk = TAXONOMY[group].find((s) => s.key === skillKey);
     if (sk) return { key: sk.key, nameAr: sk.nameAr, area: sk.area };
   }
   return null;
 }
 
-export function isMasteryAgeGroup(ageGroup: string): ageGroup is MasteryAgeGroup {
+export function isMasteryAgeGroup(ageGroup: string): ageGroup is MasteryTrack {
   return (MASTERY_AGE_GROUPS as readonly string[]).includes(ageGroup);
 }
 
-export function getTaxonomy(ageGroup: MasteryAgeGroup): MasterySkill[] {
-  return TAXONOMY[ageGroup];
+export function isMasteryTrack(track: unknown): track is MasteryTrack {
+  return typeof track === 'string' && (MASTERY_TRACKS as readonly string[]).includes(track);
+}
+
+export function getTaxonomy(track: MasteryTrack): MasterySkill[] {
+  return TAXONOMY[track];
 }
 
 function pairKey(skillArea: string, subSkill: string): string {

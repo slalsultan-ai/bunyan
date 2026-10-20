@@ -1,34 +1,45 @@
 import { hasFeatureAccess } from '../feature-flags';
 import { computeAgeGroup, getParentSession } from '../parent-auth';
 import { assertParentCanAccessChild, isParentChildAccessError } from '../parent-child-access';
-import { isMasteryAgeGroup, type MasteryAgeGroup } from './taxonomy';
+import { isMasteryAgeGroup, type MasteryTrack } from './taxonomy';
 import { MasteryError } from './service';
 
 export const MASTERY_FLAG = 'adaptive_mastery';
+export const MAWHIBA_L1_FLAG = 'mawhiba_l1';
 
 export interface MasteryAccess {
   parentId: string;
   email: string;
   childId: string;
-  ageGroup: MasteryAgeGroup;
+  /** The track the request runs on (field name kept for existing callers). */
+  ageGroup: MasteryTrack;
 }
 
 /**
- * The engine runs only for a signed-in parent with the `adaptive_mastery`
- * flag, acting on one of their own children in a supported age group.
+ * The engine runs only for a signed-in parent acting on one of their own
+ * children, with the flag of the requested track:
+ *   - smart path (default): `adaptive_mastery`, child in a supported age group
+ *   - `mawhiba_l1`: `mawhiba_l1` flag, any child (the parent picks who prepares)
  */
-export async function resolveMasteryAccess(childId: unknown): Promise<MasteryAccess> {
+export async function resolveMasteryAccess(childId: unknown, track?: unknown): Promise<MasteryAccess> {
+  const isMawhiba = track === 'mawhiba_l1';
+  if (track !== undefined && track !== null && track !== '6-9' && !isMawhiba) {
+    throw new MasteryError('مسار غير معروف', 400);
+  }
   if (typeof childId !== 'string' || childId.length === 0) {
     throw new MasteryError('بيانات ناقصة', 400);
   }
   const session = await getParentSession();
   if (!session) throw new MasteryError('غير مصرح', 401);
 
-  const enabled = await hasFeatureAccess(MASTERY_FLAG, session.email, session.parentId);
+  const enabled = await hasFeatureAccess(isMawhiba ? MAWHIBA_L1_FLAG : MASTERY_FLAG, session.email, session.parentId);
   if (!enabled) throw new MasteryError('الميزة غير مفعّلة', 403);
 
   try {
     const { child } = await assertParentCanAccessChild(session.parentId, childId);
+    if (isMawhiba) {
+      return { parentId: session.parentId, email: session.email, childId: child.id, ageGroup: 'mawhiba_l1' };
+    }
     const ageGroup = computeAgeGroup(child.age);
     if (!isMasteryAgeGroup(ageGroup)) throw new MasteryError('الفئة العمرية غير مدعومة بعد', 403);
     return { parentId: session.parentId, email: session.email, childId: child.id, ageGroup };

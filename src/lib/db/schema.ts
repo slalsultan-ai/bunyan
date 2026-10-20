@@ -274,6 +274,7 @@ export const masterySessions = sqliteTable('mastery_sessions', {
   currentSkillKey: text('current_skill_key'),
   currentPurpose: text('current_purpose'),
   currentReason: text('current_reason', { mode: 'json' }).$type<Record<string, unknown>>(),
+  track: text('track').notNull().default('6-9'),
   startedAt: text('started_at').default(sql`(datetime('now'))`),
   completedAt: text('completed_at'),
 });

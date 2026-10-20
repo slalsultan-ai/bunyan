@@ -9,7 +9,7 @@ import { computeAgeGroup } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { children } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { isMasteryAgeGroup } from '@/lib/mastery/taxonomy';
+import { isMasteryAgeGroup, isMasteryTrack, type MasteryTrack } from '@/lib/mastery/taxonomy';
 
 /**
  * Admin read API for the mastery engine.
@@ -26,17 +26,20 @@ export async function GET(req: NextRequest) {
     const params = req.nextUrl.searchParams;
     const childId = params.get('childId');
     const email = params.get('email');
+    const requestedTrack = params.get('track');
+    const track: MasteryTrack = isMasteryTrack(requestedTrack) ? requestedTrack : '6-9';
 
     if (childId) {
       const db = getDb();
       const [child] = await db.select().from(children).where(eq(children.id, childId)).limit(1);
       if (!child) return NextResponse.json({ error: 'الطفل غير موجود' }, { status: 404 });
-      const ageGroup = computeAgeGroup(child.age);
-      if (!isMasteryAgeGroup(ageGroup)) {
+      const childAgeGroup = computeAgeGroup(child.age);
+      const ageGroup: string = track === 'mawhiba_l1' ? track : childAgeGroup;
+      if (!isMasteryTrack(ageGroup) || (track !== 'mawhiba_l1' && !isMasteryAgeGroup(ageGroup))) {
         return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup }, supported: false });
       }
       const report = await getChildMasteryReport(childId, ageGroup);
-      return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup }, supported: true, ...report });
+      return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup: childAgeGroup }, track, supported: true, ...report });
     }
 
     if (email) {
@@ -45,10 +48,10 @@ export async function GET(req: NextRequest) {
 
     const [recent, gaps, config] = await Promise.all([
       listRecentMasteryChildren(),
-      getContentGapsReport('6-9'),
+      getContentGapsReport(track),
       loadMasteryConfig(),
     ]);
-    return NextResponse.json({ recent, gaps, config, defaults: DEFAULT_MASTERY_CONFIG });
+    return NextResponse.json({ track, recent, gaps, config, defaults: DEFAULT_MASTERY_CONFIG });
   } catch (e) {
     console.error('[admin mastery GET]', e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

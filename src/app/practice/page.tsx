@@ -42,6 +42,7 @@ export default function PracticePage() {
   const showSessionLimit = useFeatureFlag('session_limit');
   const showAdaptivePath = useFeatureFlag('adaptive_path');
   const showMastery = useFeatureFlag('adaptive_mastery');
+  const showMawhiba = useFeatureFlag('mawhiba_l1');
   const showExtendedBank = useFeatureFlag('gat_extended_bank');
   const showMockTests = useFeatureFlag('mock_tests');
   const showSimulations = useFeatureFlag('ENABLE_SIMULATIONS');
@@ -236,6 +237,22 @@ export default function PracticePage() {
           </div>
         ) : (
           <>
+            {/* Mawhiba Level 1 track */}
+            {showMawhiba.enabled && selectedChild && (
+              <div className="mb-4 bg-gradient-to-l from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-amber-900 font-bold text-sm">🏆 مسار موهبة ١</p>
+                  <p className="text-amber-700 text-xs">تدريب تكيّفي بالإتقان على نمط مقياس موهبة (الصفوف 3–5)</p>
+                </div>
+                <Link
+                  href="/practice/mawhiba"
+                  className="bg-gradient-to-l from-amber-500 to-orange-500 text-white font-bold px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-all"
+                >
+                  ابدأ التدريب
+                </Link>
+              </div>
+            )}
+
             {/* Adaptive mastery banner (replaces the smart-path banner for 6-9) */}
             {masteryApplies && (
               <div className="mb-4 bg-gradient-to-l from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-center justify-between">
