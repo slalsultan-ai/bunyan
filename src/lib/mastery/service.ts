@@ -6,6 +6,7 @@
 
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { getDb } from '../db';
+import { isAnswerCorrect } from '../answer-scoring';
 import {
   masteryAttempts, masteryBktParams, masterySessions, masterySkillState,
   questions, sessionAnswers, sessions, siteContent,
@@ -574,7 +575,7 @@ export async function submitAnswer(params: {
     .where(eq(questions.id, questionId))
     .limit(1);
   if (!q) throw new MasteryError('السؤال غير موجود', 404);
-  const isCorrect = selectedOption === q.correctOptionIndex;
+  const isCorrect = isAnswerCorrect(selectedOption, q.correctOptionIndex);
 
   const ctx = await buildCtx(childId, params.ageGroup, params.parentEmail);
   const skillKey = session.currentSkillKey;

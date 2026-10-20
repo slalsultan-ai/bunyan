@@ -5,6 +5,7 @@ import { eq, and, like, sql, desc } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { getYoungQuestionViolation } from '@/lib/young-question-policy';
 import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
+import { logQuestionAudit } from '@/lib/question-audit';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -99,5 +100,6 @@ export async function POST(req: NextRequest) {
     isActive: true,
   }).returning();
 
+  await logQuestionAudit('question_create', { id: row.id, correctOptionIndex: row.correctOptionIndex });
   return NextResponse.json({ question: row }, { status: 201 });
 }

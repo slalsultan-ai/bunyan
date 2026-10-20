@@ -19,17 +19,33 @@ interface QuestionHealth {
   avgTimeMs: number;
   passRate: number;
   optionDist: number[];
+  status: 'critical' | 'warning' | 'healthy' | 'low_sample';
+  suspectedKey: { index: number; share: number } | null;
 }
 
 interface Summary {
   critical: number;
   warning: number;
   healthy: number;
+  lowSample: number;
+  suspectedKey: number;
   avgPassRate: number;
   total: number;
 }
 
-function PassBadge({ rate }: { rate: number }) {
+const LETTERS = ['أ', 'ب', 'ج', 'د'];
+const MIN_ATTEMPTS_FOR_VERDICT = 10;
+
+type Filter = 'all' | 'suspect' | 'critical' | 'warning' | 'healthy' | 'low_sample';
+
+function PassBadge({ rate, lowSample }: { rate: number; lowSample: boolean }) {
+  if (lowSample) {
+    return (
+      <span className="inline-block border rounded-lg px-2 py-0.5 text-xs font-bold bg-gray-100 text-gray-500 border-gray-200" title="عينة صغيرة — لا حكم بعد">
+        {rate}٪
+      </span>
+    );
+  }
   const color = rate < 30
     ? 'bg-red-100 text-red-700 border-red-200'
     : rate < 50
@@ -44,7 +60,7 @@ function PassBadge({ rate }: { rate: number }) {
 
 function OptionDistBar({ dist, correctIndex }: { dist: number[]; correctIndex: number }) {
   const total = dist.reduce((s, n) => s + n, 0) || 1;
-  const letters = ['أ', 'ب', 'ج', 'د'];
+  const letters = LETTERS;
   return (
     <div className="flex gap-1 items-end h-8">
       {dist.map((n, i) => {
@@ -67,7 +83,7 @@ function OptionDistBar({ dist, correctIndex }: { dist: number[]; correctIndex: n
 export default function QuestionHealthPage() {
   const [data, setData]       = useState<{ questions: QuestionHealth[]; summary: Summary } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter]   = useState<'all' | 'critical' | 'warning' | 'healthy'>('all');
+  const [filter, setFilter]   = useState<Filter>('all');
 
   useEffect(() => {
     fetch('/api/admin/questions/health')
@@ -87,10 +103,9 @@ export default function QuestionHealthPage() {
   const { questions, summary } = data;
 
   const filtered = questions.filter(q => {
-    if (filter === 'critical') return q.passRate < 30;
-    if (filter === 'warning')  return q.passRate >= 30 && q.passRate < 50;
-    if (filter === 'healthy')  return q.passRate >= 50;
-    return true;
+    if (filter === 'suspect') return q.suspectedKey !== null;
+    if (filter === 'all') return true;
+    return q.status === filter;
   });
 
   return (
@@ -99,7 +114,7 @@ export default function QuestionHealthPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">صحة الأسئلة</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            أداء كل سؤال بناءً على إجابات المستخدمين — يظهر الأسئلة التي لها 3 محاولات أو أكثر
+            أداء كل سؤال من إجابات المستخدمين (3 محاولات فأكثر). الحكم بالنسبة يحتاج {MIN_ATTEMPTS_FOR_VERDICT} محاولات على الأقل، وما دونها «عينة صغيرة»
           </p>
         </div>
         <Link href="/admin/questions"
@@ -109,14 +124,21 @@ export default function QuestionHealthPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {[
           {
             label: 'متوسط نسبة النجاح',
             value: `${summary.avgPassRate}٪`,
-            sub: `${summary.total} سؤال محلَّل`,
+            sub: `${summary.total - summary.lowSample} سؤال بعينة كافية`,
             color: summary.avgPassRate >= 60 ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50',
             icon: '🎯',
+          },
+          {
+            label: 'اشتباه بخطأ في الإجابة',
+            value: summary.suspectedKey,
+            sub: 'أغلب الأطفال اختاروا الخيار نفسه',
+            color: 'border-purple-200 bg-purple-50',
+            icon: '🔑',
           },
           {
             label: 'حرجة — أقل من 30٪',
@@ -139,6 +161,13 @@ export default function QuestionHealthPage() {
             color: 'border-emerald-200 bg-emerald-50',
             icon: '✅',
           },
+          {
+            label: 'عينة صغيرة',
+            value: summary.lowSample,
+            sub: `أقل من ${MIN_ATTEMPTS_FOR_VERDICT} محاولات — لا حكم بعد`,
+            color: 'border-gray-200 bg-gray-50',
+            icon: '🔍',
+          },
         ].map(c => (
           <div key={c.label} className={`border-2 rounded-2xl p-5 ${c.color}`}>
             <div className="text-2xl mb-1">{c.icon}</div>
@@ -150,12 +179,14 @@ export default function QuestionHealthPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {([
-          { key: 'all',      label: `الكل (${summary.total})` },
-          { key: 'critical', label: `🚨 حرجة (${summary.critical})` },
-          { key: 'warning',  label: `⚠️ تحذير (${summary.warning})` },
-          { key: 'healthy',  label: `✅ صحية (${summary.healthy})` },
+          { key: 'all',        label: `الكل (${summary.total})` },
+          { key: 'suspect',    label: `🔑 اشتباه بالإجابة (${summary.suspectedKey})` },
+          { key: 'critical',   label: `🚨 حرجة (${summary.critical})` },
+          { key: 'warning',    label: `⚠️ تحذير (${summary.warning})` },
+          { key: 'healthy',    label: `✅ صحية (${summary.healthy})` },
+          { key: 'low_sample', label: `🔍 عينة صغيرة (${summary.lowSample})` },
         ] as const).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
@@ -190,6 +221,11 @@ export default function QuestionHealthPage() {
                     <td className="px-4 py-3 max-w-xs">
                       <p className="text-gray-800 truncate" title={q.questionTextAr}>{q.questionTextAr}</p>
                       <p className="text-gray-400 text-xs mt-0.5">{DIFF_L[q.difficulty] || q.difficulty}</p>
+                      {q.suspectedKey && (
+                        <p className="mt-1 inline-block rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                          🔑 {Math.round(q.suspectedKey.share * 100)}٪ اختاروا ({LETTERS[q.suspectedKey.index]}) بدل المحفوظة ({LETTERS[q.correctOptionIndex]}) — راجع مفتاح الإجابة
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
                       <span>{AGE_L[q.ageGroup] || q.ageGroup} سنوات</span>
@@ -197,7 +233,7 @@ export default function QuestionHealthPage() {
                       <span>{SKILL_L[q.skillArea] || q.skillArea}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <PassBadge rate={q.passRate} />
+                      <PassBadge rate={q.passRate} lowSample={q.status === 'low_sample'} />
                       <div className="text-xs text-gray-400 mt-0.5">
                         {q.correctCount}/{q.totalAttempts}
                       </div>
