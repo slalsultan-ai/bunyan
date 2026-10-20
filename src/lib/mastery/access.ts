@@ -20,7 +20,7 @@ export interface MasteryAccess {
  * The engine runs only for a signed-in parent acting on one of their own
  * children, with the flag of the requested track:
  *   - smart path (default): `adaptive_mastery`, child in a supported age group
- *   - `mawhiba_l1`: `mawhiba_l1` flag, child aged 8–11 (grades 3–5)
+ *   - `mawhiba_l1`: `mawhiba_l1` flag, child aged 6–11
  */
 export async function resolveMasteryAccess(childId: unknown, track?: unknown): Promise<MasteryAccess> {
   const isMawhiba = track === 'mawhiba_l1';
