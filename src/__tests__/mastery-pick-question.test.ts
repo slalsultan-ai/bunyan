@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickQuestion, questionTextKey, type PoolQuestion } from '@/lib/mastery/service';
+import { pickQuestion, questionContentKey, questionTextKey, type PoolQuestion } from '@/lib/mastery/service';
 
 /** Question whose text key defaults to its id (distinct texts). */
 const q = (id: string, difficulty = 'medium', text = id): PoolQuestion => ({
@@ -11,6 +11,17 @@ const base = {
   recentSeen: new Set<string>(),
   testSeen: new Set<string>(),
 };
+
+describe('questionContentKey', () => {
+  it('treats a shared stem with different options as different questions', () => {
+    const stem = 'أي كلمة مختلفة عن البقية؟';
+    expect(questionContentKey(stem, [{ text: 'تفاح' }, { text: 'موز' }])).not.toBe(questionContentKey(stem, [{ text: 'قلم' }, { text: 'كتاب' }]));
+  });
+
+  it('treats the same text and options (in any order) as one question', () => {
+    expect(questionContentKey('كم  تفاحة؟', [{ text: '2' }, { text: '3' }])).toBe(questionContentKey('كم تفاحة؟', [{ text: '3' }, { text: '2' }]));
+  });
+});
 
 describe('questionTextKey', () => {
   it('ignores spacing and tatweel differences', () => {

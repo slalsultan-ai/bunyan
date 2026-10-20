@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const access = await resolveMasteryAccess(body?.childId);
+    const access = await resolveMasteryAccess(body?.childId, body?.track);
     const { sessionId, questionId, selectedOption } = body ?? {};
     if (!Number.isInteger(sessionId) || typeof questionId !== 'string'
       || !Number.isInteger(selectedOption) || selectedOption < 0 || selectedOption > 5) {

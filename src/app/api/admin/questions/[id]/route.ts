@@ -7,8 +7,8 @@ import { getYoungQuestionViolation, isYoungQuestionSafe } from '@/lib/young-ques
 import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
 import { diffQuestion, logQuestionAudit } from '@/lib/question-audit';
 
-const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
-const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
+const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12', 'mawhiba_l1']);
+const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed', 'spatial', 'scientific']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

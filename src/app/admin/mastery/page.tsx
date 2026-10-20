@@ -120,16 +120,23 @@ const pct = (p: number) => `${Math.round(p * 100)}%`;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+const TRACKS = [
+  { key: '6-9', label: 'المسار الذكي (6–9)' },
+  { key: 'mawhiba_l1', label: 'مسار موهبة ١' },
+] as const;
+type Track = (typeof TRACKS)[number]['key'];
+
 export default function AdminMasteryPage() {
   const [tab, setTab] = useState<'child' | 'gaps' | 'config'>('child');
+  const [track, setTrack] = useState<Track>('6-9');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadOverview = useCallback(async () => {
-    const res = await fetch('/api/admin/mastery');
+    const res = await fetch(`/api/admin/mastery?track=${track}`);
     if (!res.ok) { setError('تعذّر التحميل'); return; }
     setOverview(await res.json());
-  }, []);
+  }, [track]);
 
   useEffect(() => { loadOverview(); }, [loadOverview]);
 
@@ -139,6 +146,18 @@ export default function AdminMasteryPage() {
       <p className="text-slate-500 text-sm mb-6">
         نموذج BKT لكل طفل ومهارة، وقواعد الإتقان، وسبب كل قرار اتخذه المحرك. (العلم: <code>adaptive_mastery</code>)
       </p>
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        {TRACKS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTrack(t.key)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold border ${track === t.key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-2 mb-6">
         {([['child', 'قرارات طفل'], ['gaps', 'نواقص المحتوى'], ['config', 'الإعدادات']] as const).map(([key, label]) => (
@@ -153,7 +172,7 @@ export default function AdminMasteryPage() {
       </div>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
-      {tab === 'child' && <ChildTab overview={overview} />}
+      {tab === 'child' && <ChildTab key={track} overview={overview} track={track} />}
       {tab === 'gaps' && overview && <GapsTab gaps={overview.gaps} />}
       {tab === 'config' && overview && <ConfigTab overview={overview} onSaved={loadOverview} />}
     </div>
@@ -162,7 +181,7 @@ export default function AdminMasteryPage() {
 
 // ─── Child decisions ─────────────────────────────────────────────────────────
 
-function ChildTab({ overview }: { overview: Overview | null }) {
+function ChildTab({ overview, track }: { overview: Overview | null; track: Track }) {
   const [email, setEmail] = useState('');
   const [found, setFound] = useState<Array<{ id: string; name: string; age: number; ageGroup: string }> | null>(null);
   const [report, setReport] = useState<ChildReport | null>(null);
@@ -177,7 +196,7 @@ function ChildTab({ overview }: { overview: Overview | null }) {
 
   const openChild = async (childId: string) => {
     setLoading(true);
-    const res = await fetch(`/api/admin/mastery?childId=${childId}`);
+    const res = await fetch(`/api/admin/mastery?childId=${childId}&track=${track}`);
     setReport(res.ok ? await res.json() : null);
     setLoading(false);
   };
@@ -361,7 +380,7 @@ function GapsTab({ gaps }: { gaps: Overview['gaps'] }) {
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
         <p className="p-4 text-sm text-slate-600 border-b border-slate-100">
-          المهارة تدخل المحرك إذا كان فيها {gaps.minQuestionsPerSkill} سؤالًا نشطًا مختلف النص على الأقل لفئة 6-9 (النسخ المكررة تُحسب مرة واحدة).
+          المهارة تدخل المحرك إذا كان فيها {gaps.minQuestionsPerSkill} سؤالًا نشطًا مختلف النص على الأقل في هذا المسار (النسخ المكررة تُحسب مرة واحدة).
         </p>
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">

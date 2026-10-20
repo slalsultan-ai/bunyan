@@ -37,7 +37,25 @@ interface MasteredSkill {
 type Phase = 'loading' | 'ready' | 'playing' | 'completed' | 'error';
 
 const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
-const AREA_ICON: Record<string, string> = { quantitative: '🔢', verbal: '📖', logical_patterns: '🧩' };
+const AREA_ICON: Record<string, string> = {
+  quantitative: '🔢', verbal: '📖', logical_patterns: '🧩', spatial: '🧭', scientific: '🔬',
+};
+
+export interface MasteryTrackCopy {
+  /** Track id sent to the API ('6-9' = smart path, 'mawhiba_l1' = Mawhiba). */
+  track?: string;
+  title: string;
+  icon: string;
+  subtitle: string;
+  /** Where the header link and "back" buttons go. */
+  backHref?: string;
+}
+
+const SMART_PATH_COPY: MasteryTrackCopy = {
+  title: 'المسار الذكي',
+  icon: '🧠',
+  subtitle: 'أسئلة تتكيّف معك وأنت تحلّ',
+};
 const MUTE_KEY = 'mastery_muted';
 
 /** Short answers (numbers, single words) read best as big tiles in a 2×2 grid. */
@@ -125,7 +143,9 @@ function OptionButton({
  * Mastery-engine practice: the server picks each next question after scoring
  * the previous answer, so the client only renders what it is handed.
  */
-export default function MasteryPractice({ childId }: { childId: string }) {
+export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { childId: string; copy?: MasteryTrackCopy }) {
+  const track = copy.track;
+  const backHref = copy.backHref ?? '/practice';
   const bunaa = useBunaa();
   const [muted, setMuted] = useState(false);
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
@@ -163,7 +183,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
       const res = await fetch('/api/mastery/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childId }),
+        body: JSON.stringify({ childId, track }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -177,7 +197,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
       setError('تعذّر الاتصال بالخادم');
       setPhase('error');
     }
-  }, [childId]);
+  }, [childId, track]);
 
   useEffect(() => { loadSession(); }, [loadSession]);
 
@@ -207,6 +227,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           childId,
+          track,
           sessionId: session.sessionId,
           questionId: question.id,
           selectedOption: optionIndex,
@@ -237,7 +258,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
     } finally {
       setSubmitting(false);
     }
-  }, [session, question, submitting, answered, childId, loadSession, playCorrect, playWrong, playFanfare, bunaa]);
+  }, [session, question, submitting, answered, childId, track, loadSession, playCorrect, playWrong, playFanfare, bunaa]);
 
   const handleNext = useCallback(() => {
     if (!pendingNext) return;
@@ -283,7 +304,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
       <div className="border-b border-slate-200/70 bg-white/80 px-4 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between">
           <Logo size="sm" />
-          <Link href="/practice" className="text-sm font-medium text-slate-500 hover:text-slate-800">التمارين</Link>
+          <Link href={backHref} className="text-sm font-medium text-slate-500 hover:text-slate-800">التمارين</Link>
         </div>
       </div>
       {children}
@@ -322,9 +343,9 @@ export default function MasteryPractice({ childId }: { childId: string }) {
     return pageShell(
       <div className="mx-auto max-w-xl px-4 py-10">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-100 text-5xl shadow-inner">🧠</div>
-          <h1 className="mb-2 text-3xl font-black text-slate-900">المسار الذكي</h1>
-          <p className="text-slate-500">{session.sessionSize} أسئلة، تتكيّف معك وأنت تحلّ</p>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-100 text-5xl shadow-inner">{copy.icon}</div>
+          <h1 className="mb-2 text-3xl font-black text-slate-900">{copy.title}</h1>
+          <p className="text-slate-500">{session.sessionSize} أسئلة · {copy.subtitle}</p>
         </div>
         <div className="mb-8 space-y-3">
           {steps.map((s) => (
@@ -400,7 +421,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
           >
             جلسة جديدة 🚀
           </button>
-          <Link href="/practice" className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 text-center font-bold text-slate-700">
+          <Link href={backHref} className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 text-center font-bold text-slate-700">
             العودة للتمارين
           </Link>
         </div>
@@ -413,7 +434,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
   // ─── Playing ──────────────────────────────────────────────────────────
   const short = isShortOptionSet(question.options);
   const position = Math.min(session.results.length + 1, session.sessionSize);
-  const shortPrompt = question.questionTextAr.trim().length <= 32;
+  const shortPrompt = question.questionTextAr.trim().length <= 32 && !question.questionTextAr.includes('\n');
   const isLast = Boolean(pendingNext?.completed || (pendingNext && !pendingNext.question));
   const correctText = correctOptionIndex !== null ? question.options[correctOptionIndex]?.text : null;
 
@@ -433,7 +454,7 @@ export default function MasteryPractice({ childId }: { childId: string }) {
         <div className="mx-auto max-w-xl">
           <div className="mb-2.5 flex items-center justify-between">
             <Link
-              href="/practice"
+              href={backHref}
               aria-label="إنهاء الجلسة"
               className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             >
@@ -473,8 +494,8 @@ export default function MasteryPractice({ childId }: { childId: string }) {
               <img src={question.questionImageUrl} alt="صورة السؤال" className="mx-auto mb-5 max-h-56 w-auto rounded-2xl" />
             )}
             <p className={cn(
-              'font-bold text-slate-900',
-              shortPrompt ? 'text-3xl leading-snug sm:text-4xl' : 'text-xl leading-loose sm:text-2xl',
+              'whitespace-pre-line font-bold text-slate-900',
+              shortPrompt ? 'text-3xl leading-snug sm:text-4xl' : 'text-right text-lg leading-loose sm:text-xl',
             )}>
               {question.questionTextAr}
             </p>
