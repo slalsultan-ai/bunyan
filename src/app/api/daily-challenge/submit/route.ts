@@ -5,6 +5,7 @@ import { getAuthenticatedParent } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { isAnswerCorrect, parseSelectedOption } from '@/lib/answer-scoring';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +20,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { childId, questionId, selectedOption } = body;
 
-    if (!childId || !questionId || selectedOption === undefined || selectedOption === null) {
+    const selected = parseSelectedOption(selectedOption);
+    if (!childId || !questionId || selected === null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -35,10 +37,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 });
     }
 
-    const isCorrect = Number(selectedOption) === question.correctOptionIndex;
+    const isCorrect = isAnswerCorrect(selected, question.correctOptionIndex);
     const today = getTodayRiyadh();
 
-    await submitChallengeAnswer(childId, today, questionId, String(selectedOption), isCorrect);
+    await submitChallengeAnswer(childId, today, questionId, String(selected), isCorrect);
 
     // Check if all 3 questions are answered
     const { sql } = await import('drizzle-orm');

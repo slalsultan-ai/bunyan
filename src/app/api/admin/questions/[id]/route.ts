@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { getYoungQuestionViolation, isYoungQuestionSafe } from '@/lib/young-question-policy';
 import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
+import { diffQuestion, logQuestionAudit } from '@/lib/question-audit';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -51,6 +52,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (err) return NextResponse.json({ error: err }, { status: 400 });
 
   const db = getDb();
+  const [before] = await db.select().from(questions).where(eq(questions.id, id));
+  if (!before) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
   const [row] = await db.update(questions).set({
     ageGroup: body.ageGroup,
     skillArea: body.skillArea,
@@ -67,6 +71,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }).where(eq(questions.id, id)).returning();
 
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const changes = diffQuestion(before, row);
+  if (Object.keys(changes).length > 0) {
+    await logQuestionAudit(changes.correctOptionIndex ? 'question_answer_key_change' : 'question_update', { id, changes });
+  }
   return NextResponse.json({ question: row });
 }
 
@@ -87,6 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
   await db.update(questions).set({ isActive }).where(eq(questions.id, id));
+  await logQuestionAudit(isActive ? 'question_activate' : 'question_deactivate', { id });
   return NextResponse.json({ success: true });
 }
 
@@ -96,8 +106,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!UUID_RE.test(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const db = getDb();
+  const [before] = await db.select().from(questions).where(eq(questions.id, id));
   // Delete associated session answers first (no cascade on FK)
   await db.delete(sessionAnswers).where(eq(sessionAnswers.questionId, id));
   await db.delete(questions).where(eq(questions.id, id));
+  if (before) await logQuestionAudit('question_delete', { id, question: before });
   return NextResponse.json({ success: true });
 }

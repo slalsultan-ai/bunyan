@@ -9,6 +9,7 @@ import { sendAchievementEmail } from '@/lib/email/achievement';
 import { upsertReviewItem, markReviewProgress } from '@/lib/review-queue';
 import { upsertMasteryProgress } from '@/lib/question-mastery';
 import { getAuthenticatedParent } from '@/lib/parent-auth';
+import { isAnswerCorrect, parseSelectedOption } from '@/lib/answer-scoring';
 
 const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
 const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
@@ -54,12 +55,7 @@ export async function POST(req: NextRequest) {
       (a) => typeof a.questionId === 'string' && UUID_RE.test(a.questionId)
     ).map((a) => ({
       questionId: a.questionId as string,
-      selectedOption:
-        Number.isInteger(a.selectedOption) &&
-        (a.selectedOption as number) >= 0 &&
-        (a.selectedOption as number) <= 3
-          ? (a.selectedOption as number)
-          : null,
+      selectedOption: typeof a.selectedOption === 'number' ? parseSelectedOption(a.selectedOption) : null,
       timeSpentMs: Math.min(Math.max(parseInt(String(a.timeSpentMs)) || 0, 0), 3_600_000),
     }));
 
@@ -108,10 +104,7 @@ export async function POST(req: NextRequest) {
 
     const verifiedAnswers = parsedAnswers.map((a) => ({
       ...a,
-      isCorrect:
-        a.selectedOption !== null &&
-        correctMap.has(a.questionId) &&
-        correctMap.get(a.questionId) === a.selectedOption,
+      isCorrect: isAnswerCorrect(a.selectedOption, correctMap.get(a.questionId)),
     }));
 
     const validAnswers = verifiedAnswers.filter((a) => correctMap.has(a.questionId));
