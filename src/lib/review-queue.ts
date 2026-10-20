@@ -1,6 +1,6 @@
 import { getDb } from './db';
 import { reviewQueue, questions as questionsTable } from './db/schema';
-import { eq, and, sql, lte } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
 import { isYoungQuestionSafe } from './young-question-policy';
 
@@ -153,7 +153,7 @@ export async function getReviewQuestions(params: {
     .where(and(
       userCond,
       eq(reviewQueue.mastered, 0),
-      lte(reviewQueue.nextReviewAt, sql`datetime('now')`)
+      sql`datetime(${reviewQueue.nextReviewAt}) <= datetime('now')`
     ))
     .orderBy(sql`times_wrong DESC, last_wrong_at ASC`)
     .limit(maxItems);
@@ -189,7 +189,7 @@ export async function getReviewStats(params: {
     .select({
       total: sql<number>`COUNT(*)`,
       mastered: sql<number>`SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END)`,
-      pending: sql<number>`SUM(CASE WHEN mastered = 0 AND next_review_at <= datetime('now') THEN 1 ELSE 0 END)`,
+      pending: sql<number>`SUM(CASE WHEN mastered = 0 AND datetime(next_review_at) <= datetime('now') THEN 1 ELSE 0 END)`,
     })
     .from(reviewQueue)
     .where(userCond);

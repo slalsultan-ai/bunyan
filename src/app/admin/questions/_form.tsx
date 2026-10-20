@@ -62,6 +62,7 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
             <option value="4-5">4-5 سنوات</option>
             <option value="6-9">6-9 سنوات</option>
             <option value="10-12">10-12 سنة</option>
+            <option value="mawhiba_l1">موهبة ١ (الصفوف 3–5)</option>
           </select>
         </div>
         <div>
@@ -70,6 +71,8 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
             <option value="quantitative">كمي</option>
             <option value="verbal">لفظي</option>
             <option value="logical_patterns">تفكير منطقي</option>
+            <option value="spatial">استدلال مكاني</option>
+            <option value="scientific">علمي وميكانيكي</option>
           </select>
         </div>
         <div>

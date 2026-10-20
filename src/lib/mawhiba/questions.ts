@@ -16,6 +16,10 @@ export interface MawhibaSourceQuestion {
   options: string[];
   correct: number;
   passage?: { title: string; text: string };
+  /** How to reach the answer; computed questions were re-solved to verify the key. */
+  explanation?: string;
+  /** false = kept in the source but not served (e.g. pure-recall science items). */
+  active?: boolean;
 }
 
 export const SECTION_SKILL_AREA: Record<MawhibaSourceQuestion['section'], string> = {
@@ -47,7 +51,8 @@ export function buildMawhibaQuestionRows(data: MawhibaSourceQuestion[]) {
     questionTextAr: mawhibaQuestionText(q),
     options: q.options.map((text) => ({ text })),
     correctOptionIndex: q.correct,
-    explanationAr: '',
+    explanationAr: q.explanation ?? '',
+    isActive: q.active !== false,
     tags: [MAWHIBA_L1, `${MAWHIBA_L1}#${q.n}`],
     source: MAWHIBA_L1,
   }));

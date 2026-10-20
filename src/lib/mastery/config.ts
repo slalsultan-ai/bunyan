@@ -22,6 +22,8 @@ export interface MasteryConfig {
   sessionSize: number;
   maxReviewsPerSession: number;
   maxDiagnosticsPerSession: number;
+  /** Practice questions per skill in one session before rotating to another open skill. */
+  maxPracticePerSkillPerSession: number;
   diagnosticPerSkill: number;
   minQuestionsPerSkill: number;
   /** Practice avoids questions the child saw within this many days. */
@@ -48,6 +50,7 @@ export const DEFAULT_MASTERY_CONFIG: MasteryConfig = {
   sessionSize: 10,
   maxReviewsPerSession: 2,
   maxDiagnosticsPerSession: 6,
+  maxPracticePerSkillPerSession: 4,
   diagnosticPerSkill: 2,
   minQuestionsPerSkill: 12,
   recentExcludeDays: 7,
@@ -75,7 +78,7 @@ const PROBABILITY_KEYS = [
 const INT_KEYS = [
   'testSize', 'testPassCount', 'minPracticeBeforeRetest', 'stuckAttempts',
   'reviewWrongsToRelapse', 'sessionSize', 'maxReviewsPerSession',
-  'maxDiagnosticsPerSession', 'diagnosticPerSkill', 'minQuestionsPerSkill',
+  'maxDiagnosticsPerSession', 'maxPracticePerSkillPerSession', 'diagnosticPerSkill', 'minQuestionsPerSkill',
   'recentExcludeDays',
 ] as const;
 

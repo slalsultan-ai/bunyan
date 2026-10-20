@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       sessionId,
       questionId,
       selectedOption,
+      optionText: typeof body?.optionText === 'string' ? body.optionText : null,
       parentEmail: access.email,
     });
     const sessionMastered = result.session.completed

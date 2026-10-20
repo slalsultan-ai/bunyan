@@ -19,7 +19,7 @@ import {
   type NextChoice, type Purpose, type SkillState, type SkillStatus,
 } from './engine';
 import {
-  buildSourceIndex, getTaxonomy, skillKeyForQuestion, skillLabel, type MasteryAgeGroup, type MasterySkill,
+  buildSourceIndex, getTaxonomy, skillKeyForQuestion, skillLabel, MASTERY_TRACKS, type MasteryAgeGroup, type MasterySkill,
 } from './taxonomy';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -31,6 +31,8 @@ export interface PoolQuestion {
   optionCount: number;
   /** Content identity (text + options): copies of the same question share it. */
   textKey: string;
+  /** Rough template identity (numbers and names removed) used to vary questions within a session. */
+  templateKey?: string;
 }
 
 export interface QuestionPool {
@@ -64,10 +66,14 @@ export interface SessionView {
   /** Correctness of each answer so far in this session, in order. */
   results: boolean[];
   completed: boolean;
+  /** True when an already-open session was returned (resume after refresh). */
+  resumed?: boolean;
 }
 
 export interface AnswerResult {
   isCorrect: boolean;
+  /** The option the server scored — the client highlights this, not its own guess. */
+  selectedOption: number;
   correctOptionIndex: number;
   explanationAr: string;
   masteredSkills: Array<{ key: string; nameAr: string }>;
@@ -101,6 +107,22 @@ export function questionContentKey(
 ): string {
   const opts = (Array.isArray(options) ? options : []).map((o) => questionTextKey(o?.text)).sort();
   return `${questionTextKey(text)}\u0000${opts.join('\u0001')}`;
+}
+
+const COMMON_NAMES = /(سلمان|ماجد|ناصر|خالد|نورة|سارة|فهد|ريم|لمى|أحمد|علي|محمد|هند|مها|عمر|يوسف|ليلى|فاطمة|منى|سعد|عبدالله)/g;
+
+/**
+ * Coarse template of a question: digits and common first names removed, first
+ * five words kept. «في الصندوق 41 من الأزرار…» and «في الصندوق 21 من البطاقات…»
+ * share a template, so a session can avoid serving the same pattern twice.
+ */
+export function questionTemplateKey(text: string | null | undefined): string {
+  return questionTextKey(text)
+    .replace(/[0-9٠-٩]+/g, '#')
+    .replace(COMMON_NAMES, 'N')
+    .split(' ')
+    .slice(0, 5)
+    .join(' ');
 }
 
 export async function loadMasteryConfig(): Promise<MasteryConfig> {
@@ -171,6 +193,7 @@ export async function loadQuestionPool(
       difficulty: r.difficulty,
       optionCount: Array.isArray(r.options) ? r.options.length : 4,
       textKey: questionContentKey(r.questionTextAr, r.options),
+      templateKey: questionTemplateKey(r.questionTextAr),
     };
     byId.set(q.id, q);
     const list = bySkill.get(skillKey) ?? [];
@@ -364,7 +387,14 @@ export function pickQuestion(params: {
   everSeen: Set<string>;
   recentSeen: Set<string>;
   testSeen: Set<string>;
+  /** Templates already used this session; a fresh template is preferred when one exists. */
+  sessionTemplates?: Set<string>;
 }): { question: PoolQuestion; note: string } | null {
+  const preferNewTemplate = (list: PoolQuestion[]) => {
+    if (!params.sessionTemplates?.size) return list;
+    const fresh = list.filter((q) => !q.templateKey || !params.sessionTemplates!.has(q.templateKey));
+    return fresh.length > 0 ? fresh : list;
+  };
   const notThisSession = params.candidates.filter(
     (q) => !params.sessionSeen.has(q.textKey) && !params.testSeen.has(q.textKey),
   );
@@ -372,14 +402,14 @@ export function pickQuestion(params: {
 
   if (params.purpose === 'test') {
     const unseen = notThisSession.filter((q) => !params.everSeen.has(q.textKey));
-    if (unseen.length > 0) return { question: randomOf(unseen)!, note: 'unseen' };
+    if (unseen.length > 0) return { question: randomOf(preferNewTemplate(unseen))!, note: 'unseen' };
     const notRecent = notThisSession.filter((q) => !params.recentSeen.has(q.textKey));
     if (notRecent.length > 0) return { question: randomOf(notRecent)!, note: 'fallback_not_recent' };
     return { question: randomOf(notThisSession)!, note: 'fallback_any' };
   }
 
   const fresh = notThisSession.filter((q) => !params.recentSeen.has(q.textKey));
-  const pool = fresh.length > 0 ? fresh : notThisSession;
+  const pool = preferNewTemplate(fresh.length > 0 ? fresh : notThisSession);
   for (const d of DIFFICULTY_FALLBACK[params.difficulty]) {
     const match = pool.filter((q) => q.difficulty === d);
     if (match.length > 0) {
@@ -426,14 +456,24 @@ async function buildCtx(childId: string, ageGroup: MasteryAgeGroup, parentEmail?
   return { childId, skills: getTaxonomy(ageGroup), config, paramsFor, pool, states };
 }
 
-async function sessionTextKeys(sessionId: number): Promise<Set<string>> {
+async function sessionInfo(sessionId: number): Promise<{
+  contentKeys: Set<string>;
+  templates: Set<string>;
+  practiced: Map<string, number>;
+}> {
   const db = getDb();
   const rows = await db
-    .select({ text: questions.questionTextAr, options: questions.options })
+    .select({ text: questions.questionTextAr, options: questions.options, skillKey: masteryAttempts.skillKey, purpose: masteryAttempts.purpose })
     .from(masteryAttempts)
     .innerJoin(questions, eq(masteryAttempts.questionId, questions.id))
     .where(eq(masteryAttempts.sessionId, sessionId));
-  return new Set(rows.map((r) => questionContentKey(r.text, r.options)));
+  const practiced = new Map<string, number>();
+  for (const r of rows) if (r.purpose === 'practice') practiced.set(r.skillKey, (practiced.get(r.skillKey) ?? 0) + 1);
+  return {
+    contentKeys: new Set(rows.map((r) => questionContentKey(r.text, r.options))),
+    templates: new Set(rows.map((r) => questionTemplateKey(r.text))),
+    practiced,
+  };
 }
 
 /** Choose the next question; skills with nothing left to serve are skipped. */
@@ -442,7 +482,8 @@ async function chooseAndPick(
   session: { id: number; reviewsServed: number; diagnosticsServed: number },
 ): Promise<{ choice: NextChoice; question: PoolQuestion; note: string } | null> {
   const seen = await loadSeen(ctx.childId, ctx.config);
-  const sessionSeen = await sessionTextKeys(session.id);
+  const info = await sessionInfo(session.id);
+  const sessionSeen = info.contentKeys;
   const exhausted = new Set<string>();
   const now = new Date();
 
@@ -454,6 +495,7 @@ async function chooseAndPick(
       reviewsServed: session.reviewsServed,
       diagnosticsServed: session.diagnosticsServed,
       exhausted,
+      practicedThisSession: info.practiced,
       config: ctx.config,
       now,
     });
@@ -466,6 +508,7 @@ async function chooseAndPick(
       sessionSeen,
       everSeen: seen.ever,
       recentSeen: seen.recent,
+      sessionTemplates: info.templates,
       testSeen: new Set((state?.testQuestionIds ?? [])
         .map((id) => ctx.pool.byId.get(id)?.textKey)
         .filter((k): k is string => Boolean(k))),
@@ -539,7 +582,7 @@ export async function startOrResumeSession(
     .orderBy(desc(masterySessions.id))
     .limit(1);
 
-  if (open?.currentQuestionId) return toView(open, ctx.config);
+  if (open?.currentQuestionId) return { ...(await toView(open, ctx.config)), resumed: true };
 
   let session = open;
   if (!session) {
@@ -561,6 +604,8 @@ export async function submitAnswer(params: {
   sessionId: number;
   questionId: string;
   selectedOption: number;
+  /** Text of the option the child tapped; must match the option at that index. */
+  optionText?: string | null;
   parentEmail?: string | null;
 }): Promise<AnswerResult> {
   const db = getDb();
@@ -577,6 +622,23 @@ export async function submitAnswer(params: {
     throw new MasteryError('هذا ليس السؤال الحالي', 409);
   }
 
+  const [q] = await db
+    .select({ correctOptionIndex: questions.correctOptionIndex, explanationAr: questions.explanationAr, options: questions.options })
+    .from(questions)
+    .where(eq(questions.id, questionId))
+    .limit(1);
+  if (!q) throw new MasteryError('السؤال غير موجود', 404);
+  const optionCount = Array.isArray(q.options) ? q.options.length : 4;
+  if (!Number.isInteger(selectedOption) || selectedOption < 0 || selectedOption >= optionCount) {
+    throw new MasteryError('خيار غير صالح', 400);
+  }
+  // Guard against any index/option mismatch between screen and server: the
+  // tapped option's text must be the option stored at that index.
+  if (typeof params.optionText === 'string'
+    && questionTextKey(params.optionText) !== questionTextKey(q.options[selectedOption]?.text)) {
+    throw new MasteryError('تغيّر عرض السؤال، أعد اختيار إجابتك', 409);
+  }
+
   // Claim the current question so a double submit cannot be scored twice.
   const claimed = await db
     .update(masterySessions)
@@ -585,12 +647,6 @@ export async function submitAnswer(params: {
     .returning({ id: masterySessions.id });
   if (claimed.length === 0) throw new MasteryError('تم تسجيل هذه الإجابة مسبقًا', 409);
 
-  const [q] = await db
-    .select({ correctOptionIndex: questions.correctOptionIndex, explanationAr: questions.explanationAr, options: questions.options })
-    .from(questions)
-    .where(eq(questions.id, questionId))
-    .limit(1);
-  if (!q) throw new MasteryError('السؤال غير موجود', 404);
   const isCorrect = isAnswerCorrect(selectedOption, q.correctOptionIndex);
 
   const ctx = await buildCtx(childId, params.ageGroup, params.parentEmail);
@@ -640,6 +696,7 @@ export async function submitAnswer(params: {
     skillKey,
     purpose,
     isCorrect,
+    selectedOption,
     pBefore: before.pKnown,
     pAfter: result.state.pKnown,
     statusBefore: before.status,
@@ -678,6 +735,7 @@ export async function submitAnswer(params: {
   const [finalSession] = await db.select().from(masterySessions).where(eq(masterySessions.id, sessionId));
   return {
     isCorrect,
+    selectedOption,
     correctOptionIndex: q.correctOptionIndex,
     explanationAr: q.explanationAr,
     masteredSkills,
@@ -709,18 +767,49 @@ export async function getChildMasteryReport(childId: string, ageGroup: MasteryAg
   const pool = await loadQuestionPool(ageGroup, config);
   const skills = getTaxonomy(ageGroup);
   const states = await loadStates(childId);
-  const attempts = await db
+  const trackKeys = skills.map((s) => s.key);
+  const rawAttempts = await db
     .select()
     .from(masteryAttempts)
-    .where(eq(masteryAttempts.childId, childId))
+    .where(and(eq(masteryAttempts.childId, childId), inArray(masteryAttempts.skillKey, trackKeys)))
     .orderBy(desc(masteryAttempts.id))
     .limit(attemptLimit);
+  // What the child chose next to the key, so any scoring doubt can be checked at a glance.
+  const qIds = [...new Set(rawAttempts.map((a) => a.questionId))];
+  const qRows = qIds.length
+    ? await db
+      .select({ id: questions.id, text: questions.questionTextAr, options: questions.options, key: questions.correctOptionIndex })
+      .from(questions)
+      .where(inArray(questions.id, qIds))
+    : [];
+  const qMap = new Map(qRows.map((r) => [r.id, r]));
+  const attempts = rawAttempts.map((a) => {
+    const qr = qMap.get(a.questionId);
+    return {
+      ...a,
+      questionText: qr?.text ?? null,
+      selectedText: a.selectedOption !== null && qr ? qr.options[a.selectedOption]?.text ?? null : null,
+      correctIndex: qr?.key ?? null,
+      correctText: qr ? qr.options[qr.key]?.text ?? null : null,
+    };
+  });
   const sessionsList = await db
     .select()
     .from(masterySessions)
-    .where(eq(masterySessions.childId, childId))
+    .where(and(eq(masterySessions.childId, childId), eq(masterySessions.track, ageGroup)))
     .orderBy(desc(masterySessions.id))
     .limit(20);
+  // Attempt counts per track, so the admin page can jump to the track that has data.
+  const perTrack = await db
+    .select({ skillKey: masteryAttempts.skillKey, n: sql<number>`COUNT(*)` })
+    .from(masteryAttempts)
+    .where(eq(masteryAttempts.childId, childId))
+    .groupBy(masteryAttempts.skillKey);
+  const trackAttempts: Record<string, number> = {};
+  for (const t of MASTERY_TRACKS) {
+    const keys = new Set(getTaxonomy(t).map((s) => s.key));
+    trackAttempts[t] = perTrack.filter((r) => keys.has(r.skillKey)).reduce((sum, r) => sum + Number(r.n), 0);
+  }
 
   return {
     config,
@@ -737,6 +826,7 @@ export async function getChildMasteryReport(childId: string, ageGroup: MasteryAg
     })),
     attempts,
     sessions: sessionsList,
+    trackAttempts,
   };
 }
 

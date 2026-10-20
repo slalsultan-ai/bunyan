@@ -3,6 +3,7 @@ import { sessions, sessionAnswers, questions, children, parents } from './db/sch
 import { sql, eq, and } from 'drizzle-orm';
 import { selectActivity } from './home-activities';
 import { calculateWeeklyImprovement, generatePredictionMessage } from './predictions';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ export async function collectWeeklyData(childId: string, parentId: string): Prom
   // Daily challenge streak
   let streak = 0;
   try {
-    const [streakRow] = await db.select().from(sql`daily_streaks`).where(sql`child_id = ${childId}`).limit(1) as any[];
+    const [streakRow] = await selectAllFrom(db, 'daily_streaks').where(sql`child_id = ${childId}`).limit(1) as any[];
     streak = streakRow?.current_streak ?? 0;
   } catch { /* table might not exist yet */ }
 

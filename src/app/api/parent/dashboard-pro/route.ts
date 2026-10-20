@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db';
 import { sessions, children, sessionAnswers } from '@/lib/db/schema';
 import { sql, eq, and } from 'drizzle-orm';
 import { predictGoalDate, calculateWeeklyImprovement } from '@/lib/predictions';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 export async function GET(req: NextRequest) {
   try {
@@ -88,9 +89,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Goals
-    const goals = await db
-      .select()
-      .from(sql`child_goals`)
+    const goals = await selectAllFrom(db, 'child_goals')
       .where(sql`child_id IN (${sql.join(childRows.map(c => sql`${c.id}`), sql`, `)}) AND status = 'active'`) as any[];
 
     const goalsWithPredictions = goals.map((g: any) => {

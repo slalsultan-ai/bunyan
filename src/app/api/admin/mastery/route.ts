@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
       const childAgeGroup = computeAgeGroup(child.age);
       const ageGroup: string = track === 'mawhiba_l1' ? track : childAgeGroup;
       if (!isMasteryTrack(ageGroup) || (track !== 'mawhiba_l1' && !isMasteryAgeGroup(ageGroup))) {
-        return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup }, supported: false });
+        const other = await getChildMasteryReport(childId, 'mawhiba_l1', 1);
+        return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup }, track, supported: false, trackAttempts: other.trackAttempts });
       }
       const report = await getChildMasteryReport(childId, ageGroup);
       return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup: childAgeGroup }, track, supported: true, ...report });

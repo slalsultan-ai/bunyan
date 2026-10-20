@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { parents } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 export async function GET(req: NextRequest) {
   const parentId = req.nextUrl.searchParams.get('parentId');
@@ -12,9 +13,7 @@ export async function GET(req: NextRequest) {
   const db = getDb();
 
   // Check if already unsubscribed
-  const [existing] = await db
-    .select()
-    .from(sql`digest_unsubscribe`)
+  const [existing] = await selectAllFrom(db, 'digest_unsubscribe')
     .where(sql`parent_id = ${parentId}`)
     .limit(1) as any[];
 

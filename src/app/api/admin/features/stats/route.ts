@@ -142,7 +142,7 @@ async function getReviewModeStats(db: DB) {
     .select({
       totalItems: sql<number>`COUNT(*)`,
       masteredItems: sql<number>`SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END)`,
-      pendingItems: sql<number>`SUM(CASE WHEN mastered = 0 AND next_review_at <= datetime('now') THEN 1 ELSE 0 END)`,
+      pendingItems: sql<number>`SUM(CASE WHEN mastered = 0 AND datetime(next_review_at) <= datetime('now') THEN 1 ELSE 0 END)`,
       uniqueChildren: sql<number>`COUNT(DISTINCT child_id)`,
       avgTimesWrong: sql<number>`ROUND(AVG(times_wrong), 1)`,
       avgReviewsToMastery: sql<number>`ROUND(AVG(CASE WHEN mastered = 1 THEN times_reviewed ELSE NULL END), 1)`,

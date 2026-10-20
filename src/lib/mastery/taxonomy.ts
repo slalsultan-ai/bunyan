@@ -225,7 +225,7 @@ export const SKILLS_MAWHIBA_L1: MasterySkill[] = [
   m1('m1_word_problems', 'المسائل الكلامية', 'quantitative', 10, [], 'مسائل كلامية'),
   m1('m1_synonyms', 'المترادفات', 'verbal', 11, [], 'المترادفات'),
   m1('m1_directions', 'الاتجاهات والحركة', 'spatial', 12, [], 'الاتجاهات والحركة'),
-  m1('m1_science_facts', 'المعلومات العلمية', 'scientific', 13, [], 'معلومات علمية'),
+  m1('m1_science_facts', 'المفاهيم العلمية', 'scientific', 13, [], 'معلومات علمية'),
   m1('m1_sequences', 'المتتاليات العددية', 'quantitative', 20, [], 'المتتاليات العددية'),
   m1('m1_antonyms', 'الأضداد', 'verbal', 21, [], 'الأضداد'),
   m1('m1_cubes', 'المكعبات والأحجام', 'spatial', 22, [], 'المكعبات والأحجام'),

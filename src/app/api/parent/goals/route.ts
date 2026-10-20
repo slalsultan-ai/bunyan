@@ -4,6 +4,7 @@ import { hasFeatureAccess } from '@/lib/feature-flags';
 import { getDb } from '@/lib/db';
 import { children } from '@/lib/db/schema';
 import { sql, eq, and } from 'drizzle-orm';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     if (!child) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const db = getDb();
-    const goals = await db.select().from(sql`child_goals`)
+    const goals = await selectAllFrom(db, 'child_goals')
       .where(sql`child_id = ${childId} AND status = 'active'`) as any[];
 
     return NextResponse.json({ goals });

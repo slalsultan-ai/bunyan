@@ -7,8 +7,8 @@ import { getYoungQuestionViolation } from '@/lib/young-question-policy';
 import { sanitizeQuestionImageUrl } from '@/lib/question-image-url';
 import { logQuestionAudit } from '@/lib/question-audit';
 
-const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12']);
-const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed']);
+const VALID_AGE_GROUPS = new Set(['4-5', '6-9', '10-12', 'mawhiba_l1']);
+const VALID_SKILL_AREAS = new Set(['quantitative', 'verbal', 'logical_patterns', 'mixed', 'spatial', 'scientific']);
 const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'mixed']);
 const VALID_TYPES = new Set(['text', 'image', 'audio', 'mixed']);
 

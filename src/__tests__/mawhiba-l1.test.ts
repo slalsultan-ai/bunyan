@@ -55,7 +55,7 @@ describe('Mawhiba L1 taxonomy', () => {
   it('gives every skill enough distinct questions to enter the engine', () => {
     for (const skill of SKILLS_MAWHIBA_L1) {
       const texts = new Set(rows
-        .filter((r) => skillKeyForQuestion(index, r.skillArea, r.subSkill) === skill.key)
+        .filter((r) => r.isActive && skillKeyForQuestion(index, r.skillArea, r.subSkill) === skill.key)
         .map((r) => questionContentKey(r.questionTextAr, r.options)));
       expect(texts.size, skill.key).toBeGreaterThanOrEqual(DEFAULT_MASTERY_CONFIG.minQuestionsPerSkill);
     }
@@ -82,5 +82,34 @@ describe('Mawhiba L1 taxonomy', () => {
     expect(isMasteryTrack('10-12')).toBe(false);
     expect(getTaxonomy('mawhiba_l1')).toBe(SKILLS_MAWHIBA_L1);
     expect(skillLabel('m1_reading')?.nameAr).toBe('فهم المقروء');
+  });
+});
+
+import { isMawhibaL1Age, MAWHIBA_L1_MIN_AGE, MAWHIBA_L1_MAX_AGE } from '@/lib/mawhiba/eligibility';
+
+describe('Mawhiba L1 content fixes (expert review)', () => {
+  it('has an explanation for every active question and none of the systematic typos', () => {
+    for (const r of rows) {
+      if (r.isActive) expect(r.explanationAr.length, r.id).toBeGreaterThan(5);
+      expect(r.questionTextAr).not.toMatch(/اشترىت|أعطىت/);
+      expect(r.questionTextAr).not.toMatch(/\b100 ريالًا/);
+    }
+  });
+
+  it('keeps 16 science-concept questions and deactivates pure recall ones', () => {
+    const science = rows.filter((r) => r.subSkill === 'معلومات علمية');
+    expect(science).toHaveLength(50);
+    expect(science.filter((r) => r.isActive)).toHaveLength(16);
+    expect(rows.filter((r) => !r.isActive)).toHaveLength(34);
+  });
+
+  it('is limited to grades 3–5 (ages 8–11)', () => {
+    expect([MAWHIBA_L1_MIN_AGE, MAWHIBA_L1_MAX_AGE]).toEqual([8, 11]);
+    expect(isMawhibaL1Age(5)).toBe(false);
+    expect(isMawhibaL1Age(7)).toBe(false);
+    expect(isMawhibaL1Age(8)).toBe(true);
+    expect(isMawhibaL1Age(11)).toBe(true);
+    expect(isMawhibaL1Age(12)).toBe(false);
+    expect(isMawhibaL1Age(undefined)).toBe(false);
   });
 });

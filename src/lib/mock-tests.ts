@@ -4,6 +4,7 @@ import { sql, eq, and } from 'drizzle-orm';
 import { hasFeatureAccess } from './feature-flags';
 import { assertParentCanAccessChild } from './parent-child-access';
 import { isYoungQuestionSafe } from './young-question-policy';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -119,15 +120,11 @@ export async function getAvailableMockTests(childId: string): Promise<{
 }> {
   const db = getDb();
 
-  const tests = await db
-    .select()
-    .from(sql`mock_tests`)
+  const tests = await selectAllFrom(db, 'mock_tests')
     .where(sql`is_active = 1`)
     .orderBy(sql`id`) as any[];
 
-  const results = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const results = await selectAllFrom(db, 'mock_test_results')
     .where(sql`child_id = ${childId} AND status = 'completed'`) as any[];
 
   const completedTestIds = [...new Set(results.map((r: any) => r.mock_test_id as number))];
@@ -168,9 +165,7 @@ export async function startMockTest(childId: string, testId: number): Promise<{
   const db = getDb();
 
   // Check for existing in-progress test
-  const [existing] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [existing] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`child_id = ${childId} AND status = 'in_progress'`)
     .limit(1) as any[];
 
@@ -179,9 +174,7 @@ export async function startMockTest(childId: string, testId: number): Promise<{
   }
 
   // Get the mock test
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${testId} AND is_active = 1`)
     .limit(1) as any[];
 
@@ -229,18 +222,14 @@ export async function resumeMockTest(childId: string): Promise<{
 } | null> {
   const db = getDb();
 
-  const [existing] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [existing] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`child_id = ${childId} AND status = 'in_progress'`)
     .orderBy(sql`started_at DESC`)
     .limit(1) as any[];
 
   if (!existing) return null;
 
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${existing.mock_test_id}`)
     .limit(1) as any[];
 
@@ -283,9 +272,7 @@ export async function submitMockAnswer(
 ): Promise<{ saved: boolean; questionsRemaining: number }> {
   const db = getDb();
 
-  const [result] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [result] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`id = ${resultId} AND status = 'in_progress'`)
     .limit(1) as any[];
 
@@ -299,9 +286,7 @@ export async function submitMockAnswer(
 
   const answers = parseStoredAnswers(result.answers);
 
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${result.mock_test_id}`)
     .limit(1) as any[];
 
@@ -340,9 +325,7 @@ export async function submitMockAnswer(
 export async function completeMockTest(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
-  const [result] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [result] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`id = ${resultId}`)
     .limit(1) as any[];
 
@@ -354,9 +337,7 @@ export async function completeMockTest(resultId: number, parentId?: string): Pro
     await assertParentCanAccessChild(parentId, result.child_id as string);
   }
 
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${result.mock_test_id}`)
     .limit(1) as any[];
 
@@ -377,9 +358,7 @@ export async function completeMockTest(resultId: number, parentId?: string): Pro
 export async function timeoutMockTest(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
-  const [result] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [result] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`id = ${resultId} AND status = 'in_progress'`)
     .limit(1) as any[];
 
@@ -391,9 +370,7 @@ export async function timeoutMockTest(resultId: number, parentId?: string): Prom
     await assertParentCanAccessChild(parentId, result.child_id as string);
   }
 
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${result.mock_test_id}`)
     .limit(1) as any[];
 
@@ -422,9 +399,7 @@ export async function timeoutMockTest(resultId: number, parentId?: string): Prom
 export async function getMockTestResult(resultId: number, parentId?: string): Promise<MockTestResult> {
   const db = getDb();
 
-  const [result] = await db
-    .select()
-    .from(sql`mock_test_results`)
+  const [result] = await selectAllFrom(db, 'mock_test_results')
     .where(sql`id = ${resultId}`)
     .limit(1) as any[];
 
@@ -436,9 +411,7 @@ export async function getMockTestResult(resultId: number, parentId?: string): Pr
     await assertParentCanAccessChild(parentId, result.child_id as string);
   }
 
-  const [test] = await db
-    .select()
-    .from(sql`mock_tests`)
+  const [test] = await selectAllFrom(db, 'mock_tests')
     .where(sql`id = ${result.mock_test_id}`)
     .limit(1) as any[];
 

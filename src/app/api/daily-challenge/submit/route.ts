@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { isAnswerCorrect, parseSelectedOption } from '@/lib/answer-scoring';
+import { selectAllFrom } from '@/lib/db/select-all';
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,9 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Check if all 3 questions are answered
     const { sql } = await import('drizzle-orm');
-    const answered = await db
-      .select()
-      .from(sql`daily_challenge_results`)
+    const answered = await selectAllFrom(db, 'daily_challenge_results')
       .where(sql`child_id = ${childId} AND challenge_date = ${today}`) as any[];
 
     let completion = null;
