@@ -3,9 +3,10 @@ import { getDb } from '@/lib/db';
 import { questions } from '@/lib/db/schema';
 import { sql, eq } from 'drizzle-orm';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { QUESTION_AGE_GROUPS, QUESTION_SKILL_AREAS, SKILL_AREAS_BY_AGE_GROUP } from '@/lib/question-taxonomy';
 
-const AGE_GROUPS  = ['4-5', '6-9', '10-12'] as const;
-const SKILL_AREAS = ['quantitative', 'verbal', 'logical_patterns'] as const;
+const AGE_GROUPS  = QUESTION_AGE_GROUPS.map(a => a.value);
+const SKILL_AREAS = QUESTION_SKILL_AREAS.map(s => s.value);
 
 export async function GET() {
   if (!await isAdminAuthenticated()) {
@@ -47,6 +48,8 @@ export async function GET() {
       skillArea: skill,
       active:    active[`${age}|${skill}`] ?? 0,
       total:     total[`${age}|${skill}`]  ?? 0,
+      // Cells outside an age group's own skill set are shown as "not applicable", not as gaps.
+      applicable: SKILL_AREAS_BY_AGE_GROUP[age]?.includes(skill) ?? false,
     }))
   );
 
@@ -78,6 +81,8 @@ export async function GET() {
   );
 
   const grandTotal = Object.values(active).reduce((s, n) => s + n, 0);
+  // Active questions whose age group / skill area falls outside the matrix (e.g. legacy 'mixed').
+  const inMatrix = matrix.flat().reduce((s, c) => s + c.active, 0);
 
-  return NextResponse.json({ matrix: matrixWithDiff, grandTotal });
+  return NextResponse.json({ matrix: matrixWithDiff, grandTotal, outsideMatrix: grandTotal - inMatrix, ageGroups: AGE_GROUPS, skillAreas: SKILL_AREAS });
 }

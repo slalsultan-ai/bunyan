@@ -23,9 +23,16 @@ export default function ContentPage() {
   }, []);
 
   async function save(key: 'hero' | 'faq', value: unknown) {
-    setSaving(true);
     setError('');
     setSaved(false);
+    const missing = key === 'hero'
+      ? Object.values(value as HeroContent).some(v => typeof v === 'string' && !v.trim())
+      : (value as FaqItem[]).some(item => !item.q.trim() || !item.a.trim());
+    if (missing) {
+      setError(key === 'hero' ? 'كل حقول القسم الرئيسي مطلوبة' : 'كل سؤال في الأسئلة الشائعة يحتاج سؤالاً وجواباً');
+      return;
+    }
+    setSaving(true);
     try {
       const res = await fetch('/api/admin/content', {
         method: 'PATCH',
@@ -143,6 +150,8 @@ function HeroEditor({
             <textarea
               rows={3}
               value={hero[key]}
+              required
+              aria-invalid={!hero[key]?.trim()}
               onChange={e => onChange({ ...hero, [key]: e.target.value })}
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none resize-none"
               dir="rtl"
@@ -151,6 +160,8 @@ function HeroEditor({
             <input
               type="text"
               value={hero[key]}
+              required
+              aria-invalid={!hero[key]?.trim()}
               onChange={e => onChange({ ...hero, [key]: e.target.value })}
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none"
               dir="rtl"
@@ -223,6 +234,8 @@ function FaqEditor({
             <input
               type="text"
               value={item.q}
+              required
+              aria-invalid={!item.q.trim()}
               onChange={e => update(i, 'q', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none"
               dir="rtl"
@@ -233,6 +246,8 @@ function FaqEditor({
             <textarea
               rows={2}
               value={item.a}
+              required
+              aria-invalid={!item.a.trim()}
               onChange={e => update(i, 'a', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none resize-none"
               dir="rtl"

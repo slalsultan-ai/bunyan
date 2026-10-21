@@ -9,11 +9,16 @@ import WeeklyEmailSection from '@/components/landing/WeeklyEmailSection';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 import { getHeroContent, getFaqContent } from '@/lib/content';
+import { getPublicContentStats } from '@/lib/public-content-stats';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [hero, faq] = await Promise.all([getHeroContent(), getFaqContent()]);
+  const [hero, faq, contentStats] = await Promise.all([
+    getHeroContent(),
+    getFaqContent(),
+    getPublicContentStats().catch(() => null),
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -49,7 +54,7 @@ export default async function HomePage() {
         <ValueProps />
         <HowItWorks />
         <AgeGroups />
-        <StatsSection />
+        <StatsSection stats={contentStats} />
         <FAQ items={faq} />
         <WeeklyEmailSection />
         <FooterCTA />

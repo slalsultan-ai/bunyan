@@ -61,7 +61,11 @@ export async function GET(req: NextRequest) {
     db.select({ v: sql<number>`COUNT(*)` }).from(sessions),
     db.select({ v: sql<number>`COUNT(*)` }).from(sessions).where(sql`DATE(started_at) = DATE('now')`),
     db.select({ v: sql<number>`COUNT(*)` }).from(guestProgress),
-    db.select({ v: sql<number>`AVG(CAST(score AS REAL) / NULLIF(total_questions, 0) * 100)` }).from(sessions),
+    // Same definition as analytics and feature stats: completed sessions only.
+    db.select({
+      v: sql<number>`AVG(CAST(score AS REAL) / NULLIF(total_questions, 0) * 100)`,
+      n: sql<number>`COUNT(*)`,
+    }).from(sessions).where(sql`completed_at IS NOT NULL`),
     db.select({ ageGroup: questions.ageGroup, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.ageGroup),
     db.select({ type: questions.questionType, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.questionType),
     db.select({ skill: questions.skillArea, cnt: sql<number>`COUNT(*)` }).from(questions).groupBy(questions.skillArea),
@@ -156,6 +160,7 @@ export async function GET(req: NextRequest) {
     todaySessions: todayS.v,
     totalGuests: totalG.v,
     avgAccuracy: Math.round(avgAcc.v ?? 0),
+    completedSessions: Number(avgAcc.n ?? 0),
     byAge,
     byType,
     bySkill,

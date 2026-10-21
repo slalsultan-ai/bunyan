@@ -15,7 +15,7 @@ export async function GET() {
     db.select({
       date: sql<string>`DATE(started_at)`,
       cnt: sql<number>`COUNT(*)`,
-      avgScore: sql<number>`ROUND(AVG(CAST(score AS REAL) / NULLIF(total_questions, 0) * 100))`,
+      avgScore: sql<number>`ROUND(AVG(CASE WHEN completed_at IS NOT NULL THEN CAST(score AS REAL) / NULLIF(total_questions, 0) * 100 END))`,
     })
       .from(sessions)
       .where(sql`started_at >= DATE('now', '-14 days')`)
@@ -32,7 +32,7 @@ export async function GET() {
 
     db.select({
       date: sql<string>`DATE(started_at)`,
-      accuracy: sql<number>`ROUND(AVG(CAST(score AS REAL) / NULLIF(total_questions, 0) * 100))`,
+      accuracy: sql<number>`ROUND(AVG(CASE WHEN completed_at IS NOT NULL THEN CAST(score AS REAL) / NULLIF(total_questions, 0) * 100 END))`,
     })
       .from(sessions)
       .where(sql`started_at >= DATE('now', '-7 days')`)

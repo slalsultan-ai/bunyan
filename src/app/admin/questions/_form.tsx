@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { QUESTION_AGE_GROUPS, QUESTION_SKILL_AREAS } from '@/lib/question-taxonomy';
 
 interface QuestionFormData {
   ageGroup: string; skillArea: string; subSkill: string;
@@ -36,6 +37,7 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!form.subSkill.trim()) return setError('المهارة الفرعية مطلوبة');
     if (form.options.some(o => !o.trim())) return setError('يجب ملء جميع الخيارات الأربعة');
     if (!form.questionTextAr.trim()) return setError('نص السؤال مطلوب');
     if (!form.explanationAr.trim()) return setError('الشرح مطلوب');
@@ -59,25 +61,18 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
         <div>
           <label className={LBL}>الفئة العمرية</label>
           <select value={form.ageGroup} onChange={e => set('ageGroup', e.target.value)} className={FIELD}>
-            <option value="4-5">4-5 سنوات</option>
-            <option value="6-9">6-9 سنوات</option>
-            <option value="10-12">10-12 سنة</option>
-            <option value="mawhiba_l1">موهبة ١ (الصفوف 3–5)</option>
+            {QUESTION_AGE_GROUPS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
           </select>
         </div>
         <div>
           <label className={LBL}>المهارة الرئيسية</label>
           <select value={form.skillArea} onChange={e => set('skillArea', e.target.value)} className={FIELD}>
-            <option value="quantitative">كمي</option>
-            <option value="verbal">لفظي</option>
-            <option value="logical_patterns">تفكير منطقي</option>
-            <option value="spatial">استدلال مكاني</option>
-            <option value="scientific">علمي وميكانيكي</option>
+            {QUESTION_SKILL_AREAS.map(sk => <option key={sk.value} value={sk.value}>{sk.label}</option>)}
           </select>
         </div>
         <div>
           <label className={LBL}>المهارة الفرعية</label>
-          <input value={form.subSkill} onChange={e => set('subSkill', e.target.value)} placeholder="مثال: العد، الأنماط..." className={FIELD} />
+          <input value={form.subSkill} onChange={e => set('subSkill', e.target.value)} placeholder="مثال: العد، الأنماط..." required className={FIELD} />
         </div>
         <div>
           <label className={LBL}>الصعوبة</label>
@@ -104,7 +99,7 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
       <div>
         <label className={LBL}>نص السؤال (عربي)</label>
         <textarea value={form.questionTextAr} onChange={e => set('questionTextAr', e.target.value)}
-          rows={3} placeholder="اكتب السؤال هنا..." className={`${FIELD} resize-none`} />
+          rows={3} placeholder="اكتب السؤال هنا..." required className={`${FIELD} resize-none`} />
         {form.questionType === 'audio' && (
           <p className="text-xs text-blue-600 mt-1">💡 هذا النص سيُقرأ بالصوت تلقائياً للطفل</p>
         )}
@@ -133,7 +128,7 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
                 {['أ', 'ب', 'ج', 'د'][i]}
               </button>
               <input value={opt} onChange={e => setOption(i, e.target.value)}
-                placeholder={`الخيار ${['أ', 'ب', 'ج', 'د'][i]}`} className={`${FIELD} flex-1`} />
+                placeholder={`الخيار ${['أ', 'ب', 'ج', 'د'][i]}`} required className={`${FIELD} flex-1`} />
             </div>
           ))}
         </div>
@@ -143,7 +138,7 @@ export default function QuestionForm({ initial, id }: { initial?: Partial<Questi
       <div>
         <label className={LBL}>الشرح</label>
         <textarea value={form.explanationAr} onChange={e => set('explanationAr', e.target.value)}
-          rows={2} placeholder="اشرح سبب الإجابة الصحيحة..." className={`${FIELD} resize-none`} />
+          rows={2} placeholder="اشرح سبب الإجابة الصحيحة..." required className={`${FIELD} resize-none`} />
       </div>
 
       <div>

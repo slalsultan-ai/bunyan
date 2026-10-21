@@ -1,12 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { roundDownForDisplay, type PublicContentStats } from '@/lib/public-content-format';
 
-const STATS = [
-  { value: 700, suffix: '+', label: 'سؤال تفاعلي', icon: '📝' },
-  { value: 3, suffix: '', label: 'مهارات أساسية', icon: '🎯' },
-  { value: 3, suffix: '', label: 'فئات عمرية', icon: '👶' },
-  { value: 100, suffix: '٪', label: 'مجاني', icon: '🎁' },
-];
+/** Free plan allowance, as stated on the plans page. */
+const FREE_DAILY_SESSIONS = 3;
 
 function Counter({ target, suffix }: { target: number; suffix: string }) {
   const [count, setCount] = useState(0);
@@ -36,12 +33,18 @@ function Counter({ target, suffix }: { target: number; suffix: string }) {
   return <div ref={ref} className="text-4xl font-extrabold text-white">{count}{suffix}</div>;
 }
 
-export default function StatsSection() {
+export default function StatsSection({ stats }: { stats: PublicContentStats | null }) {
+  const items = [
+    ...(stats && stats.total > 0 ? [{ value: roundDownForDisplay(stats.total), suffix: '+', label: 'سؤال تفاعلي', icon: '📝' }] : []),
+    { value: stats?.skillAreas ?? 3, suffix: '', label: 'مهارات أساسية', icon: '🎯' },
+    { value: stats?.ageGroups ?? 3, suffix: '', label: 'فئات عمرية', icon: '👶' },
+    { value: FREE_DAILY_SESSIONS, suffix: '', label: 'جلسات مجانية يومياً', icon: '🎁' },
+  ];
   return (
     <section className="bg-emerald-600 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {STATS.map((s, i) => (
+        <div className={`grid grid-cols-2 ${items.length === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 text-center`}>
+          {items.map((s, i) => (
             <div key={i} className="text-white">
               <div className="text-3xl mb-2">{s.icon}</div>
               <Counter target={s.value} suffix={s.suffix} />

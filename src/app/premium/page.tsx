@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
+import { formatCount, type PublicContentStats } from '@/lib/public-content-format';
 
 const FREE_FEATURES = [
-  '270 سؤال',
+  'كل بنك الأسئلة',
   '3 جلسات يومياً',
   'تقرير أساسي',
   'طفل واحد',
@@ -16,7 +17,6 @@ const FREE_FEATURES = [
 
 const PREMIUM_FEATURES = [
   'كل مزايا المجاني',
-  '1,000+ سؤال GAT',
   'جلسات غير محدودة',
   'تحدي يومي',
   'مسار ذكي',
@@ -63,6 +63,18 @@ export default function PremiumPage() {
     expiresAt?: string;
     daysRemaining?: number;
   } | null>(null);
+
+  const [contentStats, setContentStats] = useState<PublicContentStats | null>(null);
+  useEffect(() => {
+    fetch('/api/public/content-stats')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && typeof d.total === 'number') setContentStats(d); })
+      .catch(() => {});
+  }, []);
+  // Every question is in the free tier today, so the free plan states the full count.
+  const freeFeatures = contentStats && contentStats.total > 0
+    ? [`كل بنك الأسئلة (${formatCount(contentStats.free)} سؤال)`, ...FREE_FEATURES.slice(1)]
+    : FREE_FEATURES;
 
   useEffect(() => {
     fetch('/api/premium/status')
@@ -158,7 +170,7 @@ export default function PremiumPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-1">مجاني</h2>
             <p className="text-3xl font-bold text-gray-900 mb-4">0 <span className="text-base font-normal text-gray-500">ر.س</span></p>
             <ul className="space-y-3 flex-1 mb-6">
-              {FREE_FEATURES.map((f, i) => (
+              {freeFeatures.map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-gray-700 text-sm">
                   <span className="text-emerald-500 shrink-0">✓</span>
                   {f}

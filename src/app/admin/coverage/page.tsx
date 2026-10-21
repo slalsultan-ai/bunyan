@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { QUESTION_AGE_GROUPS, QUESTION_SKILL_AREAS, questionAgeGroupLabel, questionSkillAreaIcon, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
-const AGE_GROUPS  = ['4-5', '6-9', '10-12'] as const;
-const SKILL_AREAS = ['quantitative', 'verbal', 'logical_patterns'] as const;
+const AGE_GROUPS  = QUESTION_AGE_GROUPS.map(a => a.value);
+const SKILL_AREAS = QUESTION_SKILL_AREAS.map(s => s.value);
 
-const AGE_L:   Record<string, string> = { '4-5': '4–5 سنوات', '6-9': '6–9 سنوات', '10-12': '10–12 سنة' };
-const SKILL_L: Record<string, string> = { quantitative: '🔢 كمي', verbal: '📖 لفظي', logical_patterns: '🧩 منطقي' };
+const AGE_L = (age: string) => questionAgeGroupLabel(age);
+const SKILL_L = (skill: string) => `${questionSkillAreaIcon(skill)} ${questionSkillAreaLabel(skill)}`;
 const DIFF_COLORS: Record<string, string> = {
   easy:   'bg-emerald-100 text-emerald-700',
   medium: 'bg-amber-100 text-amber-700',
@@ -20,6 +21,7 @@ interface Cell {
   skillArea: string;
   active: number;
   total: number;
+  applicable: boolean;
   byDifficulty: Record<string, number>;
 }
 
@@ -40,13 +42,14 @@ function cellLabel(active: number): string {
 export default function CoveragePage() {
   const [matrix, setMatrix]       = useState<Cell[][] | null>(null);
   const [grandTotal, setGrandTotal] = useState(0);
+  const [outsideMatrix, setOutsideMatrix] = useState(0);
   const [loading, setLoading]     = useState(true);
   const [hover, setHover]         = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/questions/coverage')
       .then(r => r.json())
-      .then(d => { setMatrix(d.matrix); setGrandTotal(d.grandTotal); })
+      .then(d => { setMatrix(d.matrix); setGrandTotal(d.grandTotal); setOutsideMatrix(d.outsideMatrix ?? 0); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -58,11 +61,11 @@ export default function CoveragePage() {
 
   if (!matrix) return null;
 
-  // Summary counts
-  const empty   = matrix.flat().filter(c => c.active === 0).length;
-  const weak    = matrix.flat().filter(c => c.active > 0 && c.active < 10).length;
-  const ok      = matrix.flat().filter(c => c.active >= 10 && c.active < 20).length;
-  const good    = matrix.flat().filter(c => c.active >= 20).length;
+  // Summary counts (only cells that belong to an age group's own skill set)
+  const cells   = matrix.flat().filter(c => c.applicable);
+  const empty   = cells.filter(c => c.active === 0).length;
+  const weak    = cells.filter(c => c.active > 0 && c.active < 10).length;
+  const good    = cells.filter(c => c.active >= 20).length;
 
   return (
     <div className="p-6 space-y-6">
@@ -112,8 +115,8 @@ export default function CoveragePage() {
       </div>
 
       {/* Matrix */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-x-auto">
+        <table className="w-full min-w-[720px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 w-36">
@@ -121,7 +124,7 @@ export default function CoveragePage() {
               </th>
               {SKILL_AREAS.map(skill => (
                 <th key={skill} className="px-4 py-3 text-center text-sm font-bold text-gray-700">
-                  {SKILL_L[skill]}
+                  {SKILL_L(skill)}
                 </th>
               ))}
               <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500">المجموع</th>
@@ -133,10 +136,17 @@ export default function CoveragePage() {
               return (
                 <tr key={AGE_GROUPS[ri]} className="border-b border-gray-50 last:border-0">
                   <td className="px-5 py-4 text-sm font-bold text-gray-800 bg-gray-50">
-                    {AGE_L[AGE_GROUPS[ri]]}
+                    {AGE_L(AGE_GROUPS[ri])}
                   </td>
                   {row.map(cell => {
                     const key = `${cell.ageGroup}|${cell.skillArea}`;
+                    if (!cell.applicable && cell.total === 0) {
+                      return (
+                        <td key={cell.skillArea} className="px-4 py-3 text-center align-middle text-gray-300 text-sm" title="لا تنطبق على هذه الفئة">
+                          —
+                        </td>
+                      );
+                    }
                     const isHovered = hover === key;
                     return (
                       <td
@@ -186,18 +196,24 @@ export default function CoveragePage() {
                   </td>
                 );
               })}
-              <td className="px-4 py-3 text-center text-sm font-extrabold text-emerald-700">{grandTotal}</td>
+              <td className="px-4 py-3 text-center text-sm font-extrabold text-emerald-700">{grandTotal - outsideMatrix}</td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      {outsideMatrix > 0 && (
+        <p className="text-xs text-gray-500">
+          {outsideMatrix} سؤال نشط بفئة أو مهارة خارج المصفوفة (مثل «مزيج»)، لذلك مجموع المصفوفة أقل من الإجمالي بهذا العدد.
+        </p>
+      )}
 
       {/* Recommendations */}
       {(empty > 0 || weak > 0) && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
           <h3 className="font-bold text-amber-800 mb-3">💡 توصيات</h3>
           <ul className="space-y-1.5 text-sm text-amber-700">
-            {matrix.flat()
+            {cells
               .filter(c => c.active < 10)
               .sort((a, b) => a.active - b.active)
               .slice(0, 5)
@@ -205,11 +221,11 @@ export default function CoveragePage() {
                 <li key={`${c.ageGroup}|${c.skillArea}`} className="flex items-center gap-2">
                   <span>{c.active === 0 ? '🚨' : '⚠️'}</span>
                   <span>
-                    {AGE_L[c.ageGroup]} — {SKILL_L[c.skillArea]}:
+                    {AGE_L(c.ageGroup)} — {SKILL_L(c.skillArea)}:
                     <strong className="mr-1">{c.active} سؤال</strong>
                     {c.active === 0 ? '— لا يوجد محتوى!' : '— يُنصح بإضافة المزيد'}
                   </span>
-                  <Link href={`/admin/questions/new`}
+                  <Link href={`/admin/questions/new?age=${encodeURIComponent(c.ageGroup)}&skill=${encodeURIComponent(c.skillArea)}`}
                     className="text-xs text-amber-600 underline hover:text-amber-800 mr-auto">
                     أضف الآن
                   </Link>
