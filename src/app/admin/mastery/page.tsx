@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { questionAgeGroupLabel, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -278,7 +279,7 @@ function ChildTab({ overview, track, initialChildId, onSwitchTrack }: {
       {loading && <p className="text-slate-500">جارٍ التحميل…</p>}
       {report && !report.supported && (
         <p className="text-amber-700 bg-amber-50 rounded-xl p-4">
-          {report.child.name} من فئة {report.child.ageGroup}، والمحرك يدعم فئة 6-9 فقط حاليًا.
+          {report.child.name} من فئة {questionAgeGroupLabel(report.child.ageGroup)}، والمحرك يدعم فئة 6-9 فقط حاليًا.
         </p>
       )}
       {report?.supported && report.skills && (
@@ -460,7 +461,7 @@ function GapsTab({ gaps }: { gaps: Overview['gaps'] }) {
         ) : (
           <ul className="text-sm space-y-1">
             {gaps.unmapped.map((u) => (
-              <li key={`${u.skillArea}/${u.subSkill}`}>{u.skillArea} / {u.subSkill} — {u.count} سؤال</li>
+              <li key={`${u.skillArea}/${u.subSkill}`}>{questionSkillAreaLabel(u.skillArea)} / {u.subSkill} — {u.count} سؤال</li>
             ))}
           </ul>
         )}

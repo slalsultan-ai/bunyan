@@ -1,10 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { questionAgeGroupLabel, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
-const SKILL_L: Record<string, string> = { quantitative: 'كمي', verbal: 'لفظي', logical_patterns: 'منطقي' };
 const DIFF_L:  Record<string, string> = { easy: 'سهل', medium: 'متوسط', hard: 'صعب', mixed: 'مختلط' };
-const AGE_L:   Record<string, string> = { '4-5': '4-5', '6-9': '6-9', '10-12': '10-12' };
 
 interface QuestionHealth {
   id: string;
@@ -228,9 +227,9 @@ export default function QuestionHealthPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-                      <span>{AGE_L[q.ageGroup] || q.ageGroup} سنوات</span>
+                      <span>{questionAgeGroupLabel(q.ageGroup)}</span>
                       <br />
-                      <span>{SKILL_L[q.skillArea] || q.skillArea}</span>
+                      <span>{questionSkillAreaLabel(q.skillArea)}</span>
                     </td>
                     <td className="px-4 py-3">
                       <PassBadge rate={q.passRate} lowSample={q.status === 'low_sample'} />

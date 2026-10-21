@@ -129,13 +129,14 @@ export default function AdminCodesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">الكود *</label>
               <input type="text" value={createForm.code}
                 onChange={e => setCreateForm({ ...createForm, code: e.target.value.toUpperCase() })}
-                placeholder="مثال: SCHOOL-NOOR"
+                placeholder="مثال: SCHOOL-NOOR" required maxLength={40}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono" dir="ltr" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">اسم المؤسسة *</label>
               <input type="text" value={createForm.institutionName}
                 onChange={e => setCreateForm({ ...createForm, institutionName: e.target.value })}
+                required maxLength={120}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
             </div>
             <div>
@@ -150,12 +151,14 @@ export default function AdminCodesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">عدد المستخدمين</label>
               <input type="number" value={createForm.maxUsers}
                 onChange={e => setCreateForm({ ...createForm, maxUsers: e.target.value })}
+                min={1} max={100000} step={1}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">المدة (بالأيام)</label>
               <input type="number" value={createForm.durationDays}
                 onChange={e => setCreateForm({ ...createForm, durationDays: e.target.value })}
+                min={1} max={3650} step={1}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
               <p className="text-xs text-gray-400 mt-1">30 = شهر، 90 = 3 أشهر، 365 = سنة</p>
             </div>

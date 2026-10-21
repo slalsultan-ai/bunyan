@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { QUESTION_AGE_GROUPS, QUESTION_SKILL_AREAS, ADMIN_AGE_GROUP_VALUES, ADMIN_SKILL_AREA_VALUES, questionAgeGroupLabel, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
 interface Question {
   id: string; ageGroup: string; skillArea: string; subSkill: string;
@@ -17,11 +18,12 @@ function getSource(tags?: string[]): { label: string; color: string } {
   return { label: 'بنيان', color: 'bg-blue-100 text-blue-700' };
 }
 
-const AGES = ['', '4-5', '6-9', '10-12'];
-const SKILLS = ['', 'quantitative', 'verbal', 'logical_patterns'];
+const AGES = ['', ...QUESTION_AGE_GROUPS.map(a => a.value)];
+const SKILLS = ['', ...QUESTION_SKILL_AREAS.map(s => s.value)];
+const AGE_L: Record<string, string> = Object.fromEntries(QUESTION_AGE_GROUPS.map(a => [a.value, a.label]));
 const DIFFS = ['', 'easy', 'medium', 'hard'];
 const TYPES = ['', 'text', 'audio', 'image'];
-const SKILL_L: Record<string, string> = { quantitative: 'كمي', verbal: 'لفظي', logical_patterns: 'منطقي' };
+const SKILL_L: Record<string, string> = Object.fromEntries(QUESTION_SKILL_AREAS.map(s => [s.value, s.label]));
 const DIFF_L: Record<string, string> = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
 const TYPE_L: Record<string, string> = { text: '📝', audio: '🔊', image: '🖼️' };
 const TYPE_LBL: Record<string, string> = { text: 'نصي', audio: 'صوتي', image: 'صوري' };
@@ -39,8 +41,8 @@ function PreviewModal({ q, onClose }: { q: Question; onClose: () => void }) {
         </div>
         <div className="p-5 space-y-4">
           <div className="flex gap-2 flex-wrap text-xs">
-            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-semibold">{q.ageGroup} سنوات</span>
-            <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg font-semibold">{SKILL_L[q.skillArea] || q.skillArea}</span>
+            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-semibold">{questionAgeGroupLabel(q.ageGroup)}</span>
+            <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg font-semibold">{questionSkillAreaLabel(q.skillArea)}</span>
             <span className={`px-2 py-0.5 rounded-lg font-semibold ${q.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-700' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
               {DIFF_L[q.difficulty]}
             </span>
@@ -218,6 +220,22 @@ export default function QuestionsPage() {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [filters, setFilters] = useState({ age_group: '', skill_area: '', difficulty: '', type: '', active: 'all', search: '', source: '' });
+  const [ready, setReady] = useState(false);
+  const [pageInput, setPageInput] = useState('');
+
+  // Links such as the coverage matrix open this page pre-filtered (?age_group=…&skill_area=…).
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const age = sp.get('age_group') ?? '';
+    const skill = sp.get('skill_area') ?? '';
+    setFilters(f => ({
+      ...f,
+      age_group: ADMIN_AGE_GROUP_VALUES.has(age) ? age : '',
+      skill_area: ADMIN_SKILL_AREA_VALUES.has(skill) ? skill : '',
+      active: sp.get('active') === 'true' || sp.get('active') === 'false' ? sp.get('active')! : 'all',
+    }));
+    setReady(true);
+  }, []);
 
   const load = useCallback(async (p = page) => {
     setLoading(true);
@@ -239,8 +257,8 @@ export default function QuestionsPage() {
     setLoading(false);
   }, [filters, page]);
 
-  useEffect(() => { load(1); setPage(1); }, [filters]);
-  useEffect(() => { load(page); }, [page]);
+  useEffect(() => { if (ready) { load(1); setPage(1); } }, [filters, ready]);
+  useEffect(() => { if (ready) load(page); }, [page]);
 
   const toggleActive = async (q: Question) => {
     await fetch(`/api/admin/questions/${q.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !q.isActive }) });
@@ -316,7 +334,7 @@ export default function QuestionsPage() {
           <input value={filters.search} onChange={e => setFilter('search', e.target.value)} placeholder="🔍 بحث في السؤال والخيارات والشرح..."
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none col-span-2 lg:col-span-2" />
           {[
-            { key: 'age_group', opts: AGES, label: 'الفئة العمرية', labels: {} as Record<string, string> },
+            { key: 'age_group', opts: AGES, label: 'الفئة العمرية', labels: AGE_L },
             { key: 'skill_area', opts: SKILLS, label: 'المهارة', labels: SKILL_L },
             { key: 'difficulty', opts: DIFFS, label: 'الصعوبة', labels: DIFF_L },
             { key: 'type', opts: TYPES, label: 'النوع', labels: TYPE_LBL },
@@ -373,8 +391,8 @@ export default function QuestionsPage() {
                     <td className="px-4 py-3">
                       <span className="text-lg" title={TYPE_LBL[q.questionType]}>{TYPE_L[q.questionType] || '?'}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{q.ageGroup}</td>
-                    <td className="px-4 py-3 text-gray-600">{SKILL_L[q.skillArea] || q.skillArea}</td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{questionAgeGroupLabel(q.ageGroup)}</td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{questionSkillAreaLabel(q.skillArea)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${q.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-700' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                         {DIFF_L[q.difficulty] || q.difficulty}
@@ -412,16 +430,40 @@ export default function QuestionsPage() {
         )}
 
         {pages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="px-4 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
-              ← السابق
-            </button>
-            <span className="text-sm text-gray-500">صفحة {page} من {pages}</span>
-            <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
-              className="px-4 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
-              التالي →
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-t border-gray-100">
+            <div className="flex gap-2">
+              <button onClick={() => setPage(1)} disabled={page === 1}
+                className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
+                الأولى
+              </button>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                className="px-4 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
+                السابق
+              </button>
+            </div>
+            <form className="flex items-center gap-2 text-sm text-gray-500"
+              onSubmit={e => {
+                e.preventDefault();
+                const n = Number(pageInput);
+                if (Number.isInteger(n) && n >= 1 && n <= pages) setPage(n);
+                setPageInput('');
+              }}>
+              <span>صفحة {page} من {pages}</span>
+              <input type="number" min={1} max={pages} value={pageInput} onChange={e => setPageInput(e.target.value)}
+                placeholder="رقم" aria-label="انتقل إلى صفحة"
+                className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:border-emerald-500 focus:outline-none" />
+              <button type="submit" className="px-3 py-1 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200">انتقال</button>
+            </form>
+            <div className="flex gap-2">
+              <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
+                className="px-4 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
+                التالي
+              </button>
+              <button onClick={() => setPage(pages)} disabled={page === pages}
+                className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-gray-200">
+                الأخيرة
+              </button>
+            </div>
           </div>
         )}
       </div>

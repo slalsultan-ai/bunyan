@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { formatTime, formatDateRiyadhShort } from '@/lib/utils';
+import { questionAgeGroupLabel, questionSkillAreaIcon, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
 interface Analytics {
   dailySessions: { date: string; cnt: number; avgScore: number }[];
@@ -13,8 +14,8 @@ interface Analytics {
   totalCompleted: number;
 }
 
-const AGE_L: Record<string, string> = { '4-5': '4-5 سنوات', '6-9': '6-9 سنوات', '10-12': '10-12 سنة' };
-const SKILL_L: Record<string, string> = { quantitative: 'كمي 🔢', verbal: 'لفظي 📖', logical_patterns: 'منطقي 🧩', mixed: 'مزيج 🎯' };
+const AGE_L = (v: string) => questionAgeGroupLabel(v);
+const SKILL_L = (v: string) => `${questionSkillAreaLabel(v)} ${questionSkillAreaIcon(v)}`.trim();
 
 function Bar({ value, max, color = 'bg-emerald-500' }: { value: number; max: number; color?: string }) {
   return (
@@ -52,7 +53,8 @@ export default function AnalyticsPage() {
 
       {/* Completion Rate */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <h3 className="font-bold text-gray-900 mb-4">نسبة إكمال الاختبارات</h3>
+        <h3 className="font-bold text-gray-900">نسبة إكمال الاختبارات</h3>
+        <p className="text-xs text-gray-400 mt-0.5 mb-4">كل الجلسات: الزوار والأطفال المسجّلون معاً</p>
         <div className="flex items-center gap-6">
           <div className="relative w-24 h-24 shrink-0">
             <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
@@ -130,7 +132,7 @@ export default function AnalyticsPage() {
             {data.ageGroupDist.map(r => (
               <div key={r.ageGroup}>
                 <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-gray-700">{AGE_L[r.ageGroup] || r.ageGroup}</span>
+                  <span className="font-medium text-gray-700">{AGE_L(r.ageGroup)}</span>
                   <span className="text-gray-500">{r.cnt} ({Math.round((r.cnt / totalAge) * 100)}٪)</span>
                 </div>
                 <Bar value={r.cnt} max={totalAge * 1} color="bg-blue-500" />
@@ -146,7 +148,7 @@ export default function AnalyticsPage() {
             {data.skillDist.map(r => (
               <div key={r.skill}>
                 <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-gray-700">{SKILL_L[r.skill] || r.skill}</span>
+                  <span className="font-medium text-gray-700">{SKILL_L(r.skill)}</span>
                   <span className="text-gray-500">{r.cnt} ({Math.round((r.cnt / totalSkill) * 100)}٪)</span>
                 </div>
                 <Bar value={r.cnt} max={totalSkill} color="bg-amber-500" />
@@ -159,7 +161,8 @@ export default function AnalyticsPage() {
       {/* Weekly accuracy trend */}
       {data.weekAcc.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <h3 className="font-bold text-gray-900 mb-4">متوسط الدقة آخر 7 أيام</h3>
+          <h3 className="font-bold text-gray-900">متوسط الدقة آخر 7 أيام</h3>
+          <p className="text-xs text-gray-400 mt-0.5 mb-4">الجلسات المكتملة فقط — الزوار والأطفال المسجّلون</p>
           <div className="space-y-3">
             {data.weekAcc.map(d => (
               <div key={d.date} className="flex items-center gap-4">

@@ -201,6 +201,7 @@ const AGE_GROUP_LABELS: Record<string, string> = {
   '4-5': '٤-٥ سنوات',
   '6-9': '٦-٩ سنوات',
   '10-12': '١٠-١٢ سنة',
+  mawhiba_l1: 'موهبة ١',
 };
 
 // ─── Metric builders ─────────────────────────────────────────────────────────
@@ -214,9 +215,9 @@ function buildMetrics(flagKey: string, stats: FeatureStats | null): Metric[] | n
     const coverage = s.totalChildren > 0 ? Math.round((s.childrenWithSessions / s.totalChildren) * 100) : 0;
     return [
       { label: 'أطفال مسجّلين', value: s.totalChildren, accent: 'blue' },
-      { label: 'لديهم جلسات', value: s.childrenWithSessions, sub: `${coverage}%`, accent: 'emerald', progress: coverage },
-      { label: 'جلسات مكتملة', value: s.totalCompletedSessions, accent: 'purple' },
-      { label: 'متوسط الدقة', value: s.avgAccuracy != null ? `${s.avgAccuracy}%` : '—', accent: s.avgAccuracy != null ? (s.avgAccuracy >= 70 ? 'emerald' : s.avgAccuracy >= 50 ? 'amber' : 'red') : 'gray', progress: s.avgAccuracy ?? undefined },
+      { label: 'لديهم جلسات', value: s.childrenWithSessions, sub: `${coverage}% من الأطفال`, accent: 'emerald', progress: coverage },
+      { label: 'جلسات مكتملة (أطفال مسجّلون)', value: s.totalCompletedSessions, accent: 'purple' },
+      { label: 'متوسط الدقة (أطفال مسجّلون)', value: s.avgAccuracy != null ? `${s.avgAccuracy}%` : '—', accent: s.avgAccuracy != null ? (s.avgAccuracy >= 70 ? 'emerald' : s.avgAccuracy >= 50 ? 'amber' : 'red') : 'gray', progress: s.avgAccuracy ?? undefined },
       { label: 'جلسات آخر ٧ أيام', value: s.recentSessions, accent: s.recentSessions > 0 ? 'blue' : 'gray' },
       { label: 'دقة آخر ٧ أيام', value: s.recentAccuracy != null ? `${s.recentAccuracy}%` : '—', accent: s.recentAccuracy != null ? (s.recentAccuracy >= 70 ? 'emerald' : 'amber') : 'gray' },
     ];
@@ -539,10 +540,10 @@ function MetricCard({ m }: { m: Metric }) {
     <div className="bg-gray-50/80 rounded-xl px-3 py-2.5 border border-gray-100">
       <div className={`text-lg font-bold leading-tight ${ACCENT_COLORS[m.accent]}`}>
         {m.value}
-        {m.sub && (
-          <span className="text-[11px] font-semibold text-gray-400 mr-1">{m.sub}</span>
-        )}
       </div>
+      {m.sub && (
+        <div className="text-[11px] font-semibold text-gray-400 leading-tight">{m.sub}</div>
+      )}
       <div className="text-[11px] text-gray-500 leading-tight mt-0.5">{m.label}</div>
       {m.progress != null && <ProgressBar value={m.progress} accent={m.accent} />}
     </div>

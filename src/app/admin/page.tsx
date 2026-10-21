@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { formatTime, formatDateRiyadh } from '@/lib/utils';
+import { questionAgeGroupLabel, questionSkillAreaLabel } from '@/lib/question-taxonomy';
 
 interface ChildInfo {
   id: string;
@@ -44,6 +45,7 @@ interface Stats {
   todaySessions: number;
   totalGuests: number;
   avgAccuracy: number;
+  completedSessions: number;
   byAge: { ageGroup: string; cnt: number }[];
   byType: { type: string; cnt: number }[];
   bySkill: { skill: string; cnt: number }[];
@@ -55,8 +57,6 @@ interface Stats {
 }
 
 const TYPE_LABELS: Record<string, string> = { text: 'نصي', audio: 'صوتي', image: 'صوري', mixed: 'مختلط' };
-const SKILL_LABELS: Record<string, string> = { quantitative: 'كمي', verbal: 'لفظي', logical_patterns: 'منطقي' };
-const AGE_LABELS: Record<string, string> = { '4-5': '4-5 سنوات', '6-9': '6-9 سنوات', '10-12': '10-12 سنة' };
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
     { label: 'أولياء الأمور', value: stats.totalParents, sub: `${stats.totalChildren} طفل مسجل`, icon: '👨‍👩‍👧', color: 'bg-indigo-50 border-indigo-200', iconBg: 'bg-indigo-100' },
     { label: 'إجمالي الجلسات', value: stats.totalSessions, sub: `${stats.todaySessions} اليوم`, icon: '📝', color: 'bg-emerald-50 border-emerald-200', iconBg: 'bg-emerald-100' },
     { label: 'إجمالي الأسئلة', value: stats.totalQuestions, sub: `${stats.activeQuestions} نشطة`, icon: '❓', color: 'bg-blue-50 border-blue-200', iconBg: 'bg-blue-100' },
-    { label: 'متوسط الدقة', value: `${stats.avgAccuracy}٪`, sub: 'على جميع الجلسات', icon: '🎯', color: 'bg-purple-50 border-purple-200', iconBg: 'bg-purple-100' },
+    { label: 'متوسط الدقة', value: `${stats.avgAccuracy}٪`, sub: `الجلسات المكتملة (${stats.completedSessions ?? 0}) — زوار وأطفال`, icon: '🎯', color: 'bg-purple-50 border-purple-200', iconBg: 'bg-purple-100' },
   ];
 
   const totalByAge = stats.byAge.reduce((s, r) => s + r.cnt, 0) || 1;
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
             {stats.byAge.map(r => (
               <div key={r.ageGroup}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700 font-medium">{AGE_LABELS[r.ageGroup] || r.ageGroup}</span>
+                  <span className="text-gray-700 font-medium">{questionAgeGroupLabel(r.ageGroup)}</span>
                   <span className="text-gray-500">{r.cnt}</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
             {stats.bySkill.map(r => (
               <div key={r.skill}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700 font-medium">{SKILL_LABELS[r.skill] || r.skill}</span>
+                  <span className="text-gray-700 font-medium">{questionSkillAreaLabel(r.skill)}</span>
                   <span className="text-gray-500">{r.cnt}</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
@@ -324,8 +324,8 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-700 text-xs">{s.childName || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-800">{AGE_LABELS[s.ageGroup] || s.ageGroup}</td>
-                    <td className="px-4 py-3 text-gray-600">{SKILL_LABELS[s.skillArea] || s.skillArea}</td>
+                    <td className="px-4 py-3 text-gray-800">{questionAgeGroupLabel(s.ageGroup)}</td>
+                    <td className="px-4 py-3 text-gray-600">{questionSkillAreaLabel(s.skillArea)}</td>
                     <td className="px-4 py-3">
                       {pct !== null ? (
                         <span className={`font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
