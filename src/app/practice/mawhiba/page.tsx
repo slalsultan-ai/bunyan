@@ -15,11 +15,16 @@ const MAWHIBA_COPY: MasteryTrackCopy = {
   subtitle: 'تدريب تكيّفي على نمط مقياس موهبة، المستوى الأول',
 };
 
-/** Mawhiba Level 1 adaptive-mastery track (behind the `mawhiba_l1` flag). */
+/**
+ * Mawhiba Level 1 adaptive-mastery track. Reachable with the `mawhiba_l1`
+ * flag, or by direct link for everyone while `mawhiba_l1_link` is on.
+ */
 export default function MawhibaPage() {
   const router = useRouter();
-  const flag = useFeatureFlag('mawhiba_l1');
-  const { selectedChild, loading } = useSelectedChild();
+  const mainFlag = useFeatureFlag('mawhiba_l1');
+  const linkFlag = useFeatureFlag('mawhiba_l1_link');
+  const flag = { loading: mainFlag.loading || linkFlag.loading, enabled: mainFlag.enabled || linkFlag.enabled };
+  const { selectedChild, loading, isLoggedIn } = useSelectedChild();
 
   useEffect(() => {
     if (!flag.loading && !flag.enabled) router.replace('/practice');
@@ -29,6 +34,19 @@ export default function MawhibaPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-sm text-center">
+          <div className="mb-3 text-5xl">🏆</div>
+          <p className="mb-2 text-lg font-bold text-gray-800">مسار موهبة ١</p>
+          <p className="mb-6 text-gray-500">تدريب تكيّفي على نمط مقياس موهبة للأطفال من 6 إلى 11 سنة. سجّل الدخول وأضف طفلك للبدء.</p>
+          <Link href="/auth?redirect=/practice/mawhiba" className="rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white">تسجيل الدخول</Link>
+        </div>
       </div>
     );
   }
