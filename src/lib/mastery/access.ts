@@ -7,6 +7,8 @@ import { isMawhibaL1Age, MAWHIBA_L1_AGE_MESSAGE } from '../mawhiba/eligibility';
 
 export const MASTERY_FLAG = 'adaptive_mastery';
 export const MAWHIBA_L1_FLAG = 'mawhiba_l1';
+/** Opens the Mawhiba track to anyone with the direct link; the banner stays on MAWHIBA_L1_FLAG. */
+export const MAWHIBA_L1_LINK_FLAG = 'mawhiba_l1_link';
 
 export interface MasteryAccess {
   parentId: string;
@@ -20,7 +22,7 @@ export interface MasteryAccess {
  * The engine runs only for a signed-in parent acting on one of their own
  * children, with the flag of the requested track:
  *   - smart path (default): `adaptive_mastery`, child in a supported age group
- *   - `mawhiba_l1`: `mawhiba_l1` flag, child aged 6–11
+ *   - `mawhiba_l1`: `mawhiba_l1` or `mawhiba_l1_link` flag, child aged 6–11
  */
 export async function resolveMasteryAccess(childId: unknown, track?: unknown): Promise<MasteryAccess> {
   const isMawhiba = track === 'mawhiba_l1';
@@ -33,7 +35,10 @@ export async function resolveMasteryAccess(childId: unknown, track?: unknown): P
   const session = await getParentSession();
   if (!session) throw new MasteryError('غير مصرح', 401);
 
-  const enabled = await hasFeatureAccess(isMawhiba ? MAWHIBA_L1_FLAG : MASTERY_FLAG, session.email, session.parentId);
+  const enabled = isMawhiba
+    ? (await hasFeatureAccess(MAWHIBA_L1_FLAG, session.email, session.parentId))
+      || (await hasFeatureAccess(MAWHIBA_L1_LINK_FLAG, session.email, session.parentId))
+    : await hasFeatureAccess(MASTERY_FLAG, session.email, session.parentId);
   if (!enabled) throw new MasteryError('الميزة غير مفعّلة', 403);
 
   try {
