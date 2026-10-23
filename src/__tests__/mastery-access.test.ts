@@ -2,12 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const flags = new Set<string>();
 let childAge = 8;
+let session: { parentId: string; email: string } | null = { parentId: 'p1', email: 'parent@example.com' };
+const jar = new Map<string, string>();
+
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: (name: string) => (jar.has(name) ? { value: jar.get(name) } : undefined) }),
+}));
 
 vi.mock('@/lib/feature-flags', () => ({
   hasFeatureAccess: vi.fn(async (key: string) => flags.has(key)),
 }));
 vi.mock('@/lib/parent-auth', () => ({
-  getParentSession: vi.fn(async () => ({ parentId: 'p1', email: 'parent@example.com' })),
+  getParentSession: vi.fn(async () => session),
   computeAgeGroup: (age: number) => (age <= 5 ? '4-5' : age <= 9 ? '6-9' : '10-12'),
 }));
 vi.mock('@/lib/parent-child-access', () => ({
@@ -23,7 +29,7 @@ vi.mock('@/lib/mastery/service', () => ({
 import { resolveMasteryAccess } from '@/lib/mastery/access';
 
 describe('resolveMasteryAccess — Mawhiba track', () => {
-  beforeEach(() => { flags.clear(); childAge = 8; });
+  beforeEach(() => { flags.clear(); childAge = 8; jar.clear(); session = { parentId: 'p1', email: 'parent@example.com' }; });
 
   it('is closed when neither Mawhiba flag grants access', async () => {
     await expect(resolveMasteryAccess('c1', 'mawhiba_l1')).rejects.toMatchObject({ status: 403 });
@@ -48,5 +54,39 @@ describe('resolveMasteryAccess — Mawhiba track', () => {
   it('does not open the 6-9 smart path', async () => {
     flags.add('mawhiba_l1_link');
     await expect(resolveMasteryAccess('c1')).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe('resolveMasteryAccess — guest on the Mawhiba link', () => {
+  const guestId = 'guest_12345678-1234-4234-8234-123456789abc';
+  beforeEach(() => {
+    flags.clear(); jar.clear(); session = null;
+    jar.set('mawhiba_guest', guestId);
+    jar.set('mawhiba_guest_age', '7');
+  });
+
+  it('admits the guest with its own cookie while the link is open', async () => {
+    flags.add('mawhiba_l1_link');
+    await expect(resolveMasteryAccess(guestId, 'mawhiba_l1')).resolves.toMatchObject({ childId: guestId, ageGroup: 'mawhiba_l1', email: '' });
+  });
+
+  it('refuses when the link flag is closed', async () => {
+    await expect(resolveMasteryAccess(guestId, 'mawhiba_l1')).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("refuses another browser's guest id", async () => {
+    flags.add('mawhiba_l1_link');
+    await expect(resolveMasteryAccess('guest_99999999-1234-4234-8234-123456789abc', 'mawhiba_l1')).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('refuses a guest whose stored age is outside 6-11', async () => {
+    flags.add('mawhiba_l1_link');
+    jar.set('mawhiba_guest_age', '5');
+    await expect(resolveMasteryAccess(guestId, 'mawhiba_l1')).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('never opens the 6-9 smart path to a guest', async () => {
+    flags.add('mawhiba_l1_link');
+    await expect(resolveMasteryAccess(guestId)).rejects.toMatchObject({ status: 401 });
   });
 });

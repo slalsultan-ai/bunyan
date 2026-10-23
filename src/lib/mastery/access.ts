@@ -4,6 +4,8 @@ import { assertParentCanAccessChild, isParentChildAccessError } from '../parent-
 import { isMasteryAgeGroup, type MasteryTrack } from './taxonomy';
 import { MasteryError } from './service';
 import { isMawhibaL1Age, MAWHIBA_L1_AGE_MESSAGE } from '../mawhiba/eligibility';
+import { isGuestId, readGuest } from '../mawhiba/guest';
+import { cookies } from 'next/headers';
 
 export const MASTERY_FLAG = 'adaptive_mastery';
 export const MAWHIBA_L1_FLAG = 'mawhiba_l1';
@@ -23,6 +25,8 @@ export interface MasteryAccess {
  * children, with the flag of the requested track:
  *   - smart path (default): `adaptive_mastery`, child in a supported age group
  *   - `mawhiba_l1`: `mawhiba_l1` or `mawhiba_l1_link` flag, child aged 6–11
+ * A guest on the Mawhiba link (no account) is admitted when `mawhiba_l1_link`
+ * is open to everyone and the request carries that guest's own cookie.
  */
 export async function resolveMasteryAccess(childId: unknown, track?: unknown): Promise<MasteryAccess> {
   const isMawhiba = track === 'mawhiba_l1';
@@ -32,6 +36,8 @@ export async function resolveMasteryAccess(childId: unknown, track?: unknown): P
   if (typeof childId !== 'string' || childId.length === 0) {
     throw new MasteryError('بيانات ناقصة', 400);
   }
+  if (isMawhiba && isGuestId(childId)) return resolveGuestAccess(childId);
+
   const session = await getParentSession();
   if (!session) throw new MasteryError('غير مصرح', 401);
 
@@ -54,6 +60,15 @@ export async function resolveMasteryAccess(childId: unknown, track?: unknown): P
     if (isParentChildAccessError(e)) throw new MasteryError(e.message, e.status);
     throw e;
   }
+}
+
+async function resolveGuestAccess(childId: string): Promise<MasteryAccess> {
+  if (!(await hasFeatureAccess(MAWHIBA_L1_LINK_FLAG, null, null))) throw new MasteryError('الميزة غير مفعّلة', 403);
+  const store = await cookies();
+  const guest = readGuest((name) => store.get(name)?.value);
+  // The id must be this browser's own guest id, never one taken from elsewhere.
+  if (!guest || guest.childId !== childId) throw new MasteryError('غير مصرح', 401);
+  return { parentId: '', email: '', childId, ageGroup: 'mawhiba_l1' };
 }
 
 export function masteryErrorResponse(e: unknown, tag: string) {
