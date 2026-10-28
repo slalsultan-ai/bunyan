@@ -139,7 +139,9 @@ function SessionContent() {
     if (!session.currentQuestion) return;
     const difficulty = session.currentQuestion.difficulty;
     session.selectAnswer(idx, (isCorrect) => {
-      const pts = isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0;
+      // Same per-answer value the final total uses (calculateSessionPoints), so the
+      // counter during the session and the results page agree.
+      const pts = isCorrect ? POINTS.CORRECT_ANSWER : 0;
       setPointsThisSession(p => p + pts);
       if (isCorrect) playCorrect(); else playWrong();
       bunaa.onAnswer(isCorrect, difficulty);
@@ -215,7 +217,7 @@ function SessionContent() {
             ageGroup={ageGroup}
           />
 
-          <div className={`mt-3 ${isYoung ? 'grid grid-cols-2 gap-3' : 'space-y-2.5'}`}>
+          <div className={`mt-3 ${isYoung ? `grid ${q.options.length === 3 ? 'grid-cols-3 gap-2' : 'grid-cols-2 gap-3'}` : 'space-y-2.5'}`}>
             {q.options.map((opt, idx) => {
               const isChosen = session.selectedOption === idx;
               const isCorrect = isReviewing && session.reveal !== null && idx === session.reveal.correctOptionIndex;
@@ -243,7 +245,7 @@ function SessionContent() {
               correctOptionIndex={session.reveal.correctOptionIndex}
               explanationAr={session.reveal.explanationAr}
               isCorrect={lastAnswer.isCorrect}
-              pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER + POINTS.FIRST_TRY_BONUS : 0}
+              pointsEarned={lastAnswer.isCorrect ? POINTS.CORRECT_ANSWER : 0}
               showExplanation={showExplanations}
             />
           )}

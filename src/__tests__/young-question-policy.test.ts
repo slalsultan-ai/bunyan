@@ -21,6 +21,14 @@ describe('young question policy', () => {
     })).toBe(true);
   });
 
+  it('allows three picture options (2026 bank) but not two or five', () => {
+    const pic = (n: number) => ({ text: `خيار ${n}`, imageUrl: `/assets/bunyan/4-5/o${n}.png` });
+    const base = { ...audioQuestion, questionType: 'image', questionImageUrl: '/assets/bunyan/4-5/scene.png' };
+    expect(isYoungQuestionSafe({ ...base, options: [pic(1), pic(2), pic(3)] })).toBe(true);
+    expect(isYoungQuestionSafe({ ...base, options: [pic(1), pic(2)] })).toBe(false);
+    expect(isYoungQuestionSafe({ ...base, options: [pic(1), pic(2), pic(3), pic(4), pic(5)] })).toBe(false);
+  });
+
   it('rejects text prompts and word-based answer choices for age 4-5', () => {
     expect(getYoungQuestionViolation({
       ...audioQuestion,

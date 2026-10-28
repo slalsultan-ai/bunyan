@@ -11,6 +11,9 @@ import { computeAgeGroupClient } from '@/lib/age-utils';
 import Logo from '@/components/ui/Logo';
 import Link from 'next/link';
 import MasteryPractice from '@/components/mastery/MasteryPractice';
+import QuestionCard from '@/components/practice/QuestionCard';
+import AnswerOption from '@/components/practice/AnswerOption';
+import type { PublicQuestion } from '@/types';
 
 interface SkillFocus {
   name: string;
@@ -21,6 +24,7 @@ interface SkillFocus {
 interface SessionQuestion {
   id: string;
   skillArea: string;
+  questionType?: string;
   questionTextAr: string;
   questionImageUrl: string | null;
   options: Array<{ text: string; imageUrl?: string }>;
@@ -34,7 +38,7 @@ interface PathSummary {
   hasSufficientData: boolean;
 }
 
-type Phase = 'loading' | 'intro' | 'ready' | 'playing' | 'completed' | 'recalculation';
+type Phase = 'loading' | 'intro' | 'ready' | 'playing' | 'completed' | 'recalculation' | 'empty' | 'error';
 
 /**
  * With `adaptive_mastery` on, 6-9 children get the BKT mastery engine; everyone
@@ -103,9 +107,11 @@ function LegacySmartPath() {
     const ageGroup = computeAgeGroupClient(selectedChild.age);
     try {
       const res = await fetch(`/api/adaptive-path?childId=${selectedChild.id}&ageGroup=${ageGroup}`);
-      if (!res.ok) return;
+      if (!res.ok) { setPhase('error'); return; }
       const data = await res.json();
       if (!data.enabled) { router.replace('/practice'); return; }
+      // No questions for this child's age yet: say so instead of rendering a blank screen.
+      if (!data.session?.questions?.length) { setPhase('empty'); return; }
 
       setQuestions(data.session.questions);
       setSessionId(data.session.id);
@@ -121,6 +127,7 @@ function LegacySmartPath() {
       }
     } catch (e) {
       console.error('Failed to load adaptive path:', e);
+      setPhase('error');
     }
   }, [selectedChild, router]);
 
@@ -212,10 +219,30 @@ function LegacySmartPath() {
   };
 
   // ─── Loading ──────────────────────────────────────────────────────────
-  if (flagLoading || childLoading || phase === 'loading') {
+  if (flagLoading || childLoading || (selectedChild && phase === 'loading')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (phase === 'empty' || phase === 'error') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-sm text-center">
+          <div className="text-5xl mb-3">{phase === 'empty' ? '🧩' : '⚠️'}</div>
+          <p className="text-gray-800 font-bold text-lg mb-2">
+            {phase === 'empty' ? 'لا توجد أسئلة متاحة في المسار الذكي لهذا العمر حالياً' : 'تعذّر تحميل المسار الذكي'}
+          </p>
+          <p className="text-gray-500 mb-6">{phase === 'empty' ? 'جرّب التمارين حسب المهارة.' : 'تحقق من الاتصال ثم حاول مرة أخرى.'}</p>
+          <div className="flex justify-center gap-3">
+            {phase === 'error' && (
+              <button onClick={() => { setPhase('loading'); loadSession(); }} className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl">إعادة المحاولة</button>
+            )}
+            <Link href="/practice" className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl">التمارين</Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -246,7 +273,7 @@ function LegacySmartPath() {
           <div className="text-5xl mb-4">🧠</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">المسار الذكي</h1>
           <p className="text-gray-600 mb-2">مرحباً! عشان نصمّم لك مساراً مخصصاً، نحتاج نعرف مستواك أولاً.</p>
-          <p className="text-gray-500 mb-2">ستحلّ 10 أسئلة تشخيصية متنوعة.</p>
+          <p className="text-gray-500 mb-2">ستحلّ {questions.length} أسئلة تشخيصية متنوعة.</p>
           <p className="text-gray-500 mb-8">لا تقلق — هذي مو اختبار! هدفها نفهم نقاط قوتك.</p>
           <button
             onClick={handleStart}
@@ -314,7 +341,7 @@ function LegacySmartPath() {
             onClick={handleStart}
             className="w-full bg-gradient-to-l from-indigo-500 to-blue-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg hover:shadow-xl active:scale-95 transition-all mb-6"
           >
-            🚀 ابدأ جلسة اليوم (10 أسئلة)
+            🚀 ابدأ جلسة اليوم ({questions.length} أسئلة)
           </button>
 
           {/* Weak/Strong points */}
@@ -335,6 +362,8 @@ function LegacySmartPath() {
   if (phase === 'playing') {
     const q = questions[currentIndex];
     if (!q) return null;
+    // 4-5 children can't read yet: spoken prompt + picture options, as in regular practice.
+    const young = computeAgeGroupClient(selectedChild.age) === '4-5';
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-blue-50 flex flex-col">
@@ -358,15 +387,45 @@ function LegacySmartPath() {
 
         <div className="flex-1 overflow-y-auto">
           <div className={`max-w-2xl mx-auto px-4 pt-6 ${isReviewing ? 'pb-28' : 'pb-6'}`}>
-            {/* Question */}
-            <div className="bg-white rounded-2xl p-5 border border-indigo-100 shadow-sm mb-4">
-              {q.questionImageUrl && (
-                <img src={q.questionImageUrl} alt="صورة السؤال" className="w-full max-w-sm mx-auto rounded-xl mb-4" />
-              )}
-              <p className="text-gray-900 text-lg font-medium leading-relaxed text-right">{q.questionTextAr}</p>
-            </div>
+            {young ? (
+              <div className="mb-4">
+                <QuestionCard
+                  key={q.id}
+                  question={{ ...q, questionType: q.questionType ?? 'image', questionImageUrl: q.questionImageUrl ?? undefined } as unknown as PublicQuestion}
+                  index={currentIndex}
+                  total={questions.length}
+                  ageGroup="4-5"
+                />
+              </div>
+            ) : (
+              /* Question */
+              <div className="bg-white rounded-2xl p-5 border border-indigo-100 shadow-sm mb-4">
+                {q.questionImageUrl && (
+                  <img src={q.questionImageUrl} alt="صورة السؤال" className="w-full max-w-sm mx-auto rounded-xl mb-4" />
+                )}
+                <p className="text-gray-900 text-lg font-medium leading-relaxed text-right">{q.questionTextAr}</p>
+              </div>
+            )}
 
             {/* Options */}
+            {young ? (
+              <div className={`grid ${q.options.length === 3 ? 'grid-cols-3 gap-2' : 'grid-cols-2 gap-3'}`}>
+                {q.options.map((opt, idx) => (
+                  <AnswerOption
+                    key={idx}
+                    index={idx}
+                    text={opt.text}
+                    imageUrl={opt.imageUrl}
+                    selected={selectedOption === idx}
+                    correct={isReviewing && idx === correctOptionIndex}
+                    wrong={isReviewing && idx === selectedOption && !isCorrect}
+                    disabled={isReviewing}
+                    onClick={() => handleSelectAnswer(idx)}
+                    large
+                  />
+                ))}
+              </div>
+            ) : (
             <div className="space-y-2.5">
               {q.options.map((opt, idx) => {
                 let bg = 'bg-white border-gray-200 hover:border-indigo-300';
@@ -390,6 +449,7 @@ function LegacySmartPath() {
                 );
               })}
             </div>
+            )}
 
             {isReviewing && isCorrect !== null && (
               <div className={`mt-4 p-4 rounded-xl text-center font-bold ${

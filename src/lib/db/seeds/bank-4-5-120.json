@@ -1,0 +1,3002 @@
+[
+ {
+  "n": 1,
+  "ref": "ك-1",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ٥",
+  "difficulty": "easy",
+  "text": "انظر إلى الصورة. كم تفاحة ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k01-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k01-o1.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k01-o2.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k01-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "التفاحات ثلاث."
+ },
+ {
+  "n": 2,
+  "ref": "ك-2",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ٥",
+  "difficulty": "easy",
+  "text": "عدّ معي: كم نجمة ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k02-scene.png",
+  "options": [
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k02-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k02-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k02-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "نجمتان."
+ },
+ {
+  "n": 3,
+  "ref": "ك-3",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ٥",
+  "difficulty": "easy",
+  "text": "كم كتكوتًا ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k03-scene.png",
+  "options": [
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k03-o1.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k03-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k03-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "خمسة كتاكيت."
+ },
+ {
+  "n": 4,
+  "ref": "ك-4",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ١٠",
+  "difficulty": "medium",
+  "text": "عدّ البالونات واحدًا واحدًا. كم بالونًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k04-scene.png",
+  "options": [
+   {
+    "text": "٧",
+    "imageUrl": "/assets/bunyan/4-5/b120-k04-o1.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k04-o2.png"
+   },
+   {
+    "text": "٨",
+    "imageUrl": "/assets/bunyan/4-5/b120-k04-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "سبعة بالونات."
+ },
+ {
+  "n": 5,
+  "ref": "ك-5",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ١٠",
+  "difficulty": "medium",
+  "text": "كم قطعة بسكويت ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k05-scene.png",
+  "options": [
+   {
+    "text": "٧",
+    "imageUrl": "/assets/bunyan/4-5/b120-k05-o1.png"
+   },
+   {
+    "text": "٩",
+    "imageUrl": "/assets/bunyan/4-5/b120-k05-o2.png"
+   },
+   {
+    "text": "٨",
+    "imageUrl": "/assets/bunyan/4-5/b120-k05-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "ثماني قطع."
+ },
+ {
+  "n": 6,
+  "ref": "ك-6",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ حتى ١٠",
+  "difficulty": "medium",
+  "text": "عدّ السمكات. كم سمكة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k06-scene.png",
+  "options": [
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k06-o1.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k06-o2.png"
+   },
+   {
+    "text": "٧",
+    "imageUrl": "/assets/bunyan/4-5/b120-k06-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "ست سمكات."
+ },
+ {
+  "n": 7,
+  "ref": "ك-7",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ الانتقائي",
+  "difficulty": "hard",
+  "text": "في الصورة تفاح وموز. كم موزة فقط ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k07-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k07-o1.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k07-o2.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k07-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "أربع موزات؛ التفاح لا يُحسب."
+ },
+ {
+  "n": 8,
+  "ref": "ك-8",
+  "skillArea": "quantitative",
+  "subSkill": "العدّ الانتقائي",
+  "difficulty": "hard",
+  "text": "في الصورة سيارات وباصات. كم سيارة فقط ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k08-scene.png",
+  "options": [
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k08-o1.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k08-o2.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k08-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "ثلاث سيارات؛ الباصان لا يُحسبان."
+ },
+ {
+  "n": 9,
+  "ref": "ك-9",
+  "skillArea": "quantitative",
+  "subSkill": "التعرف على الأرقام",
+  "difficulty": "easy",
+  "text": "أين الرقم ثلاثة؟ أشر إليه.",
+  "imageUrl": "/assets/bunyan/4-5/b120-k09-scene.png",
+  "options": [
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k09-o1.png"
+   },
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k09-o2.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k09-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الرقم ٣ هو المطلوب."
+ },
+ {
+  "n": 10,
+  "ref": "ك-10",
+  "skillArea": "quantitative",
+  "subSkill": "التعرف على الأرقام",
+  "difficulty": "easy",
+  "text": "أين الرقم خمسة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k10-scene.png",
+  "options": [
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k10-o1.png"
+   },
+   {
+    "text": "٧",
+    "imageUrl": "/assets/bunyan/4-5/b120-k10-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k10-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الرقم ٥ هو المطلوب."
+ },
+ {
+  "n": 11,
+  "ref": "ك-11",
+  "skillArea": "quantitative",
+  "subSkill": "ترتيب الأعداد",
+  "difficulty": "medium",
+  "text": "أي رقم يأتي بعد الرقم أربعة مباشرة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k11-scene.png",
+  "options": [
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k11-o1.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k11-o2.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k11-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "بعد ٤ يأتي ٥."
+ },
+ {
+  "n": 12,
+  "ref": "ك-12",
+  "skillArea": "quantitative",
+  "subSkill": "ترتيب الأعداد",
+  "difficulty": "medium",
+  "text": "أي رقم يأتي قبل الرقم اثنين مباشرة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k12-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k12-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k12-o2.png"
+   },
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k12-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "قبل ٢ يأتي ١."
+ },
+ {
+  "n": 13,
+  "ref": "ك-13",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "easy",
+  "text": "انظر إلى المجموعتين. أي مجموعة فيها حبات أكثر؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k13-scene.png",
+  "options": [
+   {
+    "text": "متساويان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k13-o1.png"
+   },
+   {
+    "text": "العنب",
+    "imageUrl": "/assets/bunyan/4-5/b120-k13-o2.png"
+   },
+   {
+    "text": "الفراولة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k13-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٥ فراولات أكثر من عنبتين."
+ },
+ {
+  "n": 14,
+  "ref": "ك-14",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "easy",
+  "text": "أي مجموعة فيها حيوانات أقل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k14-scene.png",
+  "options": [
+   {
+    "text": "القطط",
+    "imageUrl": "/assets/bunyan/4-5/b120-k14-o1.png"
+   },
+   {
+    "text": "متساويتان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k14-o2.png"
+   },
+   {
+    "text": "الكلاب",
+    "imageUrl": "/assets/bunyan/4-5/b120-k14-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٣ قطط أقل من ٤ كلاب."
+ },
+ {
+  "n": 15,
+  "ref": "ك-15",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "medium",
+  "text": "قارن بين المجموعتين. ماذا ترى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k15-scene.png",
+  "options": [
+   {
+    "text": "متساويتان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k15-o1.png"
+   },
+   {
+    "text": "الزرقاء أكثر",
+    "imageUrl": "/assets/bunyan/4-5/b120-k15-o2.png"
+   },
+   {
+    "text": "الخضراء أكثر",
+    "imageUrl": "/assets/bunyan/4-5/b120-k15-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٤ و٤ متساويتان."
+ },
+ {
+  "n": 16,
+  "ref": "ك-16",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "medium",
+  "text": "أي عدد أصغر: أربعة أم ستة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k16-scene.png",
+  "options": [
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k16-o1.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k16-o2.png"
+   },
+   {
+    "text": "متساويان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k16-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "٤ أصغر من ٦."
+ },
+ {
+  "n": 17,
+  "ref": "ك-17",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "hard",
+  "text": "مع سارة ٣ أقلام، ومع فهد ٥ أقلام. من معه أقلام أكثر؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k17-scene.png",
+  "options": [
+   {
+    "text": "متساويان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k17-o1.png"
+   },
+   {
+    "text": "سارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k17-o2.png"
+   },
+   {
+    "text": "فهد",
+    "imageUrl": "/assets/bunyan/4-5/b120-k17-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٥ أكثر من ٣."
+ },
+ {
+  "n": 18,
+  "ref": "ك-18",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالكمية",
+  "difficulty": "hard",
+  "text": "معك برتقالتان، وأضفت برتقالتين. هل صار العدد أكثر من ثلاث؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k18-scene.png",
+  "options": [
+   {
+    "text": "صارت ٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k18-o1.png"
+   },
+   {
+    "text": "نعم، أكثر",
+    "imageUrl": "/assets/bunyan/4-5/b120-k18-o2.png"
+   },
+   {
+    "text": "لا",
+    "imageUrl": "/assets/bunyan/4-5/b120-k18-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "٢+٢=٤، و٤ أكثر من ٣."
+ },
+ {
+  "n": 19,
+  "ref": "ك-19",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "easy",
+  "text": "تفاحتان وتفاحة. كم تفاحة في المجموع؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k19-scene.png",
+  "options": [
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k19-o1.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k19-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k19-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٢+١=٣."
+ },
+ {
+  "n": 20,
+  "ref": "ك-20",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "easy",
+  "text": "ثلاثة كتاكيت وجاء كتكوت. كم صار؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k20-scene.png",
+  "options": [
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k20-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k20-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k20-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٣+١=٤."
+ },
+ {
+  "n": 21,
+  "ref": "ك-21",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "medium",
+  "text": "سيارتان وسيارتان. كم سيارة معًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k21-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k21-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k21-o2.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k21-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٢+٢=٤."
+ },
+ {
+  "n": 22,
+  "ref": "ك-22",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "medium",
+  "text": "ثلاث نجوم ونجمتان. كم المجموع؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k22-scene.png",
+  "options": [
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k22-o1.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k22-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k22-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٣+٢=٥."
+ },
+ {
+  "n": 23,
+  "ref": "ك-23",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "medium",
+  "text": "معك تفاحتان، وأعطتك ماما تفاحة. كم صار معك؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k23-scene.png",
+  "options": [
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k23-o1.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k23-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k23-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٢+١=٣ (سماعي بلا صورة إلزامية)."
+ },
+ {
+  "n": 24,
+  "ref": "ك-24",
+  "skillArea": "quantitative",
+  "subSkill": "الجمع بالصور",
+  "difficulty": "hard",
+  "text": "في الحديقة ٣ عصافير، وجاء عصفوران. كم عصفورًا صار في الحديقة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k24-scene.png",
+  "options": [
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k24-o1.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k24-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k24-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "٣+٢=٥."
+ },
+ {
+  "n": 25,
+  "ref": "ك-25",
+  "skillArea": "quantitative",
+  "subSkill": "الطرح بالصور",
+  "difficulty": "easy",
+  "text": "ثلاث قطع بسكويت، أكلنا واحدة. كم بقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k25-scene.png",
+  "options": [
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k25-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k25-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k25-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٣−١=٢."
+ },
+ {
+  "n": 26,
+  "ref": "ك-26",
+  "skillArea": "quantitative",
+  "subSkill": "الطرح بالصور",
+  "difficulty": "easy",
+  "text": "أربعة بالونات، طار بالون واحد. كم بقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k26-scene.png",
+  "options": [
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k26-o1.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k26-o2.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k26-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٤−١=٣."
+ },
+ {
+  "n": 27,
+  "ref": "ك-27",
+  "skillArea": "quantitative",
+  "subSkill": "الطرح بالصور",
+  "difficulty": "medium",
+  "text": "كان معك ٥ قطع حلوى، وأكلت قطعتين. كم بقي معك؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k27-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k27-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k27-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k27-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "٥−٢=٣."
+ },
+ {
+  "n": 28,
+  "ref": "ك-28",
+  "skillArea": "quantitative",
+  "subSkill": "الطرح بالصور",
+  "difficulty": "medium",
+  "text": "ستة صيصان في الساحة، ذهب اثنان إلى البيت. كم بقي في الساحة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k28-scene.png",
+  "options": [
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k28-o1.png"
+   },
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k28-o2.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k28-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٦−٢=٤."
+ },
+ {
+  "n": 29,
+  "ref": "ك-29",
+  "skillArea": "quantitative",
+  "subSkill": "الطرح بالصور",
+  "difficulty": "hard",
+  "text": "على الشجرة ٤ تفاحات، سقطت ٣ على الأرض. كم بقي على الشجرة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k29-scene.png",
+  "options": [
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k29-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k29-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k29-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "٤−٣=١."
+ },
+ {
+  "n": 30,
+  "ref": "ك-30",
+  "skillArea": "quantitative",
+  "subSkill": "الأشكال الهندسية",
+  "difficulty": "easy",
+  "text": "أين الدائرة؟ أشر إليها.",
+  "imageUrl": "/assets/bunyan/4-5/b120-k30-scene.png",
+  "options": [
+   {
+    "text": "الدائرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k30-o1.png"
+   },
+   {
+    "text": "المربع",
+    "imageUrl": "/assets/bunyan/4-5/b120-k30-o2.png"
+   },
+   {
+    "text": "المثلث",
+    "imageUrl": "/assets/bunyan/4-5/b120-k30-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الدائرة ⭕."
+ },
+ {
+  "n": 31,
+  "ref": "ك-31",
+  "skillArea": "quantitative",
+  "subSkill": "الأشكال الهندسية",
+  "difficulty": "easy",
+  "text": "أين المثلث؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k31-scene.png",
+  "options": [
+   {
+    "text": "الدائرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k31-o1.png"
+   },
+   {
+    "text": "المثلث",
+    "imageUrl": "/assets/bunyan/4-5/b120-k31-o2.png"
+   },
+   {
+    "text": "المربع",
+    "imageUrl": "/assets/bunyan/4-5/b120-k31-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "المثلث 🔺 ."
+ },
+ {
+  "n": 32,
+  "ref": "ك-32",
+  "skillArea": "quantitative",
+  "subSkill": "الأشكال الهندسية",
+  "difficulty": "medium",
+  "text": "انظر إلى المثلث. كم ضلعًا له؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k32-scene.png",
+  "options": [
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k32-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k32-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-k32-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "للمثلث ٣ أضلاع."
+ },
+ {
+  "n": 33,
+  "ref": "ك-33",
+  "skillArea": "quantitative",
+  "subSkill": "الأشكال الهندسية",
+  "difficulty": "medium",
+  "text": "أي شكل له أربعة أضلاع؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k33-scene.png",
+  "options": [
+   {
+    "text": "الدائرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k33-o1.png"
+   },
+   {
+    "text": "المربع",
+    "imageUrl": "/assets/bunyan/4-5/b120-k33-o2.png"
+   },
+   {
+    "text": "المثلث",
+    "imageUrl": "/assets/bunyan/4-5/b120-k33-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "المربع له ٤ أضلاع."
+ },
+ {
+  "n": 34,
+  "ref": "ك-34",
+  "skillArea": "quantitative",
+  "subSkill": "أنماط الأعداد",
+  "difficulty": "easy",
+  "text": "أكمل النمط: واحد، اثنان، واحد، اثنان، واحد، ...؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k34-scene.png",
+  "options": [
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k34-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-k34-o2.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k34-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "النمط يتناوب ١ ثم ٢."
+ },
+ {
+  "n": 35,
+  "ref": "ك-35",
+  "skillArea": "quantitative",
+  "subSkill": "أنماط الأعداد",
+  "difficulty": "medium",
+  "text": "أكمل ترتيب الأعداد: واحد، اثنان، ثلاثة، أربعة، ...؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k35-scene.png",
+  "options": [
+   {
+    "text": "٥",
+    "imageUrl": "/assets/bunyan/4-5/b120-k35-o1.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k35-o2.png"
+   },
+   {
+    "text": "٧",
+    "imageUrl": "/assets/bunyan/4-5/b120-k35-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "بعد ٤ يأتي ٥."
+ },
+ {
+  "n": 36,
+  "ref": "ك-36",
+  "skillArea": "quantitative",
+  "subSkill": "أنماط الأعداد",
+  "difficulty": "medium",
+  "text": "نعدّ تنازليًا: خمسة، أربعة، ثلاثة، ...؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k36-scene.png",
+  "options": [
+   {
+    "text": "١",
+    "imageUrl": "/assets/bunyan/4-5/b120-k36-o1.png"
+   },
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-k36-o2.png"
+   },
+   {
+    "text": "٦",
+    "imageUrl": "/assets/bunyan/4-5/b120-k36-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "بعد ٣ تنازليًا يأتي ٢."
+ },
+ {
+  "n": 37,
+  "ref": "ك-37",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالحجم",
+  "difficulty": "easy",
+  "text": "في الحقيقة: أيهما أكبر حجمًا، الفيل أم الفأر؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k37-scene.png",
+  "options": [
+   {
+    "text": "متساويان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k37-o1.png"
+   },
+   {
+    "text": "الفيل",
+    "imageUrl": "/assets/bunyan/4-5/b120-k37-o2.png"
+   },
+   {
+    "text": "الفأر",
+    "imageUrl": "/assets/bunyan/4-5/b120-k37-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الفيل أكبر من الفأر."
+ },
+ {
+  "n": 38,
+  "ref": "ك-38",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالطول",
+  "difficulty": "easy",
+  "text": "في الحقيقة: أيهما أطول، الزرافة أم القطة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k38-scene.png",
+  "options": [
+   {
+    "text": "الزرافة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k38-o1.png"
+   },
+   {
+    "text": "متساويتان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k38-o2.png"
+   },
+   {
+    "text": "القطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k38-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الزرافة أطول."
+ },
+ {
+  "n": 39,
+  "ref": "ك-39",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالوزن",
+  "difficulty": "medium",
+  "text": "في الحقيقة: أيهما أثقل، الفيل أم الريشة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k39-scene.png",
+  "options": [
+   {
+    "text": "متساويان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k39-o1.png"
+   },
+   {
+    "text": "الفيل",
+    "imageUrl": "/assets/bunyan/4-5/b120-k39-o2.png"
+   },
+   {
+    "text": "الريشة",
+    "imageUrl": "/assets/bunyan/4-5/b120-k39-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الفيل أثقل من الريشة."
+ },
+ {
+  "n": 40,
+  "ref": "ك-40",
+  "skillArea": "quantitative",
+  "subSkill": "المقارنة بالطول",
+  "difficulty": "hard",
+  "text": "شجرتان: واحدة بعلامة حمراء وواحدة بعلامة زرقاء. أيهما أطول؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-k40-scene.png",
+  "options": [
+   {
+    "text": "متساويتان",
+    "imageUrl": "/assets/bunyan/4-5/b120-k40-o1.png"
+   },
+   {
+    "text": "الحمراء",
+    "imageUrl": "/assets/bunyan/4-5/b120-k40-o2.png"
+   },
+   {
+    "text": "الزرقاء",
+    "imageUrl": "/assets/bunyan/4-5/b120-k40-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الشجرة الحمراء أطول."
+ },
+ {
+  "n": 41,
+  "ref": "ل-1",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "easy",
+  "text": "انظر إلى الصورة. ما اسم هذه الفاكهة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l01-scene.png",
+  "options": [
+   {
+    "text": "تفاحة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l01-o1.png"
+   },
+   {
+    "text": "موزة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l01-o2.png"
+   },
+   {
+    "text": "برتقالة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l01-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الصورة موزة."
+ },
+ {
+  "n": 42,
+  "ref": "ل-2",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "easy",
+  "text": "ما اسم هذا الحيوان؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l02-scene.png",
+  "options": [
+   {
+    "text": "فيل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l02-o1.png"
+   },
+   {
+    "text": "أسد",
+    "imageUrl": "/assets/bunyan/4-5/b120-l02-o2.png"
+   },
+   {
+    "text": "قطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l02-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الصورة فيل."
+ },
+ {
+  "n": 43,
+  "ref": "ل-3",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "easy",
+  "text": "ما هذا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l03-scene.png",
+  "options": [
+   {
+    "text": "بيت",
+    "imageUrl": "/assets/bunyan/4-5/b120-l03-o1.png"
+   },
+   {
+    "text": "شجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l03-o2.png"
+   },
+   {
+    "text": "سيارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l03-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الصورة سيارة."
+ },
+ {
+  "n": 44,
+  "ref": "ل-4",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "easy",
+  "text": "ما اسم هذا الحيوان؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l04-scene.png",
+  "options": [
+   {
+    "text": "سلحفاة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l04-o1.png"
+   },
+   {
+    "text": "أسد",
+    "imageUrl": "/assets/bunyan/4-5/b120-l04-o2.png"
+   },
+   {
+    "text": "فيل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l04-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الصورة أسد."
+ },
+ {
+  "n": 45,
+  "ref": "ل-5",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "medium",
+  "text": "ماذا نسمي هذا الذي ينزل من السماء؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l05-scene.png",
+  "options": [
+   {
+    "text": "ثلج",
+    "imageUrl": "/assets/bunyan/4-5/b120-l05-o1.png"
+   },
+   {
+    "text": "شمس",
+    "imageUrl": "/assets/bunyan/4-5/b120-l05-o2.png"
+   },
+   {
+    "text": "مطر",
+    "imageUrl": "/assets/bunyan/4-5/b120-l05-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الصورة مطر."
+ },
+ {
+  "n": 46,
+  "ref": "ل-6",
+  "skillArea": "verbal",
+  "subSkill": "تسمية الصور",
+  "difficulty": "medium",
+  "text": "ما اسم هذه الحشرة التي تصنع العسل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l06-scene.png",
+  "options": [
+   {
+    "text": "نملة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l06-o1.png"
+   },
+   {
+    "text": "نحلة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l06-o2.png"
+   },
+   {
+    "text": "فراشة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l06-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الصورة نحلة."
+ },
+ {
+  "n": 47,
+  "ref": "ل-7",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "easy",
+  "text": "النار حارة 🔥. ما عكس «حار»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l07-scene.png",
+  "options": [
+   {
+    "text": "جميل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l07-o1.png"
+   },
+   {
+    "text": "ساخن",
+    "imageUrl": "/assets/bunyan/4-5/b120-l07-o2.png"
+   },
+   {
+    "text": "بارد",
+    "imageUrl": "/assets/bunyan/4-5/b120-l07-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "عكس الحار البارد."
+ },
+ {
+  "n": 48,
+  "ref": "ل-8",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "easy",
+  "text": "الفيل كبير 🐘. ما عكس «كبير»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l08-scene.png",
+  "options": [
+   {
+    "text": "ضخم",
+    "imageUrl": "/assets/bunyan/4-5/b120-l08-o1.png"
+   },
+   {
+    "text": "طويل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l08-o2.png"
+   },
+   {
+    "text": "صغير",
+    "imageUrl": "/assets/bunyan/4-5/b120-l08-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "عكس الكبير الصغير."
+ },
+ {
+  "n": 49,
+  "ref": "ل-9",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "easy",
+  "text": "هذا النهار ☀️. ما عكس «النهار»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l09-scene.png",
+  "options": [
+   {
+    "text": "الليل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l09-o1.png"
+   },
+   {
+    "text": "الصباح",
+    "imageUrl": "/assets/bunyan/4-5/b120-l09-o2.png"
+   },
+   {
+    "text": "الظهر",
+    "imageUrl": "/assets/bunyan/4-5/b120-l09-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "عكس النهار الليل."
+ },
+ {
+  "n": 50,
+  "ref": "ل-10",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "medium",
+  "text": "الأرنب سريع 🐇. ما عكس «سريع»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l10-scene.png",
+  "options": [
+   {
+    "text": "قوي",
+    "imageUrl": "/assets/bunyan/4-5/b120-l10-o1.png"
+   },
+   {
+    "text": "خفيف",
+    "imageUrl": "/assets/bunyan/4-5/b120-l10-o2.png"
+   },
+   {
+    "text": "بطيء",
+    "imageUrl": "/assets/bunyan/4-5/b120-l10-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "عكس السريع البطيء."
+ },
+ {
+  "n": 51,
+  "ref": "ل-11",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "medium",
+  "text": "الكرة فوق الصندوق. ما عكس «فوق»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l11-scene.png",
+  "options": [
+   {
+    "text": "بجانب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l11-o1.png"
+   },
+   {
+    "text": "فوق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l11-o2.png"
+   },
+   {
+    "text": "تحت",
+    "imageUrl": "/assets/bunyan/4-5/b120-l11-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "عكس فوق: تحت."
+ },
+ {
+  "n": 52,
+  "ref": "ل-12",
+  "skillArea": "verbal",
+  "subSkill": "الأضداد",
+  "difficulty": "hard",
+  "text": "هذا الولد سعيد. ما عكس «سعيد»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l12-scene.png",
+  "options": [
+   {
+    "text": "فرحان",
+    "imageUrl": "/assets/bunyan/4-5/b120-l12-o1.png"
+   },
+   {
+    "text": "حزين",
+    "imageUrl": "/assets/bunyan/4-5/b120-l12-o2.png"
+   },
+   {
+    "text": "نعسان",
+    "imageUrl": "/assets/bunyan/4-5/b120-l12-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "عكس السعيد الحزين؛ «فرحان» مرادف مشتت."
+ },
+ {
+  "n": 53,
+  "ref": "ل-13",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "easy",
+  "text": "انظر إلى الثلاث صور. أي واحدة ليست فاكهة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l13-scene.png",
+  "options": [
+   {
+    "text": "الجزرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l13-o1.png"
+   },
+   {
+    "text": "الموزة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l13-o2.png"
+   },
+   {
+    "text": "التفاحة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l13-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الجزرة خضار وليست فاكهة."
+ },
+ {
+  "n": 54,
+  "ref": "ل-14",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "easy",
+  "text": "أي واحد من هذه حيوان؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l14-scene.png",
+  "options": [
+   {
+    "text": "القطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l14-o1.png"
+   },
+   {
+    "text": "الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l14-o2.png"
+   },
+   {
+    "text": "الكرسي",
+    "imageUrl": "/assets/bunyan/4-5/b120-l14-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "القطة حيوان."
+ },
+ {
+  "n": 55,
+  "ref": "ل-15",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "easy",
+  "text": "أي واحدة من وسائل النقل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l15-scene.png",
+  "options": [
+   {
+    "text": "العنب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l15-o1.png"
+   },
+   {
+    "text": "السمكة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l15-o2.png"
+   },
+   {
+    "text": "الطائرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l15-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الطائرة وسيلة نقل."
+ },
+ {
+  "n": 56,
+  "ref": "ل-16",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "medium",
+  "text": "أي واحد من هذه لا نلبسه؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l16-scene.png",
+  "options": [
+   {
+    "text": "الحليب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l16-o1.png"
+   },
+   {
+    "text": "الحذاء",
+    "imageUrl": "/assets/bunyan/4-5/b120-l16-o2.png"
+   },
+   {
+    "text": "القميص",
+    "imageUrl": "/assets/bunyan/4-5/b120-l16-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الحليب نُشربه ولا نلبسه."
+ },
+ {
+  "n": 57,
+  "ref": "ل-17",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "medium",
+  "text": "أي واحد من هذه من الخضار؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l17-scene.png",
+  "options": [
+   {
+    "text": "التفاحة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l17-o1.png"
+   },
+   {
+    "text": "البروكلي",
+    "imageUrl": "/assets/bunyan/4-5/b120-l17-o2.png"
+   },
+   {
+    "text": "الخبز",
+    "imageUrl": "/assets/bunyan/4-5/b120-l17-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "البروكلي من الخضار."
+ },
+ {
+  "n": 58,
+  "ref": "ل-18",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "medium",
+  "text": "أي هذه الحيوانات يعيش في الماء؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l18-scene.png",
+  "options": [
+   {
+    "text": "القطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l18-o1.png"
+   },
+   {
+    "text": "العصفور",
+    "imageUrl": "/assets/bunyan/4-5/b120-l18-o2.png"
+   },
+   {
+    "text": "السمكة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l18-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "السمكة تعيش في الماء."
+ },
+ {
+  "n": 59,
+  "ref": "ل-19",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "hard",
+  "text": "انظر: كلب وقطة وسيارة. أي اثنين من نفس الفئة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l19-scene.png",
+  "options": [
+   {
+    "text": "القطة والسيارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l19-o1.png"
+   },
+   {
+    "text": "الكلب والسيارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l19-o2.png"
+   },
+   {
+    "text": "الكلب والقطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l19-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الكلب والقطة حيوانان أليفان."
+ },
+ {
+  "n": 60,
+  "ref": "ل-20",
+  "skillArea": "verbal",
+  "subSkill": "التصنيف",
+  "difficulty": "hard",
+  "text": "أي واحد لا نراه في السماء؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l20-scene.png",
+  "options": [
+   {
+    "text": "القمر",
+    "imageUrl": "/assets/bunyan/4-5/b120-l20-o1.png"
+   },
+   {
+    "text": "السمكة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l20-o2.png"
+   },
+   {
+    "text": "الشمس",
+    "imageUrl": "/assets/bunyan/4-5/b120-l20-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "السمكة تعيش في الماء لا في السماء."
+ },
+ {
+  "n": 61,
+  "ref": "ل-21",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "easy",
+  "text": "القطة تقول مياو 🐱. ماذا يقول الكلب؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l21-scene.png",
+  "options": [
+   {
+    "text": "مياو",
+    "imageUrl": "/assets/bunyan/4-5/b120-l21-o1.png"
+   },
+   {
+    "text": "صهيل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l21-o2.png"
+   },
+   {
+    "text": "نباح",
+    "imageUrl": "/assets/bunyan/4-5/b120-l21-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الكلب ينبح."
+ },
+ {
+  "n": 62,
+  "ref": "ل-22",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "medium",
+  "text": "أين تعيش السمكة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l22-scene.png",
+  "options": [
+   {
+    "text": "في الماء",
+    "imageUrl": "/assets/bunyan/4-5/b120-l22-o1.png"
+   },
+   {
+    "text": "على الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l22-o2.png"
+   },
+   {
+    "text": "في السماء",
+    "imageUrl": "/assets/bunyan/4-5/b120-l22-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "السمكة تعيش في الماء."
+ },
+ {
+  "n": 63,
+  "ref": "ل-23",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "medium",
+  "text": "النحلة تعطينا العسل 🍯. ماذا تعطينا البقرة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l23-scene.png",
+  "options": [
+   {
+    "text": "البيض",
+    "imageUrl": "/assets/bunyan/4-5/b120-l23-o1.png"
+   },
+   {
+    "text": "الحليب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l23-o2.png"
+   },
+   {
+    "text": "الصوف",
+    "imageUrl": "/assets/bunyan/4-5/b120-l23-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "البقرة تعطينا الحليب."
+ },
+ {
+  "n": 64,
+  "ref": "ل-24",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "medium",
+  "text": "الدجاجة تضع شيئًا نأكله في الفطور. ما هو؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l24-scene.png",
+  "options": [
+   {
+    "text": "الحليب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l24-o1.png"
+   },
+   {
+    "text": "العسل",
+    "imageUrl": "/assets/bunyan/4-5/b120-l24-o2.png"
+   },
+   {
+    "text": "البيض",
+    "imageUrl": "/assets/bunyan/4-5/b120-l24-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الدجاجة تضع البيض."
+ },
+ {
+  "n": 65,
+  "ref": "ل-25",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "hard",
+  "text": "الطيار يقود الطائرة ✈️. من يقود السيارة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l25-scene.png",
+  "options": [
+   {
+    "text": "المعلم",
+    "imageUrl": "/assets/bunyan/4-5/b120-l25-o1.png"
+   },
+   {
+    "text": "السائق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l25-o2.png"
+   },
+   {
+    "text": "الطبيب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l25-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "السائق يقود السيارة."
+ },
+ {
+  "n": 66,
+  "ref": "ل-26",
+  "skillArea": "verbal",
+  "subSkill": "العلاقات",
+  "difficulty": "hard",
+  "text": "نلبس الحذاء في القدم 👟. ماذا نلبس في اليد؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l26-scene.png",
+  "options": [
+   {
+    "text": "القبعة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l26-o1.png"
+   },
+   {
+    "text": "القفاز",
+    "imageUrl": "/assets/bunyan/4-5/b120-l26-o2.png"
+   },
+   {
+    "text": "الجورب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l26-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "نلبس القفاز في اليد."
+ },
+ {
+  "n": 67,
+  "ref": "ل-27",
+  "skillArea": "verbal",
+  "subSkill": "وظائف الأشياء",
+  "difficulty": "easy",
+  "text": "بماذا نأكل الطعام؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l27-scene.png",
+  "options": [
+   {
+    "text": "الملعقة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l27-o1.png"
+   },
+   {
+    "text": "اللعبة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l27-o2.png"
+   },
+   {
+    "text": "القلم",
+    "imageUrl": "/assets/bunyan/4-5/b120-l27-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "نأكل بالملعقة."
+ },
+ {
+  "n": 68,
+  "ref": "ل-28",
+  "skillArea": "verbal",
+  "subSkill": "وظائف الأشياء",
+  "difficulty": "easy",
+  "text": "بماذا نرسم؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l28-scene.png",
+  "options": [
+   {
+    "text": "الألوان",
+    "imageUrl": "/assets/bunyan/4-5/b120-l28-o1.png"
+   },
+   {
+    "text": "الملعقة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l28-o2.png"
+   },
+   {
+    "text": "الصابون",
+    "imageUrl": "/assets/bunyan/4-5/b120-l28-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "نرسم بالألوان."
+ },
+ {
+  "n": 69,
+  "ref": "ل-29",
+  "skillArea": "verbal",
+  "subSkill": "وظائف الأشياء",
+  "difficulty": "medium",
+  "text": "المطر ينزل 🌧️. ماذا نستخدم لكي لا نتبلل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l29-scene.png",
+  "options": [
+   {
+    "text": "النظارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l29-o1.png"
+   },
+   {
+    "text": "المظلة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l29-o2.png"
+   },
+   {
+    "text": "القبعة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l29-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "نستخدم المظلة."
+ },
+ {
+  "n": 70,
+  "ref": "ل-30",
+  "skillArea": "verbal",
+  "subSkill": "وظائف الأشياء",
+  "difficulty": "medium",
+  "text": "أين ننام في الليل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l30-scene.png",
+  "options": [
+   {
+    "text": "الكرسي",
+    "imageUrl": "/assets/bunyan/4-5/b120-l30-o1.png"
+   },
+   {
+    "text": "السرير",
+    "imageUrl": "/assets/bunyan/4-5/b120-l30-o2.png"
+   },
+   {
+    "text": "الثلاجة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l30-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "ننام في السرير."
+ },
+ {
+  "n": 71,
+  "ref": "ل-31",
+  "skillArea": "verbal",
+  "subSkill": "وظائف الأشياء",
+  "difficulty": "hard",
+  "text": "من يساعدنا عندما نمرض؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l31-scene.png",
+  "options": [
+   {
+    "text": "السائق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l31-o1.png"
+   },
+   {
+    "text": "الطبيب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l31-o2.png"
+   },
+   {
+    "text": "الطباخ",
+    "imageUrl": "/assets/bunyan/4-5/b120-l31-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الطبيب يساعدنا عند المرض."
+ },
+ {
+  "n": 72,
+  "ref": "ل-32",
+  "skillArea": "verbal",
+  "subSkill": "المواضع المكانية",
+  "difficulty": "easy",
+  "text": "انظر إلى الصورة. أين القطة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l32-scene.png",
+  "options": [
+   {
+    "text": "داخل الصندوق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l32-o1.png"
+   },
+   {
+    "text": "بجانب الصندوق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l32-o2.png"
+   },
+   {
+    "text": "فوق الصندوق",
+    "imageUrl": "/assets/bunyan/4-5/b120-l32-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "القطة تجلس فوق الصندوق."
+ },
+ {
+  "n": 73,
+  "ref": "ل-33",
+  "skillArea": "verbal",
+  "subSkill": "المواضع المكانية",
+  "difficulty": "easy",
+  "text": "أين السمكة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l33-scene.png",
+  "options": [
+   {
+    "text": "بجانب الحوض",
+    "imageUrl": "/assets/bunyan/4-5/b120-l33-o1.png"
+   },
+   {
+    "text": "فوق الحوض",
+    "imageUrl": "/assets/bunyan/4-5/b120-l33-o2.png"
+   },
+   {
+    "text": "داخل الحوض",
+    "imageUrl": "/assets/bunyan/4-5/b120-l33-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "السمكة داخل الحوض."
+ },
+ {
+  "n": 74,
+  "ref": "ل-34",
+  "skillArea": "verbal",
+  "subSkill": "المواضع المكانية",
+  "difficulty": "medium",
+  "text": "انظر إلى الطاولة. أين الكرة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l34-scene.png",
+  "options": [
+   {
+    "text": "فوق الطاولة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l34-o1.png"
+   },
+   {
+    "text": "بجانب الطاولة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l34-o2.png"
+   },
+   {
+    "text": "تحت الطاولة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l34-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الكرة تحت الطاولة بين ساقيها."
+ },
+ {
+  "n": 75,
+  "ref": "ل-35",
+  "skillArea": "verbal",
+  "subSkill": "المواضع المكانية",
+  "difficulty": "medium",
+  "text": "أين يقف الطائر؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l35-scene.png",
+  "options": [
+   {
+    "text": "بجانب الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l35-o1.png"
+   },
+   {
+    "text": "على الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l35-o2.png"
+   },
+   {
+    "text": "تحت الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l35-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الطائر يقف على قمة الشجرة."
+ },
+ {
+  "n": 76,
+  "ref": "ل-36",
+  "skillArea": "verbal",
+  "subSkill": "المواضع المكانية",
+  "difficulty": "hard",
+  "text": "انظر: شجرة، أرنب، شجرة. أين الأرنب؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l36-scene.png",
+  "options": [
+   {
+    "text": "بجانب الشجرتين",
+    "imageUrl": "/assets/bunyan/4-5/b120-l36-o1.png"
+   },
+   {
+    "text": "فوق الشجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l36-o2.png"
+   },
+   {
+    "text": "بين الشجرتين",
+    "imageUrl": "/assets/bunyan/4-5/b120-l36-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الأرنب بين الشجرتين."
+ },
+ {
+  "n": 77,
+  "ref": "ل-37",
+  "skillArea": "verbal",
+  "subSkill": "الوعي الصوتي",
+  "difficulty": "medium",
+  "text": "أي كلمة تبدأ بصوت «ب»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l37-scene.png",
+  "options": [
+   {
+    "text": "سمكة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l37-o1.png"
+   },
+   {
+    "text": "قطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l37-o2.png"
+   },
+   {
+    "text": "بطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l37-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "بطة تبدأ بصوت «ب»."
+ },
+ {
+  "n": 78,
+  "ref": "ل-38",
+  "skillArea": "verbal",
+  "subSkill": "الوعي الصوتي",
+  "difficulty": "medium",
+  "text": "أي كلمة تبدأ بصوت «م»؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l38-scene.png",
+  "options": [
+   {
+    "text": "عنب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l38-o1.png"
+   },
+   {
+    "text": "موز",
+    "imageUrl": "/assets/bunyan/4-5/b120-l38-o2.png"
+   },
+   {
+    "text": "تفاح",
+    "imageUrl": "/assets/bunyan/4-5/b120-l38-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "موز تبدأ بصوت «م»."
+ },
+ {
+  "n": 79,
+  "ref": "ل-39",
+  "skillArea": "verbal",
+  "subSkill": "الوعي الصوتي",
+  "difficulty": "hard",
+  "text": "اسمع: «باب». أي كلمة تنتهي بنفس الصوت؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l39-scene.png",
+  "options": [
+   {
+    "text": "قمر",
+    "imageUrl": "/assets/bunyan/4-5/b120-l39-o1.png"
+   },
+   {
+    "text": "سيارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-l39-o2.png"
+   },
+   {
+    "text": "كتاب",
+    "imageUrl": "/assets/bunyan/4-5/b120-l39-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "«كتاب» تُقفّى مع «باب»؛ تنتهيان بالصوت نفسه."
+ },
+ {
+  "n": 80,
+  "ref": "ل-40",
+  "skillArea": "verbal",
+  "subSkill": "الوعي الصوتي",
+  "difficulty": "hard",
+  "text": "اسمع الكلمة وصفّق مع كل مقطع: «تفاحة». كم مرة صفقت؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-l40-scene.png",
+  "options": [
+   {
+    "text": "٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-l40-o1.png"
+   },
+   {
+    "text": "٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-l40-o2.png"
+   },
+   {
+    "text": "٤",
+    "imageUrl": "/assets/bunyan/4-5/b120-l40-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "«تفاحة» ثلاثة مقاطع: تَ، فَا، حَة."
+ },
+ {
+  "n": 81,
+  "ref": "م-1",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "easy",
+  "text": "انظر إلى النمط. ما الذي يأتي في المربع الفارغ؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m01-scene.png",
+  "options": [
+   {
+    "text": "🔴",
+    "imageUrl": "/assets/bunyan/4-5/b120-m01-o1.png"
+   },
+   {
+    "text": "🔵",
+    "imageUrl": "/assets/bunyan/4-5/b120-m01-o2.png"
+   },
+   {
+    "text": "🟢",
+    "imageUrl": "/assets/bunyan/4-5/b120-m01-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "النمط أحمر ثم أزرق: بعد الأحمر يأتي الأزرق."
+ },
+ {
+  "n": 82,
+  "ref": "م-2",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "easy",
+  "text": "ما الذي يأتي بعد؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m02-scene.png",
+  "options": [
+   {
+    "text": "🍌",
+    "imageUrl": "/assets/bunyan/4-5/b120-m02-o1.png"
+   },
+   {
+    "text": "🍎",
+    "imageUrl": "/assets/bunyan/4-5/b120-m02-o2.png"
+   },
+   {
+    "text": "🍇",
+    "imageUrl": "/assets/bunyan/4-5/b120-m02-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "تفاحتان ثم موزة: بعد تفاحتين تأتي الموزة."
+ },
+ {
+  "n": 83,
+  "ref": "م-3",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "easy",
+  "text": "ما الذي يأتي بعد؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m03-scene.png",
+  "options": [
+   {
+    "text": "⭐",
+    "imageUrl": "/assets/bunyan/4-5/b120-m03-o1.png"
+   },
+   {
+    "text": "☀️",
+    "imageUrl": "/assets/bunyan/4-5/b120-m03-o2.png"
+   },
+   {
+    "text": "🌙",
+    "imageUrl": "/assets/bunyan/4-5/b120-m03-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "نجمة ثم قمر: بعد النجمة يأتي القمر."
+ },
+ {
+  "n": 84,
+  "ref": "م-4",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "medium",
+  "text": "أكمل النمط. ما الشكل التالي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m04-scene.png",
+  "options": [
+   {
+    "text": "🔺",
+    "imageUrl": "/assets/bunyan/4-5/b120-m04-o1.png"
+   },
+   {
+    "text": "🟢",
+    "imageUrl": "/assets/bunyan/4-5/b120-m04-o2.png"
+   },
+   {
+    "text": "🟦",
+    "imageUrl": "/assets/bunyan/4-5/b120-m04-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "مثلثان ثم دائرة: بعد الدائرة يأتي المثلث."
+ },
+ {
+  "n": 85,
+  "ref": "م-5",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "medium",
+  "text": "ما الحيوان التالي في النمط؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m05-scene.png",
+  "options": [
+   {
+    "text": "🐰",
+    "imageUrl": "/assets/bunyan/4-5/b120-m05-o1.png"
+   },
+   {
+    "text": "🐶",
+    "imageUrl": "/assets/bunyan/4-5/b120-m05-o2.png"
+   },
+   {
+    "text": "🐱",
+    "imageUrl": "/assets/bunyan/4-5/b120-m05-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "كلب، قطة، أرنب ثم يعاد: بعد الكلب تأتي القطة."
+ },
+ {
+  "n": 86,
+  "ref": "م-6",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "hard",
+  "text": "انظر إلى أحجام الدوائر في النمط. ما الدائرة التالية؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m06-scene.png",
+  "options": [
+   {
+    "text": "كبيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m06-o1.png"
+   },
+   {
+    "text": "كبيرة زرقاء",
+    "imageUrl": "/assets/bunyan/4-5/b120-m06-o2.png"
+   },
+   {
+    "text": "صغيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m06-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "النمط صغيرة، كبيرة، صغيرة، كبيرة: بعد الكبيرة تأتي الصغيرة."
+ },
+ {
+  "n": 87,
+  "ref": "م-7",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "hard",
+  "text": "ما اللون التالي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m07-scene.png",
+  "options": [
+   {
+    "text": "🔴",
+    "imageUrl": "/assets/bunyan/4-5/b120-m07-o1.png"
+   },
+   {
+    "text": "🟡",
+    "imageUrl": "/assets/bunyan/4-5/b120-m07-o2.png"
+   },
+   {
+    "text": "🔵",
+    "imageUrl": "/assets/bunyan/4-5/b120-m07-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "أحمران ثم أزرق: بدأت دورة جديدة بالأحمر."
+ },
+ {
+  "n": 88,
+  "ref": "م-8",
+  "skillArea": "logical_patterns",
+  "subSkill": "الأنماط البصرية",
+  "difficulty": "hard",
+  "text": "ما الذي يأتي بعد؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m08-scene.png",
+  "options": [
+   {
+    "text": "🍎",
+    "imageUrl": "/assets/bunyan/4-5/b120-m08-o1.png"
+   },
+   {
+    "text": "🍇",
+    "imageUrl": "/assets/bunyan/4-5/b120-m08-o2.png"
+   },
+   {
+    "text": "🍌",
+    "imageUrl": "/assets/bunyan/4-5/b120-m08-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "تفاحة ثم موزتان: بعد التفاحة تأتي الموزة."
+ },
+ {
+  "n": 89,
+  "ref": "م-9",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "easy",
+  "text": "انظر إلى الصور الثلاث. أي صورة مختلفة عن الباقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m09-scene.png",
+  "options": [
+   {
+    "text": "كلها متشابهة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m09-o1.png"
+   },
+   {
+    "text": "التفاحة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m09-o2.png"
+   },
+   {
+    "text": "السيارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m09-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "السيارة ليست فاكهة والتفاحتان متماثلتان."
+ },
+ {
+  "n": 90,
+  "ref": "م-10",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "easy",
+  "text": "أي واحد مختلف عن الباقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m10-scene.png",
+  "options": [
+   {
+    "text": "كلها متشابهة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m10-o1.png"
+   },
+   {
+    "text": "البيتزا",
+    "imageUrl": "/assets/bunyan/4-5/b120-m10-o2.png"
+   },
+   {
+    "text": "الكلب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m10-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "البيتزا طعام والكلب والقطة حيوانات."
+ },
+ {
+  "n": 91,
+  "ref": "م-11",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "medium",
+  "text": "أي مربع مختلف عن الباقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m11-scene.png",
+  "options": [
+   {
+    "text": "الأزرق",
+    "imageUrl": "/assets/bunyan/4-5/b120-m11-o1.png"
+   },
+   {
+    "text": "الأحمر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m11-o2.png"
+   },
+   {
+    "text": "كلها متشابهة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m11-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الأزرق مختلف والمربعان الحمراوان متماثلان."
+ },
+ {
+  "n": 92,
+  "ref": "م-12",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "medium",
+  "text": "أي واحد مختلف عن الباقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m12-scene.png",
+  "options": [
+   {
+    "text": "الجورب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m12-o1.png"
+   },
+   {
+    "text": "البرقر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m12-o2.png"
+   },
+   {
+    "text": "كلها متشابهة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m12-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "البرقر طعام والقميص والجورب ملابس."
+ },
+ {
+  "n": 93,
+  "ref": "م-13",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "hard",
+  "text": "أي واحد مختلف عن الباقي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m13-scene.png",
+  "options": [
+   {
+    "text": "الباص",
+    "imageUrl": "/assets/bunyan/4-5/b120-m13-o1.png"
+   },
+   {
+    "text": "السرير",
+    "imageUrl": "/assets/bunyan/4-5/b120-m13-o2.png"
+   },
+   {
+    "text": "كلها متشابهة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m13-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "السرير أثاث والباقي مركبات."
+ },
+ {
+  "n": 94,
+  "ref": "م-14",
+  "skillArea": "logical_patterns",
+  "subSkill": "العنصر المختلف",
+  "difficulty": "hard",
+  "text": "أي واحد ليس فاكهة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m14-scene.png",
+  "options": [
+   {
+    "text": "الإجاص",
+    "imageUrl": "/assets/bunyan/4-5/b120-m14-o1.png"
+   },
+   {
+    "text": "البروكلي",
+    "imageUrl": "/assets/bunyan/4-5/b120-m14-o2.png"
+   },
+   {
+    "text": "كلها فواكه",
+    "imageUrl": "/assets/bunyan/4-5/b120-m14-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "البروكلي خضار والباقي فواكه."
+ },
+ {
+  "n": 95,
+  "ref": "م-15",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "easy",
+  "text": "ماذا يحدث أولًا؟ فكّر في قصة الدجاجة.",
+  "imageUrl": "/assets/bunyan/4-5/b120-m15-scene.png",
+  "options": [
+   {
+    "text": "الدجاجة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m15-o1.png"
+   },
+   {
+    "text": "الفرخ",
+    "imageUrl": "/assets/bunyan/4-5/b120-m15-o2.png"
+   },
+   {
+    "text": "البيضة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m15-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "أولًا البيضة، ثم الفرخ، ثم الدجاجة."
+ },
+ {
+  "n": 96,
+  "ref": "م-16",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "easy",
+  "text": "في الصباح: ماذا نفعل أولًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m16-scene.png",
+  "options": [
+   {
+    "text": "نستيقظ",
+    "imageUrl": "/assets/bunyan/4-5/b120-m16-o1.png"
+   },
+   {
+    "text": "نفطر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m16-o2.png"
+   },
+   {
+    "text": "ننظف أسناننا",
+    "imageUrl": "/assets/bunyan/4-5/b120-m16-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "أولًا نستيقظ."
+ },
+ {
+  "n": 97,
+  "ref": "م-17",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "medium",
+  "text": "ما الترتيب الصحيح لنمو النبتة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m17-scene.png",
+  "options": [
+   {
+    "text": "شجرة، نبتة، برعم",
+    "imageUrl": "/assets/bunyan/4-5/b120-m17-o1.png"
+   },
+   {
+    "text": "نبتة، برعم، شجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m17-o2.png"
+   },
+   {
+    "text": "برعم، نبتة، شجرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m17-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "البرعم ثم النبتة ثم الشجرة."
+ },
+ {
+  "n": 98,
+  "ref": "م-18",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "medium",
+  "text": "ما الترتيب الصحيح لبناء البيت؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m18-scene.png",
+  "options": [
+   {
+    "text": "بيت، بناء، طوب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m18-o1.png"
+   },
+   {
+    "text": "طوب، بناء، بيت",
+    "imageUrl": "/assets/bunyan/4-5/b120-m18-o2.png"
+   },
+   {
+    "text": "بناء، طوب، بيت",
+    "imageUrl": "/assets/bunyan/4-5/b120-m18-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "الطوب ثم البناء ثم البيت."
+ },
+ {
+  "n": 99,
+  "ref": "م-19",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "hard",
+  "text": "قبل أن نلبس الحذاء 👟، ماذا نلبس أولًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m19-scene.png",
+  "options": [
+   {
+    "text": "الجورب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m19-o1.png"
+   },
+   {
+    "text": "القبعة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m19-o2.png"
+   },
+   {
+    "text": "القميص",
+    "imageUrl": "/assets/bunyan/4-5/b120-m19-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "نلبس الجورب قبل الحذاء."
+ },
+ {
+  "n": 100,
+  "ref": "م-20",
+  "skillArea": "logical_patterns",
+  "subSkill": "التسلسل القصصي",
+  "difficulty": "hard",
+  "text": "يوم المدرسة: ما الخطوة الأولى؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m20-scene.png",
+  "options": [
+   {
+    "text": "الوصول للمدرسة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m20-o1.png"
+   },
+   {
+    "text": "ركوب الباص",
+    "imageUrl": "/assets/bunyan/4-5/b120-m20-o2.png"
+   },
+   {
+    "text": "تجهيز الحقيبة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m20-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "أولًا نجهز الحقيبة."
+ },
+ {
+  "n": 101,
+  "ref": "م-21",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "easy",
+  "text": "أي صورة تشبه هذه الفراشة تمامًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m21-scene.png",
+  "options": [
+   {
+    "text": "🦋",
+    "imageUrl": "/assets/bunyan/4-5/b120-m21-o1.png"
+   },
+   {
+    "text": "🪲",
+    "imageUrl": "/assets/bunyan/4-5/b120-m21-o2.png"
+   },
+   {
+    "text": "🐝",
+    "imageUrl": "/assets/bunyan/4-5/b120-m21-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الفراشة المطابقة هي الأولى."
+ },
+ {
+  "n": 102,
+  "ref": "م-22",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "easy",
+  "text": "من أم الكتكوت الصغير؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m22-scene.png",
+  "options": [
+   {
+    "text": "البطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m22-o1.png"
+   },
+   {
+    "text": "الدجاجة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m22-o2.png"
+   },
+   {
+    "text": "القطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m22-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "أم الكتكوت الدجاجة."
+ },
+ {
+  "n": 103,
+  "ref": "م-23",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "medium",
+  "text": "من يستخدم هذه الأداة في عمله؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m23-scene.png",
+  "options": [
+   {
+    "text": "الطباخ",
+    "imageUrl": "/assets/bunyan/4-5/b120-m23-o1.png"
+   },
+   {
+    "text": "الشرطي",
+    "imageUrl": "/assets/bunyan/4-5/b120-m23-o2.png"
+   },
+   {
+    "text": "الطبيب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m23-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الطبيب يستخدم السماعة."
+ },
+ {
+  "n": 104,
+  "ref": "م-24",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "medium",
+  "text": "المفتاح يفتح شيئًا واحدًا من هذه. ما هو؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m24-scene.png",
+  "options": [
+   {
+    "text": "الكتاب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m24-o1.png"
+   },
+   {
+    "text": "الباب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m24-o2.png"
+   },
+   {
+    "text": "الكوب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m24-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "المفتاح يفتح الباب."
+ },
+ {
+  "n": 105,
+  "ref": "م-25",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "hard",
+  "text": "انظر جيدًا: أي صورتين متشابهتين تمامًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m25-scene.png",
+  "options": [
+   {
+    "text": "١+٢",
+    "imageUrl": "/assets/bunyan/4-5/b120-m25-o1.png"
+   },
+   {
+    "text": "٢+٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-m25-o2.png"
+   },
+   {
+    "text": "١+٣",
+    "imageUrl": "/assets/bunyan/4-5/b120-m25-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "١ و٢ ثعلبان متماثلان؛ ٣ ذئب مختلف."
+ },
+ {
+  "n": 106,
+  "ref": "م-26",
+  "skillArea": "logical_patterns",
+  "subSkill": "المطابقة",
+  "difficulty": "hard",
+  "text": "أي شيء مكانه المطبخ؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m26-scene.png",
+  "options": [
+   {
+    "text": "المقلاة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m26-o1.png"
+   },
+   {
+    "text": "السرير",
+    "imageUrl": "/assets/bunyan/4-5/b120-m26-o2.png"
+   },
+   {
+    "text": "الدش",
+    "imageUrl": "/assets/bunyan/4-5/b120-m26-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "المقلاة في المطبخ."
+ },
+ {
+  "n": 107,
+  "ref": "م-27",
+  "skillArea": "logical_patterns",
+  "subSkill": "السبب والنتيجة",
+  "difficulty": "easy",
+  "text": "أكلت كل الحلوى في الطبق. ماذا بقي في الطبق؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m27-scene.png",
+  "options": [
+   {
+    "text": "لا شيء، فارغ",
+    "imageUrl": "/assets/bunyan/4-5/b120-m27-o1.png"
+   },
+   {
+    "text": "لعبة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m27-o2.png"
+   },
+   {
+    "text": "حلوى كثيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m27-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "إذا أكلناها كلها يصبح الطبق فارغًا."
+ },
+ {
+  "n": 108,
+  "ref": "م-28",
+  "skillArea": "logical_patterns",
+  "subSkill": "السبب والنتيجة",
+  "difficulty": "medium",
+  "text": "لماذا نلبس المعطف؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m28-scene.png",
+  "options": [
+   {
+    "text": "لأن الجو بارد",
+    "imageUrl": "/assets/bunyan/4-5/b120-m28-o1.png"
+   },
+   {
+    "text": "لأننا جائعون",
+    "imageUrl": "/assets/bunyan/4-5/b120-m28-o2.png"
+   },
+   {
+    "text": "لأننا نريد النوم",
+    "imageUrl": "/assets/bunyan/4-5/b120-m28-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "نلبس المعطف عند البرد."
+ },
+ {
+  "n": 109,
+  "ref": "م-29",
+  "skillArea": "logical_patterns",
+  "subSkill": "السبب والنتيجة",
+  "difficulty": "medium",
+  "text": "سقط كوب الماء على الأرض. ماذا يحدث؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m29-scene.png",
+  "options": [
+   {
+    "text": "ينسكب الماء",
+    "imageUrl": "/assets/bunyan/4-5/b120-m29-o1.png"
+   },
+   {
+    "text": "يطير الكوب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m29-o2.png"
+   },
+   {
+    "text": "يختفي الماء",
+    "imageUrl": "/assets/bunyan/4-5/b120-m29-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الكوب يسقط فينسكب الماء."
+ },
+ {
+  "n": 110,
+  "ref": "م-30",
+  "skillArea": "logical_patterns",
+  "subSkill": "السبب والنتيجة",
+  "difficulty": "hard",
+  "text": "في الصباح الأرض مبلولة. ماذا حدث في الليل غالبًا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m30-scene.png",
+  "options": [
+   {
+    "text": "نزل مطر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m30-o1.png"
+   },
+   {
+    "text": "هبت رياح",
+    "imageUrl": "/assets/bunyan/4-5/b120-m30-o2.png"
+   },
+   {
+    "text": "سطعت الشمس",
+    "imageUrl": "/assets/bunyan/4-5/b120-m30-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الأرض المبلولة علامة على المطر."
+ },
+ {
+  "n": 111,
+  "ref": "م-31",
+  "skillArea": "logical_patterns",
+  "subSkill": "المصفوفات",
+  "difficulty": "medium",
+  "text": "انظر إلى المربعات. ما الصورة الناقصة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m31-scene.png",
+  "options": [
+   {
+    "text": "🍇",
+    "imageUrl": "/assets/bunyan/4-5/b120-m31-o1.png"
+   },
+   {
+    "text": "🍌",
+    "imageUrl": "/assets/bunyan/4-5/b120-m31-o2.png"
+   },
+   {
+    "text": "🍎",
+    "imageUrl": "/assets/bunyan/4-5/b120-m31-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "العمود الأول تفاحتان، فالثاني موزتان."
+ },
+ {
+  "n": 112,
+  "ref": "م-32",
+  "skillArea": "logical_patterns",
+  "subSkill": "المصفوفات",
+  "difficulty": "medium",
+  "text": "ما الصورة الناقصة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m32-scene.png",
+  "options": [
+   {
+    "text": "🚌",
+    "imageUrl": "/assets/bunyan/4-5/b120-m32-o1.png"
+   },
+   {
+    "text": "🚗",
+    "imageUrl": "/assets/bunyan/4-5/b120-m32-o2.png"
+   },
+   {
+    "text": "🚲",
+    "imageUrl": "/assets/bunyan/4-5/b120-m32-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "نفس القاعدة: العمود الثاني باصان."
+ },
+ {
+  "n": 113,
+  "ref": "م-33",
+  "skillArea": "logical_patterns",
+  "subSkill": "المصفوفات",
+  "difficulty": "hard",
+  "text": "كل صف فيه لون واحد، وكل عمود فيه حجم واحد. ما الدائرة الناقصة؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m33-scene.png",
+  "options": [
+   {
+    "text": "زرقاء صغيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m33-o1.png"
+   },
+   {
+    "text": "حمراء صغيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m33-o2.png"
+   },
+   {
+    "text": "زرقاء كبيرة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m33-o3.png"
+   }
+  ],
+  "correct": 0,
+  "explanation": "الصف الأزرق والعمود الصغير: زرقاء صغيرة."
+ },
+ {
+  "n": 114,
+  "ref": "م-34",
+  "skillArea": "logical_patterns",
+  "subSkill": "المصفوفات",
+  "difficulty": "hard",
+  "text": "انظر إلى الأعداد والتفاح. ماذا يكون في المربع الفارغ؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m34-scene.png",
+  "options": [
+   {
+    "text": "تفاحتان",
+    "imageUrl": "/assets/bunyan/4-5/b120-m34-o1.png"
+   },
+   {
+    "text": "٤ تفاحات",
+    "imageUrl": "/assets/bunyan/4-5/b120-m34-o2.png"
+   },
+   {
+    "text": "٥ تفاحات",
+    "imageUrl": "/assets/bunyan/4-5/b120-m34-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "كل مرة يزيد تفاحة: ١،٢،٣،٤."
+ },
+ {
+  "n": 115,
+  "ref": "م-35",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "easy",
+  "text": "أنا حيوان أقول «مياو». من أنا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m35-scene.png",
+  "options": [
+   {
+    "text": "الكلب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m35-o1.png"
+   },
+   {
+    "text": "الأرنب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m35-o2.png"
+   },
+   {
+    "text": "القطة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m35-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "القطة تقول مياو."
+ },
+ {
+  "n": 116,
+  "ref": "م-36",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "medium",
+  "text": "أنا فاكهة صفراء وطويلة، يحبها القرد. من أنا؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m36-scene.png",
+  "options": [
+   {
+    "text": "التفاح",
+    "imageUrl": "/assets/bunyan/4-5/b120-m36-o1.png"
+   },
+   {
+    "text": "العنب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m36-o2.png"
+   },
+   {
+    "text": "الموز",
+    "imageUrl": "/assets/bunyan/4-5/b120-m36-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "الموز أصفر وطويل."
+ },
+ {
+  "n": 117,
+  "ref": "م-37",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "medium",
+  "text": "على الطاولة ٣ صحون، وعندنا ٣ أطفال. هل يكفي طبق لكل طفل؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m37-scene.png",
+  "options": [
+   {
+    "text": "لا، ينقص طبق",
+    "imageUrl": "/assets/bunyan/4-5/b120-m37-o1.png"
+   },
+   {
+    "text": "يبقى طبقان",
+    "imageUrl": "/assets/bunyan/4-5/b120-m37-o2.png"
+   },
+   {
+    "text": "نعم، يكفي",
+    "imageUrl": "/assets/bunyan/4-5/b120-m37-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "٣ صحون لـ٣ أطفال: يكفي تمامًا."
+ },
+ {
+  "n": 118,
+  "ref": "م-38",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "hard",
+  "text": "سارة أكبر من فهد، وفهد أكبر من ريم. من الأصغر بينهم؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m38-scene.png",
+  "options": [
+   {
+    "text": "فهد",
+    "imageUrl": "/assets/bunyan/4-5/b120-m38-o1.png"
+   },
+   {
+    "text": "ريم",
+    "imageUrl": "/assets/bunyan/4-5/b120-m38-o2.png"
+   },
+   {
+    "text": "سارة",
+    "imageUrl": "/assets/bunyan/4-5/b120-m38-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "سارة أكبر، ثم فهد، فريم الأصغر."
+ },
+ {
+  "n": 119,
+  "ref": "م-39",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "hard",
+  "text": "كل القطط تحب الحليب. ميمي قطة. ماذا تحب ميمي؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m39-scene.png",
+  "options": [
+   {
+    "text": "الماء",
+    "imageUrl": "/assets/bunyan/4-5/b120-m39-o1.png"
+   },
+   {
+    "text": "العصير",
+    "imageUrl": "/assets/bunyan/4-5/b120-m39-o2.png"
+   },
+   {
+    "text": "الحليب",
+    "imageUrl": "/assets/bunyan/4-5/b120-m39-o3.png"
+   }
+  ],
+  "correct": 2,
+  "explanation": "ميمي قطة، والقطط تحب الحليب."
+ },
+ {
+  "n": 120,
+  "ref": "م-40",
+  "skillArea": "logical_patterns",
+  "subSkill": "الاستدلال البسيط",
+  "difficulty": "hard",
+  "text": "على الطاولة ٤ كراسي وجلس ٤ أطفال. جاء طفل جديد. ماذا نحتاج؟",
+  "imageUrl": "/assets/bunyan/4-5/b120-m40-scene.png",
+  "options": [
+   {
+    "text": "طبقًا آخر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m40-o1.png"
+   },
+   {
+    "text": "كرسيًا آخر",
+    "imageUrl": "/assets/bunyan/4-5/b120-m40-o2.png"
+   },
+   {
+    "text": "لا شيء",
+    "imageUrl": "/assets/bunyan/4-5/b120-m40-o3.png"
+   }
+  ],
+  "correct": 1,
+  "explanation": "٥ أطفال و٤ كراسي: نحتاج كرسيًا خامسًا."
+ }
+]

@@ -8,6 +8,7 @@ import { getBadgeById } from '@/lib/gamification/badges';
 import { getSkillAreaLabel, formatTime } from '@/lib/utils';
 import RegisterPrompt from '@/components/auth/RegisterPrompt';
 import ShareAchievement from '@/components/results/ShareAchievement';
+import { POINTS } from '@/lib/gamification/points';
 
 function ResultsContent() {
   const params = useSearchParams();
@@ -18,6 +19,9 @@ function ResultsContent() {
   const total = Math.min(Math.max(parseInt(params.get('total') || '10'), 1), 100);
   const score = Math.min(Math.max(parseInt(params.get('score') || '0'), 0), total);
   const points = Math.min(Math.max(parseInt(params.get('points') || '0'), 0), total * 200);
+  // The session counter shows 10 per correct answer; the rest are end-of-session bonuses.
+  const answerPoints = Math.min(score * POINTS.CORRECT_ANSWER, points);
+  const bonusPoints = points - answerPoints;
   const time = parseInt(params.get('time') || '0');
   const skill = params.get('skill') || 'mixed';
   const age = params.get('age') || '6-9';
@@ -72,6 +76,9 @@ function ResultsContent() {
           <div className="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100">
             <div className="text-amber-500 font-bold text-xl">+{points}</div>
             <div className="text-xs text-gray-500 mt-1">نقطة</div>
+            {bonusPoints > 0 && (
+              <div className="text-[11px] text-gray-400 mt-1 leading-tight">{answerPoints} للإجابات + {bonusPoints} مكافأة</div>
+            )}
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100">
             <div className="text-emerald-600 font-bold text-xl">{score}</div>

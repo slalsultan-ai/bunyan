@@ -473,7 +473,7 @@ export default function PracticePage() {
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
             >
-              {selectedAge ? '🚀 ابدأ الجلسة (10 أسئلة)' : 'اختر الفئة العمرية أولاً'}
+              {selectedAge ? '🚀 ابدأ الجلسة (حتى 10 أسئلة)' : 'اختر الفئة العمرية أولاً'}
             </button>
 
             {!selectedAge && (
