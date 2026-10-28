@@ -51,6 +51,14 @@ describe('resolveMasteryAccess — Mawhiba track', () => {
     await expect(resolveMasteryAccess('c1', 'mawhiba_l1')).rejects.toMatchObject({ status: 403 });
   });
 
+  it('gates Mawhiba 2 for registered children to ages 11-14', async () => {
+    flags.add('mawhiba_l1_link');
+    childAge = 8;
+    await expect(resolveMasteryAccess('c1', 'mawhiba_l2')).rejects.toMatchObject({ status: 403 });
+    childAge = 12;
+    await expect(resolveMasteryAccess('c1', 'mawhiba_l2')).resolves.toMatchObject({ ageGroup: 'mawhiba_l2' });
+  });
+
   it('does not open the 6-9 smart path', async () => {
     flags.add('mawhiba_l1_link');
     await expect(resolveMasteryAccess('c1')).rejects.toMatchObject({ status: 403 });
@@ -62,7 +70,6 @@ describe('resolveMasteryAccess — guest on the Mawhiba link', () => {
   beforeEach(() => {
     flags.clear(); jar.clear(); session = null;
     jar.set('mawhiba_guest', guestId);
-    jar.set('mawhiba_guest_age', '7');
   });
 
   it('admits the guest with its own cookie while the link is open', async () => {
@@ -79,10 +86,9 @@ describe('resolveMasteryAccess — guest on the Mawhiba link', () => {
     await expect(resolveMasteryAccess('guest_99999999-1234-4234-8234-123456789abc', 'mawhiba_l1')).rejects.toMatchObject({ status: 401 });
   });
 
-  it('refuses a guest whose stored age is outside 6-11', async () => {
+  it('admits the same guest to Mawhiba 2', async () => {
     flags.add('mawhiba_l1_link');
-    jar.set('mawhiba_guest_age', '5');
-    await expect(resolveMasteryAccess(guestId, 'mawhiba_l1')).rejects.toMatchObject({ status: 401 });
+    await expect(resolveMasteryAccess(guestId, 'mawhiba_l2')).resolves.toMatchObject({ childId: guestId, ageGroup: 'mawhiba_l2' });
   });
 
   it('never opens the 6-9 smart path to a guest', async () => {

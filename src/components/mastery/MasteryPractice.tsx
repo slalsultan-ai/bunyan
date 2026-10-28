@@ -39,7 +39,7 @@ type Phase = 'loading' | 'ready' | 'playing' | 'completed' | 'error';
 
 const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 const AREA_ICON: Record<string, string> = {
-  quantitative: '🔢', verbal: '📖', logical_patterns: '🧩', spatial: '🧭', scientific: '🔬',
+  quantitative: '🔢', verbal: '📖', logical_patterns: '🧩', spatial: '🧭', scientific: '🔬', flexibility: '🔄',
 };
 
 export interface MasteryTrackCopy {
@@ -50,6 +50,8 @@ export interface MasteryTrackCopy {
   subtitle: string;
   /** Where the header link and "back" buttons go. */
   backHref?: string;
+  /** Label of the back link (default «التمارين»). */
+  backLabel?: string;
 }
 
 const SMART_PATH_COPY: MasteryTrackCopy = {
@@ -147,6 +149,7 @@ function OptionButton({
 export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { childId: string; copy?: MasteryTrackCopy }) {
   const track = copy.track;
   const backHref = copy.backHref ?? '/practice';
+  const backLabel = copy.backLabel ?? 'التمارين';
   const bunaa = useBunaa();
   const [muted, setMuted] = useState(false);
   const { playCorrect, playWrong, playFanfare, playNext } = useSound(muted);
@@ -350,7 +353,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
       <div className="border-b border-slate-200/70 bg-white/80 px-4 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between">
           <Logo size="sm" />
-          <Link href={backHref} className="text-sm font-medium text-slate-500 hover:text-slate-800">التمارين</Link>
+          <Link href={backHref} className="text-sm font-medium text-slate-500 hover:text-slate-800">{backLabel}</Link>
         </div>
       </div>
       {children}
@@ -468,7 +471,7 @@ export default function MasteryPractice({ childId, copy = SMART_PATH_COPY }: { c
             جلسة جديدة 🚀
           </button>
           <Link href={backHref} className="flex-1 rounded-2xl border border-slate-200 bg-white py-4 text-center font-bold text-slate-700">
-            العودة للتمارين
+            {copy.backLabel ?? 'العودة للتمارين'}
           </Link>
         </div>
       </div>,

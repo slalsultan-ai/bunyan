@@ -10,6 +10,7 @@ export const QUESTION_AGE_GROUPS = [
   { value: '6-9', label: '6-9 سنوات' },
   { value: '10-12', label: '10-12 سنة' },
   { value: 'mawhiba_l1', label: 'موهبة ١' },
+  { value: 'mawhiba_l2', label: 'موهبة ٢' },
 ] as const;
 
 export const QUESTION_SKILL_AREAS = [
@@ -18,6 +19,7 @@ export const QUESTION_SKILL_AREAS = [
   { value: 'logical_patterns', label: 'تفكير منطقي', icon: '🧩' },
   { value: 'spatial', label: 'استدلال مكاني', icon: '🧊' },
   { value: 'scientific', label: 'علمي وميكانيكي', icon: '⚙️' },
+  { value: 'flexibility', label: 'المرونة العقلية', icon: '🔄' },
 ] as const;
 
 /** Skill areas each age group's content is built from (coverage matrix cells). */
@@ -26,6 +28,7 @@ export const SKILL_AREAS_BY_AGE_GROUP: Record<string, readonly string[]> = {
   '6-9': ['quantitative', 'verbal', 'logical_patterns'],
   '10-12': ['quantitative', 'verbal', 'logical_patterns'],
   mawhiba_l1: ['quantitative', 'verbal', 'spatial', 'scientific'],
+  mawhiba_l2: ['verbal', 'flexibility', 'quantitative', 'spatial', 'scientific'],
 };
 
 export const ADMIN_AGE_GROUP_VALUES = new Set<string>(QUESTION_AGE_GROUPS.map(a => a.value));

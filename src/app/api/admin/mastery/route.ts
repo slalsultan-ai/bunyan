@@ -9,7 +9,7 @@ import { computeAgeGroup } from '@/lib/parent-auth';
 import { getDb } from '@/lib/db';
 import { children } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { isMasteryAgeGroup, isMasteryTrack, type MasteryTrack } from '@/lib/mastery/taxonomy';
+import { isMasteryAgeGroup, isMasteryTrack, isMawhibaTrack, type MasteryTrack } from '@/lib/mastery/taxonomy';
 
 /**
  * Admin read API for the mastery engine.
@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
       const [child] = await db.select().from(children).where(eq(children.id, childId)).limit(1);
       if (!child) return NextResponse.json({ error: 'الطفل غير موجود' }, { status: 404 });
       const childAgeGroup = computeAgeGroup(child.age);
-      const ageGroup: string = track === 'mawhiba_l1' ? track : childAgeGroup;
-      if (!isMasteryTrack(ageGroup) || (track !== 'mawhiba_l1' && !isMasteryAgeGroup(ageGroup))) {
+      const ageGroup: string = isMawhibaTrack(track) ? track : childAgeGroup;
+      if (!isMasteryTrack(ageGroup) || (!isMawhibaTrack(track) && !isMasteryAgeGroup(ageGroup))) {
         const other = await getChildMasteryReport(childId, 'mawhiba_l1', 1);
         return NextResponse.json({ child: { id: child.id, name: child.name, age: child.age, ageGroup }, track, supported: false, trackAttempts: other.trackAttempts });
       }
