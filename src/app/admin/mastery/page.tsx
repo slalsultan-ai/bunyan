@@ -132,6 +132,7 @@ const LETTERS_AR = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 const TRACKS = [
   { key: '6-9', label: 'المسار الذكي (6–9)' },
   { key: 'mawhiba_l1', label: 'مسار موهبة ١' },
+  { key: 'mawhiba_l2', label: 'مسار موهبة ٢' },
 ] as const;
 type Track = (typeof TRACKS)[number]['key'];
 

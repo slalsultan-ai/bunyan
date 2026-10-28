@@ -14,14 +14,14 @@
  */
 
 /** A mastery track: an age group of the general bank, or a dedicated exam bank. */
-export type MasteryTrack = '6-9' | 'mawhiba_l1';
+export type MasteryTrack = '6-9' | 'mawhiba_l1' | 'mawhiba_l2';
 /** @deprecated kept for existing imports; use MasteryTrack. */
 export type MasteryAgeGroup = MasteryTrack;
 
 export interface MasterySkill {
   key: string;
   nameAr: string;
-  area: 'quantitative' | 'verbal' | 'logical_patterns' | 'spatial' | 'scientific';
+  area: 'quantitative' | 'verbal' | 'logical_patterns' | 'spatial' | 'scientific' | 'flexibility';
   /** Teaching order: lower runs first when several skills are open. */
   order: number;
   prerequisites: string[];
@@ -31,7 +31,13 @@ export interface MasterySkill {
 
 /** Tracks chosen by the child's age (the general smart path). */
 export const MASTERY_AGE_GROUPS: readonly MasteryTrack[] = ['6-9'];
-export const MASTERY_TRACKS: readonly MasteryTrack[] = ['6-9', 'mawhiba_l1'];
+export const MASTERY_TRACKS: readonly MasteryTrack[] = ['6-9', 'mawhiba_l1', 'mawhiba_l2'];
+/** Dedicated Mawhiba exam banks (served on /practice/mawhiba). */
+export const MAWHIBA_TRACKS: readonly MasteryTrack[] = ['mawhiba_l1', 'mawhiba_l2'];
+
+export function isMawhibaTrack(track: unknown): track is 'mawhiba_l1' | 'mawhiba_l2' {
+  return track === 'mawhiba_l1' || track === 'mawhiba_l2';
+}
 
 export const SKILLS_6_9: MasterySkill[] = [
   // ─── Quantitative ────────────────────────────────────────────────────────
@@ -240,9 +246,30 @@ export const SKILLS_MAWHIBA_L1: MasterySkill[] = [
   m1('m1_reading', 'فهم المقروء', 'verbal', 51, ['m1_sentence_completion'], 'فهم المقروء'),
 ];
 
+// ─── Mawhiba Level 2 (grade 6 to intermediate 2): two practice tests, 192 questions ──
+// Each skill groups the source's question types so every skill has 12+ questions.
+const m2 = (
+  key: string, nameAr: string, area: MasterySkill['area'], order: number, subSkills: string[],
+): MasterySkill => ({ key, nameAr, area, order, prerequisites: [], sources: subSkills.map((sub) => [area, sub]) });
+
+export const SKILLS_MAWHIBA_L2: MasterySkill[] = [
+  m2('m2_analogy', 'التناظر اللفظي', 'verbal', 10, ['تناظر']),
+  m2('m2_ideas', 'توليد الأفكار', 'flexibility', 11, ['أفكار']),
+  m2('m2_arithmetic', 'الحساب والنسب', 'quantitative', 12, ['حساب', 'أعداد', 'عد', 'كسور', 'نسب', 'تناسب', 'زمن']),
+  m2('m2_mechanics', 'القوى والآلات والطاقة', 'scientific', 13, ['قوى', 'رافعة', 'بكرات', 'تروس', 'طاقة']),
+  m2('m2_verbal_logic', 'الاستنتاج اللغوي', 'verbal', 20, ['إكمال', 'المختلف', 'استنتاج']),
+  m2('m2_classify', 'التصنيف وإعادة الصياغة', 'flexibility', 21, ['تصنيف', 'إعادة صياغة']),
+  m2('m2_spatial', 'الاستدلال المكاني', 'spatial', 22, ['تدوير', 'انعكاس', 'مصفوفة', 'مكعبات', 'متتالية أشكال']),
+  m2('m2_science', 'المفاهيم العلمية', 'scientific', 23, ['منهج', 'صوت', 'أرض', 'ضوء', 'كهرباء', 'مادة', 'أحياء', 'مغناطيس']),
+  m2('m2_reading', 'فهم المقروء', 'verbal', 30, ['فهم المقروء']),
+  m2('m2_rule_switch', 'تبديل القواعد وحل المشكلات', 'flexibility', 31, ['تبديل القاعدة', 'حل مشكلات']),
+  m2('m2_algebra', 'الجبر والمتتاليات والهندسة', 'quantitative', 32, ['جبر', 'متتاليات', 'هندسة', 'إحصاء', 'احتمال']),
+];
+
 const TAXONOMY: Record<MasteryTrack, MasterySkill[]> = {
   '6-9': SKILLS_6_9,
   mawhiba_l1: SKILLS_MAWHIBA_L1,
+  mawhiba_l2: SKILLS_MAWHIBA_L2,
 };
 
 /** Display info for a skill key, from any supported age group. */
