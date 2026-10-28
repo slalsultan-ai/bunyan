@@ -33,7 +33,7 @@ export default function AnswerOption({ index, text, imageUrl, selected, correct,
           disabled && !correct && !wrong && 'cursor-not-allowed opacity-50',
         )}
       >
-        {imageUrl ? <img src={imageUrl} alt="خيار" className="h-16 w-16 object-contain" /> : <span className="leading-none">{text}</span>}
+        {imageUrl ? <img src={imageUrl} alt={text || 'خيار'} className="max-h-[78%] w-[88%] object-contain" /> : <span className="leading-none">{text}</span>}
         {correct && <span className="text-base mt-1 text-emerald-600 font-bold">✓</span>}
         {wrong && <span className="text-base mt-1 text-red-500 font-bold">✕</span>}
       </button>

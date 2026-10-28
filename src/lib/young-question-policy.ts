@@ -29,8 +29,9 @@ export function isYoungQuestionSafe(question: YoungQuestionCandidate): boolean {
   const hasSupportedPrompt = question.questionType === 'audio'
     || (question.questionType === 'image' && Boolean(question.questionImageUrl?.trim()));
 
+  // The 2026 bank uses three picture options; the original bank uses four.
   return hasSupportedPrompt
-    && question.options.length === 4
+    && (question.options.length === 3 || question.options.length === 4)
     && question.options.every(isVisualAnswerOption);
 }
 
